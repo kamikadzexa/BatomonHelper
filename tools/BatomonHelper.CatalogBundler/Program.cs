@@ -4,7 +4,7 @@ try
 {
     var root = FindRepositoryRoot(Environment.CurrentDirectory, AppContext.BaseDirectory);
     var database = Path.Combine(root, "assets", "wiki", "batomon-wiki.db");
-    var sprites = Path.Combine(root, "assets", "wiki", "monsters");
+    var sprites = Path.Combine(root, "assets", "wiki");
     using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
     client.DefaultRequestHeaders.UserAgent.ParseAdd("BatomonHelper catalog bundler");
     var snapshot = await new CatalogBundler(client).BundleAsync(database, sprites);

@@ -8,6 +8,8 @@ public partial class MainWindow : Window
     private const int CaptureHotkeyId = 0xB471;
     private const int WmHotkey = 0x0312;
     private HwndSource? _source;
+    private bool _isExpanded;
+    private Size _compactSize;
 
     public MainWindow()
     {
@@ -39,5 +41,23 @@ public partial class MainWindow : Window
     }
 
     private void DragWindow(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); }
+    private void ToggleExpanded(object sender, RoutedEventArgs e)
+    {
+        if (!_isExpanded)
+        {
+            _compactSize = new Size(Width, Height);
+            WindowState = WindowState.Normal;
+            Width = Math.Min(1600, SystemParameters.WorkArea.Width);
+            Height = Math.Min(920, SystemParameters.WorkArea.Height);
+            ExpandButton.Content = "Compact";
+            _isExpanded = true;
+            return;
+        }
+
+        Width = Math.Max(MinWidth, _compactSize.Width);
+        Height = Math.Max(MinHeight, _compactSize.Height);
+        ExpandButton.Content = "Expand";
+        _isExpanded = false;
+    }
     private void CloseWindow(object sender, RoutedEventArgs e) => Close();
 }

@@ -1,4 +1,5 @@
 using BatomonHelper.Core;
+using BatomonHelper.ScreenReader;
 using System.Text.Json;
 
 namespace BatomonHelper.Tests;
@@ -25,11 +26,11 @@ public sealed class ShopOddsSnapshotTests
     }
 
     [Fact]
-    public void Requires_the_visible_item_offer_while_an_item_use_remains()
+    public void Does_not_require_item_identity_while_an_item_use_remains()
     {
         var snapshot = FixtureSnapshot() with { ItemOffer = null };
 
-        Assert.False(ShopOddsSnapshotValidator.Validate(snapshot, CatalogSnapshot.Empty).IsValid);
+        Assert.True(ShopOddsSnapshotValidator.Validate(snapshot, CatalogSnapshot.Empty).IsValid);
     }
 
     [Fact]
@@ -43,6 +44,17 @@ public sealed class ShopOddsSnapshotTests
         Assert.Equal(45, root.GetProperty("gold").GetInt32());
         Assert.Equal(67, root.GetProperty("rarityOdds").GetProperty("common").GetInt32());
         Assert.Equal("Gray Chip", root.GetProperty("shopItemOffer").GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public void Manual_rank_correction_updates_the_standard_ribbon()
+    {
+        var fields = new[] { new RecognizedField("CommonOdds", "90", 1, true, []), new RecognizedField("UncommonOdds", "10", 1, true, []), new RecognizedField("RareOdds", "0", 1, true, []), new RecognizedField("SuperRareOdds", "0", 1, true, []), new RecognizedField("LegendaryOdds", "0", 1, true, []) };
+
+        var corrected = ShopOddsSnapshotCorrections.Apply(FixtureSnapshot(), fields, CatalogSnapshot.Empty);
+
+        Assert.Equal(.9m, corrected.RarityOdds.Single(odds => odds.Rarity == Rarity.Common).Probability);
+        Assert.Equal(.1m, corrected.RarityOdds.Single(odds => odds.Rarity == Rarity.Uncommon).Probability);
     }
 
     private static ShopOddsSnapshot FixtureSnapshot() => new("Black Belt", 4, 45,

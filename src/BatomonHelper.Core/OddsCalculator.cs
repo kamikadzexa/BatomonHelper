@@ -4,7 +4,8 @@ namespace BatomonHelper.Core;
 
 public sealed record RarityOdds(Rarity Rarity, decimal Probability, int EligibleCount, Rarity RolledAs);
 public sealed record MonsterOdds(string MonsterId, string Name, Rarity Rarity, decimal PerBatomonRoll, decimal NextShopChance, string Explanation);
-public sealed record OddsResult(ImmutableArray<RarityOdds> RarityOdds, ImmutableArray<MonsterOdds> MonsterOdds, int BatomonSlotsNextShop, ImmutableArray<string> Notes);
+public sealed record ItemOdds(string ItemId, string Name, Rarity Rarity, decimal PerItemRoll, decimal NextShopChance, string Explanation);
+public sealed record OddsResult(ImmutableArray<RarityOdds> RarityOdds, ImmutableArray<MonsterOdds> MonsterOdds, ImmutableArray<ItemOdds> ItemOdds, int BatomonSlotsNextShop, ImmutableArray<string> Notes);
 
 public interface IOddsCalculator
 {
@@ -18,12 +19,13 @@ public sealed class OddsCalculator : IOddsCalculator
 
     public OddsResult Calculate(CatalogSnapshot catalog, ShopOddsSnapshot snapshot)
     {
-        if (catalog.Monsters.IsEmpty) return new([], [], 0, ["No catalog is available; import the wiki first."]);
+        if (catalog.Monsters.IsEmpty) return new([], [], [], 0, ["No catalog is available; import the wiki first."]);
         var eligible = EligibleByRarity(catalog, snapshot);
         var visibleOdds = snapshot.RarityOdds.ToDictionary(odds => odds.Rarity, odds => odds.Probability);
         var slots = snapshot.ItemUsesRemaining > 0 ? 4 : 5;
         var rarityOdds = ImmutableArray.CreateBuilder<RarityOdds>();
         var monsterOdds = ImmutableArray.CreateBuilder<MonsterOdds>();
+        var itemOdds = ImmutableArray.CreateBuilder<ItemOdds>();
 
         foreach (var rarity in RibbonOrder)
         {
@@ -40,11 +42,22 @@ public sealed class OddsCalculator : IOddsCalculator
                 $"Uses the captured {string.Join(", ", sourceRarities)} ribbon odds."));
         }
 
+        var itemsByRarity = catalog.Items.GroupBy(item => item.Rarity).ToDictionary(group => group.Key, group => group.ToImmutableArray());
+        foreach (var item in catalog.Items.OrderBy(item => item.Rarity).ThenBy(item => item.Name))
+        {
+            var sameRarity = itemsByRarity[item.Rarity];
+            var perRoll = snapshot.ItemUsesRemaining > 0 && sameRarity.Length > 0
+                ? visibleOdds.GetValueOrDefault(item.Rarity) / sameRarity.Length
+                : 0m;
+            itemOdds.Add(new(item.Id, item.Name, item.Rarity, perRoll, perRoll,
+                "Uses the captured {DisplayRarity(item.Rarity)} ribbon odds, split across {sameRarity.Length} item(s)."));
+        }
+
         var notes = ImmutableArray.CreateBuilder<string>();
         notes.Add("Rarity odds are read directly from the shop ribbon.");
-        if (snapshot.ItemUsesRemaining > 0) notes.Add($"{snapshot.ItemUsesRemaining}/{snapshot.DailyItemLimit} item uses: the fifth slot is an item, so four slots roll Batomon.");
+        if (snapshot.ItemUsesRemaining > 0) notes.Add($"{snapshot.ItemUsesRemaining}/{snapshot.DailyItemLimit} item uses: the fifth slot is an item, so four slots roll Batomon. Item odds use that one item slot and the same visible rarity ribbon.");
         else notes.Add("No item use remains: all five slots roll Batomon.");
-        return new(rarityOdds.ToImmutable(), monsterOdds.ToImmutable(), slots, notes.ToImmutable());
+        return new(rarityOdds.ToImmutable(), monsterOdds.ToImmutable(), itemOdds.ToImmutable(), slots, notes.ToImmutable());
     }
 
     private static Dictionary<Rarity, ImmutableArray<MonsterDefinition>> EligibleByRarity(CatalogSnapshot catalog, ShopOddsSnapshot snapshot)
@@ -71,4 +84,6 @@ public sealed class OddsCalculator : IOddsCalculator
         for (var index = 0; index < exponent; index++) result *= value;
         return result;
     }
+
+    private static string DisplayRarity(Rarity rarity) => rarity == Rarity.SuperRare ? "Super Rare" : rarity.ToString();
 }

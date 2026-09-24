@@ -41,6 +41,34 @@ public sealed class OddsCalculatorTests
     }
 
     [Fact]
+    public void Item_odds_split_the_captured_ribbon_between_items_of_the_same_rarity()
+    {
+        var catalog = Catalog() with
+        {
+            Items = [new("chip-a", "Chip A", Rarity: Rarity.Common), new("chip-b", "Chip B", Rarity: Rarity.Common)]
+        };
+        var snapshot = Snapshot() with { ItemUsesRemaining = 1 };
+
+        var result = _calculator.Calculate(catalog, snapshot);
+
+        Assert.All(result.ItemOdds, odds =>
+        {
+            Assert.Equal(.5m, odds.PerItemRoll);
+            Assert.Equal(.5m, odds.NextShopChance);
+        });
+    }
+
+    [Fact]
+    public void Item_odds_are_zero_when_the_shop_has_no_item_slot()
+    {
+        var catalog = Catalog() with { Items = [new("chip", "Chip", Rarity: Rarity.Common)] };
+
+        var result = _calculator.Calculate(catalog, Snapshot() with { ItemUsesRemaining = 0 });
+
+        Assert.Equal(0m, Assert.Single(result.ItemOdds).PerItemRoll);
+    }
+
+    [Fact]
     public void User_selected_region_limits_the_eligible_pool()
     {
         var catalog = new CatalogSnapshot("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],

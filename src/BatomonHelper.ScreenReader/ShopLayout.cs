@@ -18,18 +18,10 @@ public readonly record struct NormalizedRect(double X, double Y, double Width, d
 public static class ShopLayout
 {
     public static readonly NormalizedRect TrainerHeader = new(.008, .100, .20, .065);
-    public static readonly NormalizedRect TrainerEffect = new(.012, .395, .195, .205);
     public static readonly NormalizedRect ShopRank = new(.197, .745, .055, .05);
     public static readonly NormalizedRect Gold = new(.457, .742, .085, .07);
     public static readonly NormalizedRect Ribbon = new(.195, .735, .250, .075);
-    public static readonly NormalizedRect[] RibbonOdds =
-    [
-        new(.252, .745, .028, .05), new(.292, .745, .028, .05), new(.329, .745, .028, .05),
-        new(.368, .745, .028, .05), new(.405, .745, .028, .05)
-    ];
     public static readonly NormalizedRect ItemUseCounter = new(.69, .825, .09, .05);
-    public static readonly NormalizedRect ShopItemName = new(.69, .935, .10, .045);
-    public static readonly NormalizedRect ShopItemPrice = new(.77, .935, .035, .045);
     public static readonly NormalizedRect ShopProbe = new(.19, .82, .12, .17);
 
     public static Rectangle DetectContentBounds(Bitmap source)

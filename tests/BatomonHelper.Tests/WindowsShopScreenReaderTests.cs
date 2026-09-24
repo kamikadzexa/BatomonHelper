@@ -18,14 +18,13 @@ public sealed class WindowsShopScreenReaderTests
         var result = await new WindowsShopScreenReader().RecognizeImageAsync(image, Catalog());
 
         Assert.NotNull(result.Snapshot);
-        Assert.Equal(expectedSnapshot.GetProperty("Trainer").GetString(), result.Snapshot!.Trainer);
+        Assert.Null(result.Snapshot!.Trainer);
         Assert.Equal(expectedSnapshot.GetProperty("ShopRank").GetInt32(), result.Snapshot.ShopRank);
         Assert.Equal(expectedSnapshot.GetProperty("Gold").GetInt32(), result.Snapshot.Gold);
         Assert.Equal([100, 0, 0, 0, 0], result.Snapshot.RarityOdds.OrderBy(odds => odds.Rarity).Select(odds => odds.Probability * 100m));
         Assert.Equal(expectedSnapshot.GetProperty("ItemUsesRemaining").GetInt32(), result.Snapshot.ItemUsesRemaining);
         Assert.Equal(expectedSnapshot.GetProperty("DailyItemLimit").GetInt32(), result.Snapshot.DailyItemLimit);
-        Assert.Equal(expectedSnapshot.GetProperty("ItemOffer").GetProperty("Name").GetString(), result.Snapshot.ItemOffer!.Name);
-        Assert.Equal(expectedSnapshot.GetProperty("ItemOffer").GetProperty("Price").GetInt32(), result.Snapshot.ItemOffer.Price);
+        Assert.Null(result.Snapshot.ItemOffer);
         Assert.All(result.Fields, field => Assert.True(field.IsResolved, field.Name));
     }
 
@@ -43,14 +42,13 @@ public sealed class WindowsShopScreenReaderTests
         var result = await new WindowsShopScreenReader().RecognizeImageAsync(image, catalog);
 
         Assert.NotNull(result.Snapshot);
-        Assert.Equal("Treasure Hunter", result.Snapshot!.Trainer);
+        Assert.Null(result.Snapshot!.Trainer);
         Assert.Equal(9, result.Snapshot.ShopRank);
         Assert.Equal(22, result.Snapshot.Gold);
         Assert.Equal([20, 25, 38, 15, 2], result.Snapshot.RarityOdds.OrderBy(odds => odds.Rarity).Select(odds => odds.Probability * 100m));
         Assert.Equal(2, result.Snapshot.ItemUsesRemaining);
         Assert.Equal(3, result.Snapshot.DailyItemLimit);
-        Assert.Equal("Gray Ticket", result.Snapshot.ItemOffer!.Name);
-        Assert.Equal(0, result.Snapshot.ItemOffer.Price);
+        Assert.Null(result.Snapshot.ItemOffer);
         Assert.All(result.Fields, field => Assert.True(field.IsResolved, field.Name));
     }
 

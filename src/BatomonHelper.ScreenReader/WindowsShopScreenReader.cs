@@ -18,14 +18,6 @@ namespace BatomonHelper.ScreenReader;
 public sealed class WindowsShopScreenReader : IShopScreenReader
 {
     private static readonly Rarity[] RibbonOrder = [Rarity.Common, Rarity.Uncommon, Rarity.Rare, Rarity.SuperRare, Rarity.Legendary];
-    private static readonly IReadOnlyDictionary<int, int[]> BaseRibbonOdds = new Dictionary<int, int[]>
-    {
-        [1] = [100, 0, 0, 0, 0], [2] = [90, 10, 0, 0, 0], [3] = [75, 25, 0, 0, 0], [4] = [67, 30, 3, 0, 0],
-        [5] = [55, 30, 15, 0, 0], [6] = [45, 32, 20, 3, 0], [7] = [30, 40, 25, 5, 0], [8] = [25, 30, 35, 10, 0],
-        [9] = [20, 25, 38, 15, 2], [10] = [15, 20, 40, 20, 5], [11] = [10, 20, 35, 25, 10], [12] = [5, 15, 30, 35, 15],
-        [13] = [1, 10, 30, 39, 20], [14] = [1, 2, 20, 47, 30]
-    };
-
     public async Task<ShopCaptureResult> CaptureAsync(CatalogSnapshot catalog, CancellationToken cancellationToken = default)
     {
         try
@@ -73,72 +65,27 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
     {
         if (!LooksLikeShop(source)) return new(null, frame, [], [new("not-shop", "The captured frame does not match the Batomon shop layout.", true)]);
         var fields = ImmutableArray.CreateBuilder<RecognizedField>();
-        var trainer = await TrainerAsync(source, catalog.Trainers, fields, cancellationToken);
-        var rank = await NumberAsync("ShopRank", source, ShopLayout.ShopRank, 1, 99, fields, cancellationToken);
+        var rank = await NumberAsync("ShopRank", source, ShopLayout.ShopRank, ShopRankOdds.MinimumRank, ShopRankOdds.MaximumRank, fields, cancellationToken);
         var rankFieldIndex = fields.Count - 1;
         var gold = await NumberAsync("Gold", source, ShopLayout.Gold, 0, 9_999, fields, cancellationToken);
         var wholeRibbon = await ReadRibbonPercentagesAsync(source, cancellationToken);
-        if (TryRepairPixelFontRead(rank, wholeRibbon, out var repairedRank, out var repairedRibbon))
+        var usesStandardRibbon = ShopRankOdds.TryFindRank(wholeRibbon, out var inferredRank);
+        if (usesStandardRibbon && inferredRank != rank)
         {
-            rank = repairedRank;
-            wholeRibbon = repairedRibbon;
+            rank = inferredRank;
             var original = fields[rankFieldIndex];
-            fields[rankFieldIndex] = Field("ShopRank", rank.ToString(), .86, original.Candidates.Append(new RecognitionCandidate($"ribbon-consistency:{rank}", .86)));
+            fields[rankFieldIndex] = Field("ShopRank", rank.ToString(), .90, original.Candidates.Append(new RecognitionCandidate($"fixed-layout ribbon:{rank}", .90)));
         }
         var ribbon = ImmutableArray.CreateBuilder<CapturedRarityOdds>();
-        for (var index = 0; index < RibbonOrder.Length; index++)
+        foreach (var rarity in RibbonOrder)
         {
-            var percent = await PercentageAsync($"{RibbonOrder[index]}Odds", source, ShopLayout.RibbonOdds[index], wholeRibbon[index], fields, cancellationToken);
-            ribbon.Add(new(RibbonOrder[index], percent / 100m));
+            var value = usesStandardRibbon ? (int?)(ShopRankOdds.ForRank(rank).Single(odds => odds.Rarity == rarity).Probability * 100) : wholeRibbon[(int)rarity];
+            ribbon.Add(new(rarity, value is >= 0 and <= 100 ? value.Value / 100m : ShopRankOdds.ForRank(rank).Single(odds => odds.Rarity == rarity).Probability));
+            fields.Add(Field($"{rarity}Odds", (value ?? (int)(ribbon[^1].Probability * 100)).ToString(), .82, [], value is null ? "Ribbon OCR needs correction." : null));
         }
         var itemUses = await FractionAsync(source, fields, cancellationToken);
-        var itemName = await TextFieldAsync("ShopItem", source, ShopLayout.ShopItemName, catalog.Items.IsDefaultOrEmpty ? [] : catalog.Items.Select(reference => reference.Name), fields, cancellationToken);
-        var itemReference = catalog.Items.FirstOrDefault(reference => reference.Name.Equals(itemName, StringComparison.OrdinalIgnoreCase));
-        var itemPrice = await NumberAsync("ShopItemPrice", source, ShopLayout.ShopItemPrice, 0, 9_999, fields, cancellationToken, itemReference?.Price);
-        var item = itemUses.Current > 0 && !string.IsNullOrWhiteSpace(itemName) ? new ShopItemOffer(itemName, itemPrice) : null;
-        var snapshot = new ShopOddsSnapshot(trainer, rank, gold, ribbon.ToImmutable(), itemUses.Current, itemUses.Total, item, DateTimeOffset.UtcNow);
+        var snapshot = new ShopOddsSnapshot(null, rank, gold, ribbon.ToImmutable(), itemUses.Current, itemUses.Total, null, DateTimeOffset.UtcNow);
         return new(snapshot, frame, fields.ToImmutable(), []);
-    }
-
-    private async Task<string> TextFieldAsync(string name, Bitmap source, NormalizedRect region, IEnumerable<string> knownValues, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
-    {
-        using var crop = Crop(source, region);
-        var ocrCandidates = await ReadTextAsync(crop, cancellationToken);
-        var catalogCandidates = knownValues
-            .Select(value => new RecognitionCandidate(value, ocrCandidates.Select(candidate => Similarity(candidate, value)).DefaultIfEmpty(0).Max()))
-            .Where(candidate => candidate.Confidence >= .55)
-            .OrderByDescending(candidate => candidate.Confidence)
-            .Take(4)
-            .ToArray();
-        var bestCatalog = catalogCandidates.FirstOrDefault();
-        var value = bestCatalog is not null && bestCatalog.Confidence >= .82
-            ? bestCatalog.Value
-            : ocrCandidates.OrderByDescending(candidate => candidate.Length).FirstOrDefault() ?? string.Empty;
-        var confidence = bestCatalog is not null && value.Equals(bestCatalog.Value, StringComparison.OrdinalIgnoreCase) ? bestCatalog.Confidence : string.IsNullOrWhiteSpace(value) ? 0 : .7;
-        fields.Add(Field(name, value, confidence, ocrCandidates.Select(candidate => new RecognitionCandidate(candidate, .7)).Concat(catalogCandidates), string.IsNullOrWhiteSpace(value) ? "OCR needs correction." : null));
-        return value;
-    }
-
-    private async Task<string> TrainerAsync(Bitmap source, ImmutableArray<TrainerDefinition> trainers, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
-    {
-        using var header = Crop(source, ShopLayout.TrainerHeader);
-        using var effect = Crop(source, ShopLayout.TrainerEffect);
-        var headerCandidates = await ReadTextAsync(header, cancellationToken);
-        var effectCandidates = await ReadTextAsync(effect, cancellationToken);
-        var candidates = trainers
-            .Select(trainer => new RecognitionCandidate(trainer.Name, Math.Max(
-                headerCandidates.Select(value => Similarity(value, trainer.Name)).DefaultIfEmpty(0).Max(),
-                string.IsNullOrWhiteSpace(trainer.RuleText) ? 0 : effectCandidates.Select(value => Similarity(value, trainer.RuleText!)).DefaultIfEmpty(0).Max())))
-            .OrderByDescending(candidate => candidate.Confidence)
-            .Take(4)
-            .ToArray();
-        var best = candidates.FirstOrDefault();
-        var value = best is not null && best.Confidence >= .62
-            ? best.Value
-            : headerCandidates.OrderByDescending(candidate => candidate.Length).FirstOrDefault() ?? string.Empty;
-        var confidence = best is not null && value.Equals(best.Value, StringComparison.OrdinalIgnoreCase) ? best.Confidence : string.IsNullOrWhiteSpace(value) ? 0 : .55;
-        fields.Add(Field("Trainer", value, confidence, headerCandidates.Concat(effectCandidates).Select(candidate => new RecognitionCandidate(candidate, .7)).Concat(candidates), string.IsNullOrWhiteSpace(value) ? "OCR needs correction." : null));
-        return value;
     }
 
     private async Task<int> NumberAsync(string name, Bitmap source, NormalizedRect region, int minimum, int maximum, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken, int? fallback = null)
@@ -156,22 +103,6 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         return valid ? value : 0;
     }
 
-    private async Task<int> PercentageAsync(string name, Bitmap source, NormalizedRect region, int? ribbonFallback, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
-    {
-        using var crop = Crop(source, region);
-        var text = (await ReadOddsTextAsync(crop, cancellationToken)).Concat(await ReadTextAsync(crop, cancellationToken)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-        var value = ExtractNumber(text, 0, 100);
-        var valid = value is >= 0 and <= 100;
-        if (!valid && ribbonFallback is { } fallback)
-        {
-            fields.Add(Field(name, fallback.ToString(), .82, text.Select(candidate => new RecognitionCandidate(candidate, .72)).Append(new($"ribbon:{fallback}%", .82))));
-            return fallback;
-        }
-        fields.Add(Field(name, valid ? value.ToString() : string.Empty, valid ? .82 : 0,
-            text.Select(candidate => new RecognitionCandidate(candidate, .72)), valid ? null : "Colored-ribbon OCR needs correction."));
-        return valid ? value : 0;
-    }
-
     private static async Task<int?[]> ReadRibbonPercentagesAsync(Bitmap source, CancellationToken cancellationToken)
     {
         using var crop = Crop(source, ShopLayout.Ribbon);
@@ -182,25 +113,6 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
             if (values.Length >= 5) return values.TakeLast(5).Cast<int?>().ToArray();
         }
         return [null, null, null, null, null];
-    }
-
-    // Pixel-font OCR occasionally reads the Rank digit as the first ribbon value and drops the final one.
-    // It can also invent a leading value while correctly reading the remaining four percentages.
-    private static bool TryRepairPixelFontRead(int recognizedRank, int?[] values, out int rank, out int?[] ribbon)
-    {
-        var matches = BaseRibbonOdds.Where(entry => values.Length == 5 &&
-            (values[1..].SequenceEqual(entry.Value[..4].Select(value => (int?)value)) ||
-             values[1..].SequenceEqual(entry.Value[1..].Select(value => (int?)value))))
-            .ToArray();
-        if (matches.Length == 1 && matches[0].Key != recognizedRank)
-        {
-            rank = matches[0].Key;
-            ribbon = matches[0].Value.Select(value => (int?)value).ToArray();
-            return true;
-        }
-        rank = recognizedRank;
-        ribbon = values;
-        return false;
     }
 
     private async Task<(int Current, int Total)> FractionAsync(Bitmap source, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
@@ -260,18 +172,6 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         return -1;
     }
     private static string NormalizeDigits(string value) => value.Replace('O', '0').Replace('o', '0').Replace('I', '1').Replace('l', '1');
-    private static double Similarity(string left, string right)
-    {
-        var first = new string(left.Where(char.IsLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
-        var second = new string(right.Where(char.IsLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
-        if (first.Length == 0 || second.Length == 0) return 0;
-        var matrix = new int[first.Length + 1, second.Length + 1];
-        for (var row = 0; row <= first.Length; row++) matrix[row, 0] = row;
-        for (var column = 0; column <= second.Length; column++) matrix[0, column] = column;
-        for (var row = 1; row <= first.Length; row++) for (var column = 1; column <= second.Length; column++)
-            matrix[row, column] = Math.Min(Math.Min(matrix[row - 1, column] + 1, matrix[row, column - 1] + 1), matrix[row - 1, column - 1] + (first[row - 1] == second[column - 1] ? 0 : 1));
-        return 1d - (double)matrix[first.Length, second.Length] / Math.Max(first.Length, second.Length);
-    }
     private static RecognizedField Field(string name, string value, double confidence, IEnumerable<RecognitionCandidate> candidates, string? diagnostic = null) => new(name, value, confidence, confidence >= .65 && diagnostic is null, candidates.DistinctBy(candidate => candidate.Value, StringComparer.OrdinalIgnoreCase).ToImmutableArray(), diagnostic);
 
     private static async Task<IReadOnlyList<string>> ReadTextAsync(Bitmap source, CancellationToken cancellationToken)

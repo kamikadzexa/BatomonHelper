@@ -18,7 +18,8 @@ public sealed record MonsterDefinition(
 
 public sealed record TrainerDefinition(string Id, string Name, string? RuleText = null);
 
-public sealed record ItemDefinition(string Id, string Name, string? RuleText = null, int? Price = null);
+public sealed record ItemDefinition(string Id, string Name, string? RuleText = null, int? Price = null, string? SpritePath = null, Rarity Rarity = Rarity.Common);
+public sealed record TrinketDefinition(string Id, string Name, Rarity Rarity, string? RuleText = null, bool IsUnique = false, string? SpritePath = null);
 
 public sealed record CatalogSnapshot(
     string SnapshotId,
@@ -32,6 +33,7 @@ public sealed record CatalogSnapshot(
 {
     public ImmutableArray<TrainerDefinition> Trainers { get; init; } = [];
     public ImmutableArray<ItemDefinition> Items { get; init; } = [];
+    public ImmutableArray<TrinketDefinition> Trinkets { get; init; } = [];
 
     public static CatalogSnapshot Empty { get; } = new(
         "empty", "unknown", null, DateTimeOffset.MinValue,

@@ -62,12 +62,16 @@ public sealed partial class WikiImporter(IWikiSource source)
             }
             var trainerIds = ReferenceIdRegex().Matches(pages[3]).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             var itemIds = ItemIdRegex().Matches(pages[4]).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var trinketPage = await TryGetStringAsync("/trinkets", cancellationToken);
+            var trinketIds = TrinketIdRegex().Matches(trinketPage).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             var trainers = await ImportReferencesAsync(trainerIds, "/trainers/", ParseTrainer, cancellationToken);
-            var items = await ImportReferencesAsync(itemIds, "/items/", ParseItem, cancellationToken);
+            var items = (await ImportReferencesAsync(itemIds, "/items/", ParseItem, cancellationToken)).Select(item => item with { SpritePath = $"assets/wiki/items/{item.Id}.png" }).ToImmutableArray();
+            var trinkets = (await ImportReferencesAsync(trinketIds, "/trinkets/", ParseTrinket, cancellationToken)).Select(trinket => trinket with { SpritePath = $"assets/wiki/trinkets/{trinket.Id}.png" }).ToImmutableArray();
             var warnings = ImmutableArray.CreateBuilder<string>();
             if (valid.Any(m => m.ActiveSets.IsEmpty)) warnings.Add("Some catalog entries have no declared active set and will not be rolled.");
             if (trainers.IsEmpty) warnings.Add("The trainer reference list was unavailable; trainer OCR will require review.");
             if (items.IsEmpty) warnings.Add("The item reference list was unavailable; item OCR will require review.");
+            if (trinkets.IsEmpty) warnings.Add("The trinket reference list was unavailable.");
             var raw = string.Concat(pages) + string.Join('\n', monsters.Select(m => m?.Id));
             var snapshot = new CatalogSnapshot(
                 $"wiki-{build}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}", build, FindBalance(pages), DateTimeOffset.UtcNow,
@@ -75,7 +79,8 @@ public sealed partial class WikiImporter(IWikiSource source)
                 Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(raw))), warnings.ToImmutable(), valid)
             {
                 Trainers = trainers,
-                Items = items
+                Items = items,
+                Trinkets = trinkets
             };
             return new(snapshot, []);
         }
@@ -143,8 +148,15 @@ public sealed partial class WikiImporter(IWikiSource source)
         return entries.ToImmutableArray();
     }
 
+    private async Task<string> TryGetStringAsync(string path, CancellationToken cancellationToken)
+    {
+        try { return await source.GetStringAsync(path, cancellationToken); }
+        catch (KeyNotFoundException) { return string.Empty; }
+    }
+
     private static TrainerDefinition ParseTrainer(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Trainer ability"));
-    private static ItemDefinition ParseItem(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Item effect"), ParsePrice(html));
+    private static ItemDefinition ParseItem(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Item effect"), ParsePrice(html), null, ParseRarity(html) ?? Rarity.Common);
+    private static TrinketDefinition ParseTrinket(string id, string html) => new(id, ParseReferenceName(id, html), ParseRarity(html) ?? Rarity.Common, ParseReferenceEffect(html, "Trinket effect"), html.Contains("Unique", StringComparison.OrdinalIgnoreCase));
     private static string ParseReferenceName(string id, string html)
     {
         var name = StripTags(WebUtility.HtmlDecode(TitleRegex().Match(html).Groups["name"].Value)).Trim();
@@ -177,6 +189,7 @@ public sealed partial class WikiImporter(IWikiSource source)
     [GeneratedRegex("\\\"id\\\"\\s*:\\s*\\\"(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase)] private static partial Regex IdRegex();
     [GeneratedRegex("href\\s*=\\s*['\\\"]/trainers/(?<id>[a-z0-9-]+)['\\\"]", RegexOptions.IgnoreCase)] private static partial Regex ReferenceIdRegex();
     [GeneratedRegex("href\\s*=\\s*['\\\"]/items/(?<id>[a-z0-9-]+)['\\\"]", RegexOptions.IgnoreCase)] private static partial Regex ItemIdRegex();
+    [GeneratedRegex("href\\s*=\\s*['\\\"]/trinkets/(?<id>[a-z0-9-]+)['\\\"]", RegexOptions.IgnoreCase)] private static partial Regex TrinketIdRegex();
     [GeneratedRegex("<h1[^>]*>(?<name>.*?)</h1>", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex TitleRegex();
     [GeneratedRegex("<title>[^<]*?[—-]\\s*(?<rarity>Super\\s+Rare|Uncommon|Common|Rare|Legendary|Mythical)\\b", RegexOptions.IgnoreCase)] private static partial Regex PageTitleRarityRegex();
     [GeneratedRegex("\\\"tier\\\"\\s*:\\s*(?<tier>[1-6])", RegexOptions.IgnoreCase)] private static partial Regex TierRegex();
