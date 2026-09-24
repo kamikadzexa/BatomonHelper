@@ -92,7 +92,7 @@ public sealed partial class WikiImporter(IWikiSource source)
     }
 
     private static IReadOnlyDictionary<string, ImmutableHashSet<string>> ParseMonsterRegions(string html) => MonsterRegionRegex().Matches(html)
-        .Select(match => (Id: match.Groups["id"].Value, Regions: RegionValueRegex().Matches(match.Groups["regions"].Value).Select(region => region.Groups["region"].Value).ToImmutableHashSet(StringComparer.OrdinalIgnoreCase)))
+        .Select(match => (Id: IdRegex().Match(match.Value).Groups["id"].Value, Regions: RegionValueRegex().Matches(match.Value).Select(region => NormalizeRegion(region.Groups["region"].Value)).ToImmutableHashSet(StringComparer.OrdinalIgnoreCase)))
         .GroupBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
         .ToDictionary(group => group.Key, group => group.Last().Regions, StringComparer.OrdinalIgnoreCase);
 
@@ -131,11 +131,13 @@ public sealed partial class WikiImporter(IWikiSource source)
     private static string? FindBuild(IEnumerable<string> pages) => pages.Select(page => BuildRegex().Match(page)).FirstOrDefault(m => m?.Success == true)?.Groups["build"].Value;
     private static string? FindBalance(IEnumerable<string> pages) => pages.Select(page => BalanceRegex().Match(page)).FirstOrDefault(m => m?.Success == true)?.Groups["balance"].Value;
     private static string DisplayRarity(Rarity rarity) => rarity == Rarity.SuperRare ? "Super Rare" : rarity.ToString();
+    private static string NormalizeRegion(string region) => region.EndsWith(" region", StringComparison.OrdinalIgnoreCase) ? region : $"{region} region";
     private static string StripTags(string value) => TagRegex().Replace(value, string.Empty);
 
     [GeneratedRegex("href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase)] private static partial Regex MonsterIdRegex();
-    [GeneratedRegex("\\\"id\\\":\\\"(?<id>[a-z0-9-]+)\\\".*?\\\"regions\\\":\\[(?<regions>.*?)\\]", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex MonsterRegionRegex();
-    [GeneratedRegex("\\\"(?<region>(?:Jinto|Pantra) region)\\\"", RegexOptions.IgnoreCase)] private static partial Regex RegionValueRegex();
+    [GeneratedRegex("\\{(?=[^{}]*\\\"id\\\"\\s*:\\s*\\\"[a-z0-9-]+\\\")(?=[^{}]*\\\"regions\\\"\\s*:\\s*\\[[^]]*\\])[^{}]*\\}", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex MonsterRegionRegex();
+    [GeneratedRegex("\\\"(?<region>(?:Jinto|Pantra)(?:\\s+region)?)\\\"", RegexOptions.IgnoreCase)] private static partial Regex RegionValueRegex();
+    [GeneratedRegex("\\\"id\\\"\\s*:\\s*\\\"(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase)] private static partial Regex IdRegex();
     [GeneratedRegex("href\\s*=\\s*['\\\"]/trainers/(?<id>[a-z0-9-]+)['\\\"]", RegexOptions.IgnoreCase)] private static partial Regex ReferenceIdRegex();
     [GeneratedRegex("href\\s*=\\s*['\\\"]/items/(?<id>[a-z0-9-]+)['\\\"]", RegexOptions.IgnoreCase)] private static partial Regex ItemIdRegex();
     [GeneratedRegex("<h1[^>]*>(?<name>.*?)</h1>", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex TitleRegex();

@@ -7,11 +7,15 @@
     <Style x:Key="GridCell" TargetType="DataGridCell"><Setter Property="Background" Value="#10202E" /><Setter Property="Foreground" Value="#F4F8FF" /><Setter Property="BorderBrush" Value="#3C4B5F" /><Setter Property="Padding" Value="7,4" /></Style>
     <Style x:Key="GridRow" TargetType="DataGridRow"><Setter Property="Background" Value="#10202E" /><Setter Property="Foreground" Value="#F4F8FF" /></Style>
     <Style x:Key="GridHeader" TargetType="DataGridColumnHeader"><Setter Property="Background" Value="#26384B" /><Setter Property="Foreground" Value="#F4F8FF" /><Setter Property="BorderBrush" Value="#536278" /><Setter Property="Padding" Value="7,5" /></Style>
+    <Style x:Key="FilterTextBox" TargetType="TextBox"><Setter Property="Background" Value="#F4F6F8" /><Setter Property="Foreground" Value="#17202B" /><Setter Property="CaretBrush" Value="#17202B" /><Setter Property="BorderBrush" Value="#8090A4" /><Setter Property="BorderThickness" Value="1" /></Style>
+    <Style x:Key="FilterComboBox" TargetType="ComboBox"><Setter Property="Background" Value="#F4F6F8" /><Setter Property="Foreground" Value="#17202B" /><Setter Property="BorderBrush" Value="#8090A4" /><Setter Property="BorderThickness" Value="1" /></Style>
+    <Style TargetType="ComboBoxItem"><Setter Property="Foreground" Value="#17202B" /><Setter Property="Background" Value="#F4F6F8" /></Style>
   </Window.Resources>
   <Border Background="{StaticResource PanelBackground}" BorderBrush="#536278" BorderThickness="1" CornerRadius="12" Padding="14">
     <Grid>
       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-      <Grid Grid.Row="0" MouseLeftButtonDown="DragWindow">
+      <Border Grid.Row="0" Margin="-4,-4,-4,0" Padding="4,4,4,7" BorderBrush="#78E2B8" BorderThickness="0,0,0,2" MouseLeftButtonDown="DragWindow">
+        <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <StackPanel>
           <TextBlock FontWeight="Bold" FontSize="19" Text="Creature Browser" />
@@ -22,13 +26,14 @@
           <Button Content="Pin" Command="{Binding TogglePinnedCommand}" ToolTip="Toggle click-through" />
           <Button Content="×" Click="CloseWindow" />
         </StackPanel>
-      </Grid>
+        </Grid>
+      </Border>
       <Border Grid.Row="1" Margin="0,12,0,4" Padding="8" Background="#372B1C" CornerRadius="5" Visibility="{Binding WarningVisibility}"><TextBlock TextWrapping="Wrap" Foreground="#FFD58B" Text="{Binding Warning}" /></Border>
       <Grid Grid.Row="2" Margin="0,8,0,8">
         <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="150"/><ColumnDefinition Width="150"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <TextBox Grid.Column="0" Margin="0,0,8,0" Padding="7,4" ToolTip="Search creature name" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
-        <ComboBox Grid.Column="1" Margin="0,0,8,0" ItemsSource="{Binding RegionFilters}" SelectedItem="{Binding SelectedRegionFilter}" DisplayMemberPath="Name" />
-        <ComboBox Grid.Column="2" Margin="0,0,8,0" ItemsSource="{Binding RarityFilters}" SelectedItem="{Binding SelectedRarityFilter}" DisplayMemberPath="Name" />
+        <TextBox Grid.Column="0" Margin="0,0,8,0" Padding="7,4" Style="{StaticResource FilterTextBox}" ToolTip="Search creature name" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+        <ComboBox Grid.Column="1" Margin="0,0,8,0" Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RegionFilters}" SelectedItem="{Binding SelectedRegionFilter}" DisplayMemberPath="Name" />
+        <ComboBox Grid.Column="2" Margin="0,0,8,0" Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RarityFilters}" SelectedItem="{Binding SelectedRarityFilter}" DisplayMemberPath="Name" />
         <TextBlock Grid.Column="3" VerticalAlignment="Center" Foreground="#AAB7CA" Text="{Binding CreatureCount}" />
       </Grid>
       <Grid Grid.Row="3">

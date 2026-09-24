@@ -10,7 +10,7 @@ public sealed class WikiImporterTests
         var pages = new Dictionary<string, string>
         {
             ["/"] = "<p>Balance 22 Steam build <!-- -->25377295</p>",
-            ["/batomon"] = "<a href=\"/batomon/alpha\">Alpha</a><script>{\"id\":\"alpha\",\"regions\":[\"Jinto region\"]}</script>",
+            ["/batomon"] = "<a href=\"/batomon/alpha\">Alpha</a><script>{\"regions\":[\"Jinto\"],\"id\":\"alpha\"}</script>",
             ["/mechanics/monster-pool"] = "<h1>Shop</h1>",
             ["/trainers"] = "<a class=\"catalog\" href=\"/trainers/black-belt\"><span>Black Belt</span></a>",
             ["/items"] = "<a class=\"catalog\" href=\"/items/gray-chip\"><span>Gray Chip</span></a>",
