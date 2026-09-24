@@ -14,7 +14,7 @@ Press `F8` to hide/show the overlay. **Pin** enables click-through mode. Focus a
 
 ## OCR shop reader
 
-The supported overlay source is a UI-aware, fixed-layout shop reader. It captures only the foreground game client, strips genuine black ultrawide side bars, and normalizes the 16:9 shop layout before recognizing individual HUD, board, bench, inventory, lock, and shop-card regions. It uses Windows English OCR plus catalog-constrained candidates and optional sprite templates for textless cards.
+The supported overlay source is a UI-aware, fixed-layout shop reader. It captures only the foreground game client, strips genuine black ultrawide side bars, and normalizes the 16:9 shop layout before reading the trainer title, six team sprites/levels, shop rank, the five colored rarity percentages, gold, and the fifth-slot item counter/offer. The displayed gray/green/blue/purple/orange ribbon is authoritative: the overlay does not reconstruct it from item or trainer effects.
 
 The review dialog shows recognition confidence and alternatives. Accepted and rejected reviewed captures are retained as a PNG plus structured state under `%LOCALAPPDATA%\BatomonHelper\capture-history`; the oldest entries are pruned so only the latest 20 remain. Install the Windows English OCR language feature if it is unavailable.
 
@@ -24,6 +24,6 @@ The optional `reference-templates.json` alongside the overlay contains fixture-d
 
 ## Data and limits
 
-The wiki importer caches raw provenance: source URLs, retrieval time, page hash, balance, and declared Steam build. It uses only public batomon.com pages and keeps the last valid SQLite snapshot offline if refresh fails. The odds engine covers rank weights, active-set/Level 3+ exclusions, fallback rarities, tickets, fifth-slot item fallback, Research Notes, VIP Pass, Mystic Incense notes, Rainbow Pearl notes, and overflow warnings.
+The wiki importer caches public catalog provenance, including Batomon, trainer, and item references. The odds engine starts from the captured ribbon, uses the Starter set, excludes owned Level 3/4 creatures and their base species, and uses four Batomon slots while an item use remains (five otherwise). It does not simulate item purchases or infer hidden effects.
 
 No recommendation engine is enabled yet; the `IRecommendationEngine` interface preserves an explainable, local-only next step.

@@ -13,4 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BatomonHelper.Core\BatomonHelper.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

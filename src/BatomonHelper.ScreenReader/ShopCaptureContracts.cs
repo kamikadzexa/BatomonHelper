@@ -9,12 +9,12 @@ public sealed record CaptureDiagnostic(string Code, string Message, bool IsError
 public sealed record CaptureFrame(byte[] Png, int Width, int Height);
 
 public sealed record ShopCaptureResult(
-    ShopState? State,
+    ShopOddsSnapshot? Snapshot,
     CaptureFrame? Frame,
     ImmutableArray<RecognizedField> Fields,
     ImmutableArray<CaptureDiagnostic> Diagnostics)
 {
-    public bool IsShop => State is not null && !Diagnostics.Any(diagnostic => diagnostic.IsError);
+    public bool IsShop => Snapshot is not null && !Diagnostics.Any(diagnostic => diagnostic.IsError);
 }
 
 public interface IShopScreenReader

@@ -4,5 +4,5 @@ public sealed record Recommendation(string Action, decimal Score, IReadOnlyList<
 
 public interface IRecommendationEngine
 {
-    IReadOnlyList<Recommendation> Evaluate(CatalogSnapshot catalog, ShopState state, OddsResult odds);
+    IReadOnlyList<Recommendation> Evaluate(CatalogSnapshot catalog, ShopOddsSnapshot snapshot, OddsResult odds);
 }

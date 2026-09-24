@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 namespace BatomonHelper.Core;
 
 public enum Rarity { Common, Uncommon, Rare, SuperRare, Legendary, Mythical }
-public enum ShopSlotKind { Batomon, Item, Empty }
 
 public sealed record MonsterDefinition(
     string Id,
@@ -12,6 +11,10 @@ public sealed record MonsterDefinition(
     string? BaseSpeciesId,
     ImmutableHashSet<string> ActiveSets,
     bool HasShiny = true);
+
+public sealed record TrainerDefinition(string Id, string Name, string? RuleText = null);
+
+public sealed record ItemDefinition(string Id, string Name, string? RuleText = null);
 
 public sealed record CatalogSnapshot(
     string SnapshotId,
@@ -23,6 +26,9 @@ public sealed record CatalogSnapshot(
     ImmutableArray<string> Warnings,
     ImmutableArray<MonsterDefinition> Monsters)
 {
+    public ImmutableArray<TrainerDefinition> Trainers { get; init; } = [];
+    public ImmutableArray<ItemDefinition> Items { get; init; } = [];
+
     public static CatalogSnapshot Empty { get; } = new(
         "empty", "unknown", null, DateTimeOffset.MinValue,
         [], string.Empty, ["No wiki snapshot has been imported."], []);
@@ -35,23 +41,6 @@ public sealed record UnitState(
     int Position,
     ImmutableArray<string> Equipment,
     ImmutableDictionary<string, int> Stats);
-
-public sealed record ShopSlotState(
-    ShopSlotKind Kind,
-    string? OfferId,
-    Rarity? Rarity,
-    int Price,
-    bool IsShiny,
-    string? Note = null);
-
-public sealed record RunEffects(
-    int ResearchNotes = 0,
-    bool VipPass = false,
-    bool MysticIncenseQueued = false,
-    bool ForceAllMythical = false,
-    Rarity? TicketRarity = null,
-    bool RainbowPearl = false,
-    int ShinyChanceMultiplier = 1);
 
 public sealed record ValidationResult(bool IsValid, ImmutableArray<string> Errors)
 {

@@ -37,6 +37,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<RarityRow> RarityRows { get; } = [];
+    public ObservableCollection<CreatureRow> EligibleCreatureRows { get; } = [];
     public ICommand RefreshWikiCommand { get; }
     public ICommand CaptureShopCommand { get; }
     public ICommand TogglePinnedCommand { get; }
@@ -82,7 +83,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             var result = await _screenReader.CaptureAsync(_catalog);
             if (window is not null) window.Opacity = restoreOpacity;
 
-            if (result.State is null)
+            if (result.Snapshot is null)
             {
                 await SaveHistoryAsync(result, false);
                 Warning = string.Join(" ", result.Diagnostics.Select(diagnostic => diagnostic.Message));
@@ -91,7 +92,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             }
 
             var review = new CaptureReviewWindow(result, _catalog) { Owner = window };
-            var accepted = review.ShowDialog() == true && review.AcceptedState is not null;
+            var accepted = review.ShowDialog() == true && review.AcceptedSnapshot is not null;
             if (!accepted)
             {
                 await SaveHistoryAsync(result, false);
@@ -99,8 +100,8 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
                 return;
             }
 
-            var state = review.AcceptedState!;
-            var validation = ShopStateValidator.Validate(state, _catalog);
+            var snapshot = review.AcceptedSnapshot!;
+            var validation = ShopOddsSnapshotValidator.Validate(snapshot, _catalog);
             if (!validation.IsValid)
             {
                 await SaveHistoryAsync(result, false);
@@ -109,10 +110,10 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
                 return;
             }
 
-            await SaveHistoryAsync(result with { State = state }, true);
-            Render(_oddsCalculator.Calculate(_catalog, state.ToOddsInput()), state);
+            await SaveHistoryAsync(result with { Snapshot = snapshot }, true);
+            Render(_oddsCalculator.Calculate(_catalog, snapshot), snapshot);
             Warning = result.Fields.Any(field => !field.IsResolved) ? "Some OCR fields were manually reviewed or remain low confidence." : "";
-            Status = $"Shop captured at {state.CapturedAt:HH:mm:ss}. Press F9 after your next shop change.";
+            Status = $"Shop captured at {snapshot.CapturedAt:HH:mm:ss}. Press F9 after your next shop change.";
         }
         catch (Exception exception)
         {
@@ -131,12 +132,14 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         catch (Exception exception) { Warning = $"Capture history could not be saved: {exception.Message}"; }
     }
 
-    private void Render(OddsResult odds, ShopState state)
+    private void Render(OddsResult odds, ShopOddsSnapshot snapshot)
     {
         RarityRows.Clear();
         foreach (var item in odds.RarityOdds) RarityRows.Add(new(item.Rarity.ToString(), item.Probability.ToString("P2"), item.EligibleCount, item.RolledAs.ToString()));
-        RunSummary = $"Day {state.Hud.Day} · Rank {state.Hud.Rank} · HP {state.Hud.HitPoints} · reroll ${state.Hud.RerollCost} · {odds.BatomonSlotsNextShop} Batomon slot(s) next fresh shop";
-        Notes = string.Join(" ", odds.Notes);
+        EligibleCreatureRows.Clear();
+        foreach (var monster in odds.MonsterOdds) EligibleCreatureRows.Add(new(monster.Name, monster.Rarity.ToString(), monster.PerBatomonRoll.ToString("P2"), monster.NextShopChance.ToString("P2")));
+        RunSummary = $"{snapshot.Trainer ?? "Unknown trainer"} · Rank {snapshot.ShopRank} · ${snapshot.Gold} · item {snapshot.ItemUsesRemaining}/{snapshot.DailyItemLimit}: {snapshot.ItemOffer?.Name ?? "none"} · {odds.BatomonSlotsNextShop} Batomon slot(s) next shop";
+        Notes = string.Join(" ", new[] { snapshot.ItemOffer?.RuleText }.Concat(odds.Notes).Where(note => !string.IsNullOrWhiteSpace(note)));
     }
 
     private void UpdateProvenance() => Provenance = $"Wiki build {_catalog.DeclaredSteamBuild} · retrieved {_catalog.RetrievedAt:yyyy-MM-dd HH:mm} UTC · source: manual shop OCR";
@@ -152,6 +155,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 }
 
 public sealed record RarityRow(string Name, string Chance, int Eligible, string Fallback);
+public sealed record CreatureRow(string Name, string Rarity, string PerRoll, string NextShop);
 
 public sealed class RelayCommand(Action action) : ICommand
 {

@@ -8,42 +8,52 @@ public sealed class OddsCalculatorTests
     private readonly OddsCalculator _calculator = new();
 
     [Fact]
-    public void RankOne_splits_the_common_roll_between_eligible_common_monsters()
+    public void Captured_common_ribbon_odds_split_between_eligible_common_monsters()
     {
-        var result = _calculator.Calculate(Catalog(), State());
+        var result = _calculator.Calculate(Catalog(), Snapshot());
 
         Assert.Equal(1m, result.RarityOdds.Single(x => x.Rarity == Rarity.Common).Probability);
-        Assert.Equal(0.5m, result.MonsterOdds.Single(x => x.MonsterId == "alpha").PerBatomonRoll);
-        Assert.Equal(0.96875m, result.MonsterOdds.Single(x => x.MonsterId == "alpha").NextShopChance);
+        Assert.Equal(.5m, result.MonsterOdds.Single(x => x.MonsterId == "alpha").PerBatomonRoll);
+        Assert.Equal(.96875m, result.MonsterOdds.Single(x => x.MonsterId == "alpha").NextShopChance);
     }
 
     [Fact]
-    public void Research_notes_add_weight_before_normalizing()
+    public void Uses_the_captured_ribbon_without_recalculating_item_effects()
     {
-        var state = State() with { ShopRank = 9, Effects = new RunEffects(ResearchNotes: 1), ItemUsesRemaining = 1, HasEligibleItemOffer = true };
-        var result = _calculator.Calculate(Catalog(), state);
+        var snapshot = Snapshot() with
+        {
+            RarityOdds = Odds((Rarity.Common, .67m), (Rarity.Uncommon, .30m), (Rarity.Rare, .03m), (Rarity.SuperRare, 0m), (Rarity.Legendary, 0m)),
+            ItemUsesRemaining = 1,
+            ItemOffer = new("Gray Chip", 0)
+        };
+        var result = _calculator.Calculate(Catalog(), snapshot);
 
-        Assert.Equal(22m / 120m, result.RarityOdds.Single(x => x.Rarity == Rarity.Legendary).Probability);
+        Assert.Equal(.03m, result.RarityOdds.Single(x => x.Rarity == Rarity.Rare).Probability);
         Assert.Equal(4, result.BatomonSlotsNextShop);
     }
 
     [Fact]
-    public void Level_three_monster_is_excluded_from_normal_rolls()
+    public void Level_three_monster_and_its_base_species_are_excluded()
     {
-        var state = State() with { Team = [new UnitState("alpha", 3, false, 0, [], ImmutableDictionary<string, int>.Empty)] };
-        var result = _calculator.Calculate(Catalog(), state);
+        var catalog = new CatalogSnapshot("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
+        [
+            Monster("alpha", Rarity.Common), Monster("alpha-base", Rarity.Common),
+            new("alpha-advanced", "alpha-advanced", Rarity.Common, "alpha-base", ImmutableHashSet.Create(StringComparer.OrdinalIgnoreCase, "starter")),
+            Monster("beta", Rarity.Common)
+        ]);
+        var snapshot = Snapshot() with { Team = [Unit("alpha-advanced", 3, 0)] };
+        var result = _calculator.Calculate(catalog, snapshot);
 
-        Assert.DoesNotContain(result.MonsterOdds, x => x.MonsterId == "alpha");
-        Assert.Equal(1, result.RarityOdds.Single(x => x.Rarity == Rarity.Common).EligibleCount);
+        Assert.DoesNotContain(result.MonsterOdds, x => x.MonsterId is "alpha-advanced" or "alpha-base");
+        Assert.Equal(2, result.RarityOdds.Single(x => x.Rarity == Rarity.Common).EligibleCount);
     }
 
     [Fact]
-    public void Ticket_forces_all_five_batomon_slots()
+    public void Five_batomon_slots_apply_when_no_item_use_remains()
     {
-        var result = _calculator.Calculate(Catalog(), State() with { Effects = new RunEffects(TicketRarity: Rarity.Legendary), ItemUsesRemaining = 1, HasEligibleItemOffer = true });
+        var result = _calculator.Calculate(Catalog(), Snapshot() with { ItemUsesRemaining = 0, ItemOffer = null });
 
         Assert.Equal(5, result.BatomonSlotsNextShop);
-        Assert.Equal(1m, result.RarityOdds.Single(x => x.Rarity == Rarity.Legendary).Probability);
     }
 
     private static CatalogSnapshot Catalog() => new("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
@@ -53,5 +63,7 @@ public sealed class OddsCalculatorTests
         ]);
 
     private static MonsterDefinition Monster(string id, Rarity rarity) => new(id, id, rarity, null, ImmutableHashSet.Create(StringComparer.OrdinalIgnoreCase, "starter"));
-    private static ShopOddsInput State() => new(1, 1, "starter", [], [], [], new(), 0, false);
+    private static UnitState Unit(string id, int level, int position) => new(id, level, false, position, [], ImmutableDictionary<string, int>.Empty);
+    private static ShopOddsSnapshot Snapshot() => new("Black Belt", [], 4, 45, Odds((Rarity.Common, 1m), (Rarity.Uncommon, 0m), (Rarity.Rare, 0m), (Rarity.SuperRare, 0m), (Rarity.Legendary, 0m)), 0, 1, null, DateTimeOffset.UtcNow);
+    private static ImmutableArray<CapturedRarityOdds> Odds(params (Rarity Rarity, decimal Probability)[] values) => values.Select(value => new CapturedRarityOdds(value.Rarity, value.Probability)).ToImmutableArray();
 }

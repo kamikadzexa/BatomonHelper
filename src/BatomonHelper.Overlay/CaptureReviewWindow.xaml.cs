@@ -21,12 +21,12 @@ public partial class CaptureReviewWindow : Window
         DataContext = new CaptureReviewViewModel(result);
     }
 
-    public ShopState? AcceptedState { get; private set; }
+    public ShopOddsSnapshot? AcceptedSnapshot { get; private set; }
 
     private void Accept_Click(object sender, RoutedEventArgs e)
     {
-        if (_result.State is null || DataContext is not CaptureReviewViewModel viewModel) return;
-        AcceptedState = ShopStateCorrections.Apply(_result.State, viewModel.Fields.Select(field => field.ToField()), _catalog);
+        if (_result.Snapshot is null || DataContext is not CaptureReviewViewModel viewModel) return;
+        AcceptedSnapshot = ShopOddsSnapshotCorrections.Apply(_result.Snapshot, viewModel.Fields.Select(field => field.ToField()), _catalog);
         DialogResult = true;
     }
 }
