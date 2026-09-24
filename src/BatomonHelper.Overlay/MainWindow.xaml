@@ -1,7 +1,7 @@
 <Window x:Class="BatomonHelper.Overlay.MainWindow" x:Name="OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Batomon Helper" Icon="Assets/batomon-helper.ico" Width="980" Height="720" MinWidth="720" MinHeight="480" Topmost="True"
+        Title="Batomon Helper" Icon="pack://application:,,,/Assets/batomon-helper.ico" Width="980" Height="720" MinWidth="720" MinHeight="480" Topmost="True"
         WindowStyle="None" ResizeMode="CanResizeWithGrip" AllowsTransparency="True" Background="Transparent">
   <Window.Resources>
     <Style x:Key="OverlayButton" TargetType="Button">

@@ -8,6 +8,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Resource Include="Assets\batomon-helper.ico" />
     <ProjectReference Include="..\BatomonHelper.Core\BatomonHelper.Core.csproj" />
     <ProjectReference Include="..\BatomonHelper.ScreenReader\BatomonHelper.ScreenReader.csproj" />
   </ItemGroup>
