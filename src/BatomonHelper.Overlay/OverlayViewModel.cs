@@ -18,6 +18,9 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     private ShopOddsSnapshot? _capturedSnapshot;
     private IReadOnlyDictionary<string, MonsterOdds> _oddsByMonster = new Dictionary<string, MonsterOdds>();
     private IReadOnlyDictionary<string, ItemOdds> _oddsByItem = new Dictionary<string, ItemOdds>();
+    private IReadOnlyDictionary<string, TrinketOdds> _oddsByTrinket = new Dictionary<string, TrinketOdds>();
+    private readonly HashSet<string> _levelThreeCreatureIds = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _ownedUniqueTrinketIds = new(StringComparer.OrdinalIgnoreCase);
     private string _searchText = string.Empty;
     private string _itemSearchText = string.Empty;
     private string _trinketSearchText = string.Empty;
@@ -25,6 +28,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     private string _warning = string.Empty;
     private string _runSummary = "No shop has been captured.";
     private string _notes = string.Empty;
+    private bool _itemAvailable = true;
     private RegionFilterOption _selectedRegionFilter = new(MonsterRegionFilter.All, "All regions");
     private RarityFilterOption _selectedRarityFilter = new(null, "All rarities");
     private RarityFilterOption _selectedItemRarityFilter = new(null, "All rarities");
@@ -39,6 +43,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         CaptureShopCommand = new AsyncCommand(CaptureShopAsync);
         DecreaseRankCommand = new RelayCommand(() => ChangeRank(-1));
         IncreaseRankCommand = new RelayCommand(() => ChangeRank(1));
+        ResetCommand = new RelayCommand(ResetManualState);
         _ = InitializeAsync();
     }
 
@@ -46,11 +51,13 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     public ObservableCollection<CreatureBrowserRow> CreatureRows { get; } = [];
     public ObservableCollection<ItemBrowserRow> ItemRows { get; } = [];
     public ObservableCollection<TrinketBrowserRow> TrinketRows { get; } = [];
+    public ObservableCollection<ShopRarityOddsRow> ShopOddsRows { get; } = [];
     public IReadOnlyList<RegionFilterOption> RegionFilters { get; } = [new(MonsterRegionFilter.All, "All regions"), new(MonsterRegionFilter.Jinto, "Jinto region"), new(MonsterRegionFilter.Pantra, "Pantra region")];
     public IReadOnlyList<RarityFilterOption> RarityFilters { get; } = [new(null, "All rarities"), new(Rarity.Common, "Common"), new(Rarity.Uncommon, "Uncommon"), new(Rarity.Rare, "Rare"), new(Rarity.SuperRare, "Super Rare"), new(Rarity.Legendary, "Legendary"), new(Rarity.Mythical, "Mythical")];
     public ICommand CaptureShopCommand { get; }
     public ICommand DecreaseRankCommand { get; }
     public ICommand IncreaseRankCommand { get; }
+    public ICommand ResetCommand { get; }
     public string Status { get => _status; private set => Set(ref _status, value); }
     public string Warning { get => _warning; private set { Set(ref _warning, value); OnPropertyChanged(nameof(WarningVisibility)); } }
     public Visibility WarningVisibility => string.IsNullOrWhiteSpace(Warning) ? Visibility.Collapsed : Visibility.Visible;
@@ -67,6 +74,8 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     public string ItemCount => $"{ItemRows.Count} items";
     public string TrinketCount => $"{TrinketRows.Count} trinkets";
     public string RankLabel => _snapshot is null ? "Rank —" : $"Rank {_snapshot.ShopRank}";
+    public string ShopOddsLabel => _snapshot is null ? "Shop odds" : $"Rank {_snapshot.ShopRank} shop odds";
+    public bool ItemAvailable { get => _itemAvailable; set { if (Set(ref _itemAvailable, value) && _snapshot is not null) SetItemAvailable(value); } }
 
     private async Task InitializeAsync()
     {
@@ -82,6 +91,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             RefreshCreatureRows();
             RefreshItemRows();
             RefreshTrinketRows();
+            ResetManualState();
             Status = $"Loaded {_catalog.Monsters.Length} bundled creatures. Press F9 to capture the focused shop.";
         }
         catch (Exception exception)
@@ -130,9 +140,11 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
                 Status = "Correct the highlighted capture values and try again; the previous state is unchanged.";
                 return;
             }
-            await SaveHistoryAsync(result with { Snapshot = snapshot, Fields = review.AcceptedFields }, true);
+            await SaveHistoryAsync(result, true, snapshot, review.AcceptedFields);
             _capturedSnapshot = snapshot;
-            Render(_oddsCalculator.Calculate(_catalog, snapshot), snapshot);
+            _itemAvailable = snapshot.ItemAvailable;
+            OnPropertyChanged(nameof(ItemAvailable));
+            Render(CalculateOdds(snapshot), snapshot);
             Warning = result.Fields.Any(field => !field.IsResolved) ? "Some OCR fields were manually reviewed or remain low confidence." : string.Empty;
             Status = $"Shop captured at {snapshot.CapturedAt:HH:mm:ss}. Press F9 after your next shop change.";
         }
@@ -144,9 +156,9 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         finally { if (window is not null) window.Opacity = restoreOpacity; }
     }
 
-    private async Task SaveHistoryAsync(ShopCaptureResult result, bool accepted)
+    private async Task SaveHistoryAsync(ShopCaptureResult result, bool accepted, ShopOddsSnapshot? acceptedSnapshot = null, IEnumerable<RecognizedField>? acceptedFields = null)
     {
-        try { await _history.SaveAsync(result, accepted); }
+        try { await _history.SaveAsync(result, accepted, acceptedSnapshot, acceptedFields); }
         catch (Exception exception) { Warning = $"Capture history could not be saved: {exception.Message}"; }
     }
 
@@ -155,11 +167,23 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         _snapshot = snapshot;
         _oddsByMonster = odds.MonsterOdds.ToDictionary(monster => monster.MonsterId, StringComparer.OrdinalIgnoreCase);
         _oddsByItem = odds.ItemOdds.ToDictionary(item => item.ItemId, StringComparer.OrdinalIgnoreCase);
+        _oddsByTrinket = odds.TrinketOdds.ToDictionary(trinket => trinket.TrinketId, StringComparer.OrdinalIgnoreCase);
+        ShopOddsRows.Clear();
+        foreach (var rarityOdds in odds.RarityOdds)
+        {
+            ShopOddsRows.Add(new(
+                DisplayRarity(rarityOdds.Rarity),
+                rarityOdds.Probability,
+                rarityOdds.EligibleCount,
+                DisplayRarity(rarityOdds.RolledAs)));
+        }
         RefreshCreatureRows();
         RefreshItemRows();
-        RunSummary = $"Rank {snapshot.ShopRank} · ${snapshot.Gold} · item uses {snapshot.ItemUsesRemaining}/{snapshot.DailyItemLimit} · {snapshot.RegionFilter} · {odds.BatomonSlotsNextShop} Batomon slot(s) next shop";
+        RefreshTrinketRows();
+        RunSummary = $"Rank {snapshot.ShopRank} · ${snapshot.Gold} · item {(snapshot.ItemAvailable ? "available" : "unavailable")} · {snapshot.RegionFilter} · {odds.BatomonSlotsNextShop} Batomon slot(s) next shop";
         Notes = string.Join(" ", odds.Notes);
         OnPropertyChanged(nameof(RankLabel));
+        OnPropertyChanged(nameof(ShopOddsLabel));
     }
 
     private void RefreshCreatureRows()
@@ -171,7 +195,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         {
             _oddsByMonster.TryGetValue(monster.Id, out var odds);
             var sprite = monster.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, monster.SpritePath.Replace('/', Path.DirectorySeparatorChar));
-            CreatureRows.Add(new(monster.Name, monster.Rarity == Rarity.SuperRare ? "Super Rare" : monster.Rarity.ToString(), string.Join(", ", monster.Regions.OrderBy(region => region)), odds?.PerBatomonRoll.ToString("P2") ?? "—", odds?.NextShopChance.ToString("P2") ?? "—", sprite));
+            CreatureRows.Add(new(monster.Id, monster.Name, DisplayRarity(monster.Rarity), (int)monster.Rarity, string.Join(", ", monster.Regions.OrderBy(region => region)), odds?.PerBatomonRoll, odds?.NextShopChance, sprite, _levelThreeCreatureIds.Contains(monster.Id), SetCreatureLevelThree));
         }
         OnPropertyChanged(nameof(CreatureCount));
     }
@@ -180,7 +204,6 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     {
         if (_catalog == CatalogSnapshot.Empty) return;
         var search = ItemSearchText.Trim();
-        var checkedIds = ItemRows.Where(item => item.IsChecked).Select(item => item.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         ItemRows.Clear();
         foreach (var item in _catalog.Items
             .Where(item => (SelectedItemRarityFilter.Value is null || item.Rarity == SelectedItemRarityFilter.Value)
@@ -188,9 +211,9 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             .OrderBy(item => item.Rarity).ThenBy(item => item.Name))
         {
             _oddsByItem.TryGetValue(item.Id, out var odds);
-            ItemRows.Add(new(item.Id, item.Name, DisplayRarity(item.Rarity), item.Price is { } price ? $"${price}" : "—", item.RuleText ?? "—",
-                odds?.PerItemRoll.ToString("P2") ?? "—", odds?.NextShopChance.ToString("P2") ?? "—",
-                item.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, item.SpritePath.Replace('/', Path.DirectorySeparatorChar)), checkedIds.Contains(item.Id)));
+            ItemRows.Add(new(item.Id, item.Name, DisplayRarity(item.Rarity), (int)item.Rarity, item.Price, item.RuleText ?? "—",
+                odds?.PerItemRoll, odds?.NextShopChance,
+                item.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, item.SpritePath.Replace('/', Path.DirectorySeparatorChar))));
         }
         OnPropertyChanged(nameof(ItemCount));
     }
@@ -204,7 +227,10 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             .Where(trinket => (SelectedTrinketRarityFilter.Value is null || trinket.Rarity == SelectedTrinketRarityFilter.Value)
                 && (string.IsNullOrWhiteSpace(search) || trinket.Name.Contains(search, StringComparison.OrdinalIgnoreCase)))
             .OrderBy(trinket => trinket.Rarity).ThenBy(trinket => trinket.Name))
-            TrinketRows.Add(new(trinket.Name, DisplayRarity(trinket.Rarity), trinket.RuleText ?? "—", trinket.IsUnique ? "Unique" : "", trinket.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, trinket.SpritePath.Replace('/', Path.DirectorySeparatorChar))));
+        {
+            _oddsByTrinket.TryGetValue(trinket.Id, out var odds);
+            TrinketRows.Add(new(trinket.Id, trinket.Name, DisplayRarity(trinket.Rarity), (int)trinket.Rarity, trinket.RuleText ?? "—", trinket.IsUnique ? "Unique" : "", trinket.IsUnique, _ownedUniqueTrinketIds.Contains(trinket.Id), odds?.PerTrinketRoll, odds?.EligibleCount ?? 0, trinket.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, trinket.SpritePath.Replace('/', Path.DirectorySeparatorChar)), SetOwnedUniqueTrinket));
+        }
         OnPropertyChanged(nameof(TrinketCount));
     }
 
@@ -212,21 +238,66 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     {
         if (_snapshot is null) { RefreshCreatureRows(); return; }
         var snapshot = _snapshot with { RegionFilter = SelectedRegionFilter.Value };
-        Render(_oddsCalculator.Calculate(_catalog, snapshot), snapshot);
+        Render(CalculateOdds(snapshot), snapshot);
     }
 
     private void ChangeRank(int change)
     {
-        if (_snapshot is null) { Status = "Capture a shop first to change the rank."; return; }
+        if (_snapshot is null) return;
         var rank = Math.Clamp(_snapshot.ShopRank + change, ShopRankOdds.MinimumRank, ShopRankOdds.MaximumRank);
         if (rank == _snapshot.ShopRank) return;
-        var source = _capturedSnapshot ?? _snapshot;
-        var snapshot = _snapshot with { ShopRank = rank, RarityOdds = ShopRankOdds.ApplyCapturedModifier(source.ShopRank, source.RarityOdds, rank), CapturedAt = DateTimeOffset.UtcNow };
-        Render(_oddsCalculator.Calculate(_catalog, snapshot), snapshot);
-        Status = $"Calculated rank {rank}, preserving the captured shop-odds modifier.";
+        var source = _capturedSnapshot;
+        var odds = source is null ? ShopRankOdds.ForRank(rank) : ShopRankOdds.ApplyCapturedModifier(source.ShopRank, source.RarityOdds, rank);
+        var snapshot = _snapshot with { ShopRank = rank, RarityOdds = odds, CapturedAt = DateTimeOffset.UtcNow };
+        Render(CalculateOdds(snapshot), snapshot);
+        Status = source is null ? $"Manual rank set to {rank}." : $"Calculated rank {rank}, preserving the captured shop-odds modifier.";
+    }
+
+    private void SetItemAvailable(bool itemAvailable)
+    {
+        var snapshot = _snapshot! with { ItemAvailable = itemAvailable, CapturedAt = DateTimeOffset.UtcNow };
+        Render(CalculateOdds(snapshot), snapshot);
+        Status = itemAvailable ? "Item slot enabled: four Batomon slots." : "Item slot disabled: five Batomon slots.";
+    }
+
+    private void ResetManualState()
+    {
+        if (_catalog == CatalogSnapshot.Empty) return;
+        _capturedSnapshot = null;
+        _levelThreeCreatureIds.Clear();
+        _ownedUniqueTrinketIds.Clear();
+        SearchText = ItemSearchText = TrinketSearchText = string.Empty;
+        SelectedRegionFilter = RegionFilters[0];
+        SelectedRarityFilter = SelectedItemRarityFilter = SelectedTrinketRarityFilter = RarityFilters[0];
+        _itemAvailable = true;
+        OnPropertyChanged(nameof(ItemAvailable));
+        var snapshot = new ShopOddsSnapshot(null, ShopRankOdds.MinimumRank, 0, ShopRankOdds.ForRank(ShopRankOdds.MinimumRank), true, null, DateTimeOffset.UtcNow)
+        { RegionFilter = MonsterRegionFilter.All };
+        Render(CalculateOdds(snapshot), snapshot);
+        Status = "Manual browse reset to Rank 1 with an item available.";
     }
 
     private static string DisplayRarity(Rarity rarity) => rarity == Rarity.SuperRare ? "Super Rare" : rarity.ToString();
+
+    private OddsResult CalculateOdds(ShopOddsSnapshot snapshot) => _oddsCalculator.Calculate(_catalog, snapshot, new(_levelThreeCreatureIds, _ownedUniqueTrinketIds));
+
+    private void SetCreatureLevelThree(string id, bool isLevelThree)
+    {
+        if (isLevelThree) _levelThreeCreatureIds.Add(id); else _levelThreeCreatureIds.Remove(id);
+        RecalculatePools();
+    }
+
+    private void SetOwnedUniqueTrinket(string id, bool isOwned)
+    {
+        if (isOwned) _ownedUniqueTrinketIds.Add(id); else _ownedUniqueTrinketIds.Remove(id);
+        RecalculatePools();
+    }
+
+    private void RecalculatePools()
+    {
+        if (_snapshot is null) { RefreshCreatureRows(); RefreshTrinketRows(); return; }
+        Render(CalculateOdds(_snapshot), _snapshot);
+    }
 
     private bool Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {
@@ -238,24 +309,65 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-public sealed record CreatureBrowserRow(string Name, string Rarity, string Regions, string PerRoll, string NextShop, string? SpritePath);
-public sealed class ItemBrowserRow(string id, string name, string rarity, string price, string effect, string perRoll, string nextShop, string? spritePath, bool isChecked) : INotifyPropertyChanged
+public sealed class CreatureBrowserRow(string id, string name, string rarity, int rarityOrder, string regions, decimal? perRoll, decimal? nextShop, string? spritePath, bool isLevelThree, Action<string, bool> levelThreeChanged) : INotifyPropertyChanged
 {
-    private bool _isChecked = isChecked;
+    private bool _isLevelThree = isLevelThree;
+    private readonly Action<string, bool> _levelThreeChanged = levelThreeChanged;
     public event PropertyChangedEventHandler? PropertyChanged;
     public string Id { get; } = id;
     public string Name { get; } = name;
     public string Rarity { get; } = rarity;
-    public string Price { get; } = price;
-    public string Effect { get; } = effect;
-    public string PerRoll { get; } = perRoll;
-    public string NextShop { get; } = nextShop;
+    public int RarityOrder { get; } = rarityOrder;
+    public string Regions { get; } = regions;
+    public decimal PerRollValue { get; } = perRoll ?? -1m;
+    public decimal NextShopValue { get; } = nextShop ?? -1m;
+    public string PerRoll => perRoll?.ToString("P2") ?? "—";
+    public string NextShop => nextShop?.ToString("P2") ?? "—";
     public string? SpritePath { get; } = spritePath;
-    public bool IsChecked { get => _isChecked; set { if (_isChecked == value) return; _isChecked = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsChecked))); } }
+    public bool IsLevelThree { get => _isLevelThree; set { if (_isLevelThree == value) return; _isLevelThree = value; PropertyChanged?.Invoke(this, new(nameof(IsLevelThree))); _levelThreeChanged(Id, value); } }
 }
-public sealed record TrinketBrowserRow(string Name, string Rarity, string Effect, string Attribute, string? SpritePath);
+
+public sealed class ItemBrowserRow(string id, string name, string rarity, int rarityOrder, int? price, string effect, decimal? perRoll, decimal? nextShop, string? spritePath)
+{
+    public string Id { get; } = id;
+    public string Name { get; } = name;
+    public string Rarity { get; } = rarity;
+    public int RarityOrder { get; } = rarityOrder;
+    public int PriceValue { get; } = price ?? -1;
+    public string Price => price is { } value ? $"${value}" : "—";
+    public string Effect { get; } = effect;
+    public decimal PerRollValue { get; } = perRoll ?? -1m;
+    public decimal NextShopValue { get; } = nextShop ?? -1m;
+    public string PerRoll => perRoll?.ToString("P2") ?? "—";
+    public string NextShop => nextShop?.ToString("P2") ?? "—";
+    public string? SpritePath { get; } = spritePath;
+}
+public sealed class TrinketBrowserRow(string id, string name, string rarity, int rarityOrder, string effect, string attribute, bool isUnique, bool isOwned, decimal? chance, int poolCount, string? spritePath, Action<string, bool> ownedChanged) : INotifyPropertyChanged
+{
+    private bool _isOwned = isOwned;
+    private readonly Action<string, bool> _ownedChanged = ownedChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public string Id { get; } = id;
+    public string Name { get; } = name;
+    public string Rarity { get; } = rarity;
+    public int RarityOrder { get; } = rarityOrder;
+    public string Effect { get; } = effect;
+    public string Attribute { get; } = attribute;
+    public bool IsUnique { get; } = isUnique;
+    public decimal ChanceValue { get; } = chance ?? -1m;
+    public string Chance => chance?.ToString("P2") ?? "—";
+    public int PoolCount { get; } = poolCount;
+    public string? SpritePath { get; } = spritePath;
+    public bool IsOwned { get => _isOwned; set { if (_isOwned == value) return; _isOwned = value; PropertyChanged?.Invoke(this, new(nameof(IsOwned))); _ownedChanged(Id, value); } }
+}
 public sealed record RegionFilterOption(MonsterRegionFilter Value, string Name);
 public sealed record RarityFilterOption(Rarity? Value, string Name);
+public sealed record ShopRarityOddsRow(string Rarity, decimal Probability, int EligibleCount, string RollsAs)
+{
+    public string Percentage => Probability.ToString("P0");
+    public string PoolDescription => EligibleCount == 1 ? "1 eligible creature" : $"{EligibleCount} eligible creatures";
+    public string RollDescription => RollsAs == Rarity ? "Direct rarity roll" : $"Falls back to {RollsAs}";
+}
 
 public sealed class RelayCommand(Action action) : ICommand
 {

@@ -10,8 +10,7 @@ public sealed record ShopOddsSnapshot(
     int ShopRank,
     int Gold,
     ImmutableArray<CapturedRarityOdds> RarityOdds,
-    int ItemUsesRemaining,
-    int DailyItemLimit,
+    bool ItemAvailable,
     ShopItemOffer? ItemOffer,
     DateTimeOffset CapturedAt,
     string ActiveSet = "starter")
@@ -29,7 +28,6 @@ public static class ShopOddsSnapshotValidator
         var errors = ImmutableArray.CreateBuilder<string>();
         if (snapshot.ShopRank is < ShopRankOdds.MinimumRank or > ShopRankOdds.MaximumRank) errors.Add($"Shop rank must be between {ShopRankOdds.MinimumRank} and {ShopRankOdds.MaximumRank}.");
         if (snapshot.Gold is < 0 or > 9_999) errors.Add("Gold must be non-negative.");
-        if (snapshot.ItemUsesRemaining is < 0 or > 99 || snapshot.DailyItemLimit is < 0 or > 99 || snapshot.ItemUsesRemaining > snapshot.DailyItemLimit) errors.Add("Item-use values are invalid.");
         if (snapshot.RarityOdds.Length != 5 || snapshot.RarityOdds.Select(odds => odds.Rarity).Distinct().Count() != 5) errors.Add("All five visible rarity odds are required.");
         if (snapshot.RarityOdds.Any(odds => odds.Probability is < 0m or > 1m)) errors.Add("Rarity odds must be between 0% and 100%.");
         if (snapshot.RarityOdds.Sum(odds => odds.Probability) != 1m) errors.Add("Visible rarity odds must total 100%.");

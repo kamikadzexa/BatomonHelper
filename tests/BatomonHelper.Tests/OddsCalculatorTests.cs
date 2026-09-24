@@ -23,7 +23,7 @@ public sealed class OddsCalculatorTests
         var snapshot = Snapshot() with
         {
             RarityOdds = Odds((Rarity.Common, .67m), (Rarity.Uncommon, .30m), (Rarity.Rare, .03m), (Rarity.SuperRare, 0m), (Rarity.Legendary, 0m)),
-            ItemUsesRemaining = 1,
+            ItemAvailable = true,
             ItemOffer = new("Gray Chip", 0)
         };
         var result = _calculator.Calculate(Catalog(), snapshot);
@@ -35,7 +35,7 @@ public sealed class OddsCalculatorTests
     [Fact]
     public void Five_batomon_slots_apply_when_no_item_use_remains()
     {
-        var result = _calculator.Calculate(Catalog(), Snapshot() with { ItemUsesRemaining = 0, ItemOffer = null });
+        var result = _calculator.Calculate(Catalog(), Snapshot() with { ItemAvailable = false, ItemOffer = null });
 
         Assert.Equal(5, result.BatomonSlotsNextShop);
     }
@@ -47,7 +47,7 @@ public sealed class OddsCalculatorTests
         {
             Items = [new("chip-a", "Chip A", Rarity: Rarity.Common), new("chip-b", "Chip B", Rarity: Rarity.Common)]
         };
-        var snapshot = Snapshot() with { ItemUsesRemaining = 1 };
+        var snapshot = Snapshot() with { ItemAvailable = true };
 
         var result = _calculator.Calculate(catalog, snapshot);
 
@@ -63,9 +63,43 @@ public sealed class OddsCalculatorTests
     {
         var catalog = Catalog() with { Items = [new("chip", "Chip", Rarity: Rarity.Common)] };
 
-        var result = _calculator.Calculate(catalog, Snapshot() with { ItemUsesRemaining = 0 });
+        var result = _calculator.Calculate(catalog, Snapshot() with { ItemAvailable = false });
 
         Assert.Equal(0m, Assert.Single(result.ItemOdds).PerItemRoll);
+    }
+
+    [Fact]
+    public void Level_three_creatures_are_removed_from_their_rarity_pool()
+    {
+        var result = _calculator.Calculate(Catalog(), Snapshot(), new(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "alpha" }));
+
+        Assert.DoesNotContain(result.MonsterOdds, odds => odds.MonsterId == "alpha");
+        Assert.Equal(1, result.RarityOdds.Single(odds => odds.Rarity == Rarity.Common).EligibleCount);
+        Assert.Equal(1m, result.MonsterOdds.Single(odds => odds.MonsterId == "beta").PerBatomonRoll);
+    }
+
+    [Fact]
+    public void Trinket_chance_uses_a_separate_pool_for_each_rarity_and_excludes_owned_uniques()
+    {
+        var catalog = Catalog() with
+        {
+            Trinkets = [
+                new("common-a", "Common A", Rarity.Common),
+                new("common-unique", "Common Unique", Rarity.Common, IsUnique: true),
+                new("rare-a", "Rare A", Rarity.Rare)
+            ]
+        };
+        var snapshot = Snapshot() with { RarityOdds = Odds((Rarity.Common, .8m), (Rarity.Uncommon, 0m), (Rarity.Rare, .2m), (Rarity.SuperRare, 0m), (Rarity.Legendary, 0m)) };
+
+        var result = _calculator.Calculate(catalog, snapshot, new(OwnedUniqueTrinketIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "common-unique" }));
+
+        var common = result.TrinketOdds.Single(odds => odds.TrinketId == "common-a");
+        var owned = result.TrinketOdds.Single(odds => odds.TrinketId == "common-unique");
+        Assert.Equal(.8m, common.PerTrinketRoll);
+        Assert.Equal(1, common.EligibleCount);
+        Assert.False(owned.IsEligible);
+        Assert.Equal(0m, owned.PerTrinketRoll);
+        Assert.Equal(.2m, result.TrinketOdds.Single(odds => odds.TrinketId == "rare-a").PerTrinketRoll);
     }
 
     [Fact]
@@ -115,6 +149,7 @@ public sealed class OddsCalculatorTests
     [Theory]
     [InlineData("ignit")]
     [InlineData("talonite")]
+    [InlineData("wishwash")]
     [InlineData("purple-egg")]
     public void Shop_odds_exclude_unavailable_creatures_and_eggs(string id)
     {
@@ -135,6 +170,6 @@ public sealed class OddsCalculatorTests
 
     private static MonsterDefinition Monster(string id, Rarity rarity, params string[] regions) => new(id, id, rarity, null, ImmutableHashSet.Create(StringComparer.OrdinalIgnoreCase, "starter")) { Regions = regions.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase) };
     private static MonsterDefinition Evolution(string id, Rarity rarity, string baseSpeciesId) => new(id, id, rarity, baseSpeciesId, ImmutableHashSet.Create(StringComparer.OrdinalIgnoreCase, "starter"));
-    private static ShopOddsSnapshot Snapshot() => new("Black Belt", 4, 45, Odds((Rarity.Common, 1m), (Rarity.Uncommon, 0m), (Rarity.Rare, 0m), (Rarity.SuperRare, 0m), (Rarity.Legendary, 0m)), 0, 1, null, DateTimeOffset.UtcNow);
+    private static ShopOddsSnapshot Snapshot() => new("Black Belt", 4, 45, Odds((Rarity.Common, 1m), (Rarity.Uncommon, 0m), (Rarity.Rare, 0m), (Rarity.SuperRare, 0m), (Rarity.Legendary, 0m)), false, null, DateTimeOffset.UtcNow);
     private static ImmutableArray<CapturedRarityOdds> Odds(params (Rarity Rarity, decimal Probability)[] values) => values.Select(value => new CapturedRarityOdds(value.Rarity, value.Probability)).ToImmutableArray();
 }

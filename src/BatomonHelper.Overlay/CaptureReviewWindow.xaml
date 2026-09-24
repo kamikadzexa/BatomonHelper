@@ -10,7 +10,7 @@
     </Border>
     <Grid Grid.Column="1">
       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-      <TextBlock TextWrapping="Wrap" Foreground="#4E5D6D" Text="Review the shop rank, gold, and item-use amounts. Ribbon odds are generated from the standard rank table. The selected Jinto/Pantra region filter is retained with the capture and limits the eligible pool. Correct any uncertain values before acceptance. The screenshot is retained locally only after this dialog closes." />
+      <TextBlock TextWrapping="Wrap" Foreground="#4E5D6D" Text="Review the shop rank, gold, rarity ribbon, and whether an item occupies the fifth slot. The selected Jinto/Pantra region filter is retained with the capture and limits the eligible pool. Correct any uncertain values before acceptance. The screenshot is retained locally only after this dialog closes." />
       <DataGrid Grid.Row="1" Margin="0,10,0,10" ItemsSource="{Binding Fields}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column">
         <DataGrid.Columns>
           <DataGridTextColumn Header="Field" Binding="{Binding Name}" IsReadOnly="True" Width="130" />

@@ -15,13 +15,13 @@ public static class ShopOddsSnapshotCorrections
             ShopRank = rank,
             Gold = Integer("Gold", source.Gold),
             RarityOdds = odds,
-            ItemUsesRemaining = Integer("ItemUsesRemaining", source.ItemUsesRemaining),
-            DailyItemLimit = Integer("DailyItemLimit", source.DailyItemLimit),
+            ItemAvailable = Boolean("ItemAvailable", source.ItemAvailable),
             ItemOffer = null,
             CapturedAt = DateTimeOffset.UtcNow
         };
 
         int Integer(string name, int fallback) => values.TryGetValue(name, out var raw) && int.TryParse(raw, out var value) ? value : fallback;
+        bool Boolean(string name, bool fallback) => values.TryGetValue(name, out var raw) && bool.TryParse(raw, out var value) ? value : fallback;
         decimal Percentage(string name, decimal fallback) => values.TryGetValue(name, out var raw) && decimal.TryParse(raw.TrimEnd('%'), out var value) && value is >= 0m and <= 100m ? value / 100m : fallback;
     }
 }

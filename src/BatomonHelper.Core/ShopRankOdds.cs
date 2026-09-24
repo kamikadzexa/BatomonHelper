@@ -26,9 +26,7 @@ public static class ShopRankOdds
     {
         var candidate = values.ToArray();
         var matches = Percentages.Where(entry => candidate.Length == 5 &&
-            (candidate.SequenceEqual(entry.Value.Select(value => (int?)value)) ||
-             candidate[1..].SequenceEqual(entry.Value[..4].Select(value => (int?)value)) ||
-             candidate[1..].SequenceEqual(entry.Value[1..].Select(value => (int?)value))))
+            candidate.SequenceEqual(entry.Value.Select(value => (int?)value)))
             .Select(entry => entry.Key).ToArray();
         rank = matches.Length == 1 ? matches[0] : 0;
         return rank != 0;

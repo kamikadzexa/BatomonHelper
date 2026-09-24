@@ -10,11 +10,37 @@ public partial class MainWindow : Window
     private HwndSource? _source;
     private bool _isExpanded;
     private Size _compactSize;
+    private Rect _windowedBounds;
+    private WindowState _windowedState;
+    private WindowStyle _windowedStyle;
+    private ResizeMode _windowedResizeMode;
+
+    public static readonly DependencyProperty IsFullscreenProperty = DependencyProperty.Register(
+        nameof(IsFullscreen), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+
+    public bool IsFullscreen
+    {
+        get => (bool)GetValue(IsFullscreenProperty);
+        private set => SetValue(IsFullscreenProperty, value);
+    }
 
     public MainWindow()
     {
         InitializeComponent();
         DataContext = new OverlayViewModel();
+        PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == Key.F11)
+            {
+                ToggleFullscreen(this, new RoutedEventArgs());
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape && IsFullscreen)
+            {
+                ToggleFullscreen(this, new RoutedEventArgs());
+                e.Handled = true;
+            }
+        };
         SourceInitialized += (_, _) =>
         {
             _source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
@@ -41,6 +67,7 @@ public partial class MainWindow : Window
     }
 
     private void DragWindow(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); }
+
     private void ToggleExpanded(object sender, RoutedEventArgs e)
     {
         if (!_isExpanded)
@@ -59,5 +86,37 @@ public partial class MainWindow : Window
         ExpandButton.Content = "Expand";
         _isExpanded = false;
     }
+
+    private void ToggleFullscreen(object sender, RoutedEventArgs e)
+    {
+        if (!IsFullscreen)
+        {
+            _windowedBounds = WindowState == WindowState.Normal
+                ? new Rect(Left, Top, ActualWidth, ActualHeight)
+                : RestoreBounds;
+            _windowedState = WindowState;
+            _windowedStyle = WindowStyle;
+            _windowedResizeMode = ResizeMode;
+            WindowState = WindowState.Normal;
+            WindowStyle = WindowStyle.None;
+            ResizeMode = ResizeMode.NoResize;
+            NativeOverlay.FillCurrentMonitor(this);
+            FullscreenButton.Content = "Exit Fullscreen";
+            IsFullscreen = true;
+            return;
+        }
+
+        WindowState = WindowState.Normal;
+        WindowStyle = _windowedStyle;
+        ResizeMode = _windowedResizeMode;
+        Left = _windowedBounds.Left;
+        Top = _windowedBounds.Top;
+        Width = _windowedBounds.Width;
+        Height = _windowedBounds.Height;
+        WindowState = _windowedState;
+        FullscreenButton.Content = "Fullscreen";
+        IsFullscreen = false;
+    }
+
     private void CloseWindow(object sender, RoutedEventArgs e) => Close();
 }

@@ -1,0 +1,11 @@
+[
+  {
+    "Name": "BatomonHelper",
+    "Projects": [
+      {
+        "Path": "src\\BatomonHelper.Overlay\\BatomonHelper.Overlay.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

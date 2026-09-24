@@ -13,11 +13,10 @@ public sealed class ShopRankOddsTests
     }
 
     [Fact]
-    public void Recognizes_a_fixed_layout_ribbon_even_when_its_leading_read_is_wrong()
+    public void Recognizes_only_an_exact_standard_ribbon()
     {
         Assert.True(ShopRankOdds.TryFindRank([30, 40, 25, 5, 0], out var exactRank));
         Assert.Equal(7, exactRank);
-        Assert.True(ShopRankOdds.TryFindRank([99, 40, 25, 5, 0], out var repairedRank));
-        Assert.Equal(7, repairedRank);
+        Assert.False(ShopRankOdds.TryFindRank([99, 40, 25, 5, 0], out _));
     }
 }

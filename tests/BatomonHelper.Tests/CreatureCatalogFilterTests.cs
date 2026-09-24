@@ -38,7 +38,7 @@ public sealed class CreatureCatalogFilterTests
     public void Excludes_unavailable_creatures_and_eggs_from_the_creature_browser()
     {
         var catalog = new CatalogSnapshot("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
-        [Monster("Bunchop", Rarity.Common, "Jinto region"), Monster("Ignit", Rarity.Common, "Jinto region"), Monster("Purple Egg", Rarity.Common, "Jinto region")]);
+        [Monster("Bunchop", Rarity.Common, "Jinto region"), Monster("Ignit", Rarity.Common, "Jinto region"), Monster("Wishwash", Rarity.Common, "Jinto region"), Monster("Purple Egg", Rarity.Common, "Jinto region")]);
 
         var filtered = CreatureCatalogFilter.Apply(catalog, null, MonsterRegionFilter.All, null).ToArray();
 

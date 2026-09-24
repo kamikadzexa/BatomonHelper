@@ -1,9 +1,18 @@
 using System.Text.Json;
 using System.IO;
+using System.Collections.Immutable;
+using BatomonHelper.Core;
 
 namespace BatomonHelper.ScreenReader;
 
-public sealed record CaptureHistoryEntry(DateTimeOffset CapturedAt, bool Accepted, ShopCaptureResult Result);
+/// <summary>One reviewed field, retaining both the reader's proposal and the value the player approved.</summary>
+public sealed record CaptureFieldReview(string Name, string RecognizedValue, string AcceptedValue, bool WasChanged);
+
+public sealed record CaptureHistoryEntry(
+    DateTimeOffset CapturedAt,
+    bool Accepted,
+    ShopCaptureResult Result,
+    ImmutableArray<CaptureFieldReview> Reviews = default);
 
 public sealed class CaptureHistoryStore(string directory, int capacity = 20)
 {
@@ -11,12 +20,21 @@ public sealed class CaptureHistoryStore(string directory, int capacity = 20)
     private readonly int _capacity = Math.Max(1, capacity);
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    public async Task SaveAsync(ShopCaptureResult result, bool accepted, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(ShopCaptureResult result, bool accepted, ShopOddsSnapshot? acceptedSnapshot = null, IEnumerable<RecognizedField>? acceptedFields = null, CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(_directory);
         var stamp = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmssfff");
         var id = $"{stamp}-{Guid.NewGuid():N}";
-        var entry = new CaptureHistoryEntry(DateTimeOffset.UtcNow, accepted, result with { Frame = null });
+        var finalResult = acceptedSnapshot is null ? result : result with { Snapshot = acceptedSnapshot };
+        var reviews = acceptedFields is null
+            ? ImmutableArray<CaptureFieldReview>.Empty
+            : acceptedFields.Select(field =>
+            {
+                var recognized = result.Fields.FirstOrDefault(source => string.Equals(source.Name, field.Name, StringComparison.OrdinalIgnoreCase));
+                var proposed = recognized?.Value ?? string.Empty;
+                return new CaptureFieldReview(field.Name, proposed, field.Value, !string.Equals(proposed, field.Value, StringComparison.Ordinal));
+            }).ToImmutableArray();
+        var entry = new CaptureHistoryEntry(DateTimeOffset.UtcNow, accepted, finalResult with { Frame = null }, reviews);
         var jsonPath = Path.Combine(_directory, id + ".json");
         var tempJson = jsonPath + ".tmp";
         await File.WriteAllTextAsync(tempJson, JsonSerializer.Serialize(entry, JsonOptions), cancellationToken);

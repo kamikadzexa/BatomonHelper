@@ -6,7 +6,8 @@ public static class ShopCreatureEligibility
     private static readonly HashSet<string> UnavailableIds = new(StringComparer.OrdinalIgnoreCase)
     {
         "ignit",
-        "talonite"
+        "talonite",
+        "wishwash"
     };
 
     public static bool IsShopCreature(MonsterDefinition monster) =>
