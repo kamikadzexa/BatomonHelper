@@ -18,7 +18,6 @@ namespace BatomonHelper.ScreenReader;
 public sealed class WindowsShopScreenReader : IShopScreenReader
 {
     private static readonly Rarity[] RibbonOrder = [Rarity.Common, Rarity.Uncommon, Rarity.Rare, Rarity.SuperRare, Rarity.Legendary];
-    private readonly ReferenceTemplateMatcher _templates = new();
 
     public async Task<ShopCaptureResult> CaptureAsync(CatalogSnapshot catalog, CancellationToken cancellationToken = default)
     {
@@ -72,26 +71,9 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         var itemUses = await FractionAsync(source, fields, cancellationToken);
         var itemName = await TextFieldAsync("ShopItem", source, ShopLayout.ShopItemName, catalog.Items.IsDefaultOrEmpty ? [] : catalog.Items.Select(reference => reference.Name), fields, cancellationToken);
         var itemPrice = await NumberAsync("ShopItemPrice", source, ShopLayout.ShopItemPrice, 0, 9_999, fields, cancellationToken);
-        var team = await ReadTeamAsync(source, catalog, fields, cancellationToken);
         var item = itemUses.Current > 0 && !string.IsNullOrWhiteSpace(itemName) ? new ShopItemOffer(itemName, itemPrice) : null;
-        var snapshot = new ShopOddsSnapshot(trainer, team, rank, gold, ribbon.ToImmutable(), itemUses.Current, itemUses.Total, item, DateTimeOffset.UtcNow);
+        var snapshot = new ShopOddsSnapshot(trainer, rank, gold, ribbon.ToImmutable(), itemUses.Current, itemUses.Total, item, DateTimeOffset.UtcNow);
         return new(snapshot, frame, fields.ToImmutable(), []);
-    }
-
-    private async Task<ImmutableArray<UnitState>> ReadTeamAsync(Bitmap source, CatalogSnapshot catalog, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
-    {
-        var units = ImmutableArray.CreateBuilder<UnitState>();
-        for (var index = 0; index < ShopLayout.Team.Length; index++)
-        {
-            using var crop = Crop(source, ShopLayout.Team[index]);
-            if (IsEmptySlot(crop)) { fields.Add(Field($"Team{index + 1}", string.Empty, .98, [])); continue; }
-            var template = _templates.Match(crop, "monster");
-            var level = await NumberAsync($"Team{index + 1}Level", source, ShopLayout.TeamLevel(ShopLayout.Team[index]), 1, 4, fields, cancellationToken);
-            var monster = template?.Value ?? $"unresolved-team-{index + 1}";
-            fields.Add(Field($"Team{index + 1}", template?.Value ?? string.Empty, template?.Confidence ?? 0, template is null ? [] : [template], template is null ? "Identify this team sprite from the fixture catalog or correct it." : null));
-            units.Add(new(monster, level, false, index, [], ImmutableDictionary<string, int>.Empty));
-        }
-        return units.ToImmutable();
     }
 
     private async Task<string> TextFieldAsync(string name, Bitmap source, NormalizedRect region, IEnumerable<string> knownValues, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
@@ -117,15 +99,22 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
     {
         using var crop = Crop(source, region);
         var text = await ReadTextAsync(crop, cancellationToken);
-        var template = _templates.Match(crop, "number");
-        var value = template is not null && int.TryParse(template.Value, out var templated) ? templated : ExtractNumber(text, minimum, maximum);
+        var value = ExtractNumber(text, minimum, maximum);
         var valid = value >= minimum && value <= maximum;
-        fields.Add(Field(name, valid ? value.ToString() : string.Empty, valid ? template?.Confidence ?? .72 : 0, text.Select(candidate => new RecognitionCandidate(candidate, .55)).AppendIfNotNull(template), valid ? null : "Numeric OCR needs correction."));
+        fields.Add(Field(name, valid ? value.ToString() : string.Empty, valid ? .72 : 0, text.Select(candidate => new RecognitionCandidate(candidate, .55)), valid ? null : "Numeric OCR needs correction."));
         return valid ? value : 0;
     }
 
-    private async Task<int> PercentageAsync(string name, Bitmap source, NormalizedRect region, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken) =>
-        await NumberAsync(name, source, region, 0, 100, fields, cancellationToken);
+    private async Task<int> PercentageAsync(string name, Bitmap source, NormalizedRect region, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
+    {
+        using var crop = Crop(source, region);
+        var text = await ReadOddsTextAsync(crop, cancellationToken);
+        var value = ExtractNumber(text, 0, 100);
+        var valid = value is >= 0 and <= 100;
+        fields.Add(Field(name, valid ? value.ToString() : string.Empty, valid ? .82 : 0,
+            text.Select(candidate => new RecognitionCandidate(candidate, .72)), valid ? null : "Colored-ribbon OCR needs correction."));
+        return valid ? value : 0;
+    }
 
     private async Task<(int Current, int Total)> FractionAsync(Bitmap source, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
     {
@@ -151,17 +140,6 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         var header = ShopLayout.TrainerHeader.ToPixels(source.Width, source.Height);
         var shop = ShopLayout.ShopProbe.ToPixels(source.Width, source.Height);
         return CountPixels(source, header, color => color.R > 190 && color.G > 140 && color.B < 80) > 4 && CountPixels(source, shop, color => color.R > 150 || color.G > 150 || color.B > 150) > 20;
-    }
-
-    private static bool IsEmptySlot(Bitmap image)
-    {
-        var samples = 0;
-        var light = 0;
-        for (var y = 4; y < image.Height - 4; y += Math.Max(1, image.Height / 14)) for (var x = 4; x < image.Width - 4; x += Math.Max(1, image.Width / 14))
-        {
-            var color = image.GetPixel(x, y); samples++; if (color.R > 215 && color.G > 215 && color.B > 215) light++;
-        }
-        return samples > 0 && light >= samples * .72;
     }
 
     private static int CountPixels(Bitmap image, Rectangle region, Func<Color, bool> predicate)
@@ -198,15 +176,41 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         using var enlargedBinary = Enlarge(binary);
         return (await ReadVariantAsync(enlarged, cancellationToken)).Concat(await ReadVariantAsync(enlargedBinary, cancellationToken)).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
-    private static Bitmap Enlarge(Bitmap source)
+    private static async Task<IReadOnlyList<string>> ReadOddsTextAsync(Bitmap source, CancellationToken cancellationToken)
     {
-        var result = new Bitmap(source.Width * 3, source.Height * 3, PixelFormat.Format32bppPArgb);
+        using var enlarged = Enlarge(source, 6);
+        using var inkMask = InkMask(source);
+        using var enlargedInkMask = Enlarge(inkMask, 8);
+        return (await ReadVariantAsync(enlarged, cancellationToken))
+            .Concat(await ReadVariantAsync(enlargedInkMask, cancellationToken))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+    private static Bitmap Enlarge(Bitmap source)
+        => Enlarge(source, 3);
+    private static Bitmap Enlarge(Bitmap source, int scale)
+    {
+        var result = new Bitmap(source.Width * scale, source.Height * scale, PixelFormat.Format32bppPArgb);
         using var graphics = Graphics.FromImage(result); graphics.InterpolationMode = InterpolationMode.NearestNeighbor; graphics.DrawImage(source, new Rectangle(0, 0, result.Width, result.Height)); return result;
     }
     private static Bitmap Binary(Bitmap source)
     {
         var result = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppPArgb);
         for (var y = 0; y < source.Height; y++) for (var x = 0; x < source.Width; x++) { var color = source.GetPixel(x, y); var bright = (color.R * 299 + color.G * 587 + color.B * 114) / 1000 >= 160; result.SetPixel(x, y, bright ? Color.White : Color.Black); }
+        return result;
+    }
+    private static Bitmap InkMask(Bitmap source)
+    {
+        var result = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppPArgb);
+        for (var y = 0; y < source.Height; y++) for (var x = 0; x < source.Width; x++)
+        {
+            var color = source.GetPixel(x, y);
+            var maximum = Math.Max(color.R, Math.Max(color.G, color.B));
+            var minimum = Math.Min(color.R, Math.Min(color.G, color.B));
+            var isInk = maximum < 170 || (maximum - minimum > 55 && maximum > 105);
+            result.SetPixel(x, y, isInk ? Color.Black : Color.White);
+        }
         return result;
     }
     private static async Task<IReadOnlyList<string>> ReadVariantAsync(Bitmap bitmap, CancellationToken cancellationToken)
@@ -232,9 +236,4 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
     [DllImport("user32.dll")] private static extern bool ClientToScreen(IntPtr window, ref PointNative point);
     [StructLayout(LayoutKind.Sequential)] private struct PointNative { public int X; public int Y; }
     [StructLayout(LayoutKind.Sequential)] private struct ClientRect { public PointNative TopLeft; public PointNative BottomRight; }
-}
-
-internal static class RecognitionCandidateExtensions
-{
-    public static IEnumerable<RecognitionCandidate> AppendIfNotNull(this IEnumerable<RecognitionCandidate> source, RecognitionCandidate? candidate) => candidate is null ? source : source.Append(candidate);
 }

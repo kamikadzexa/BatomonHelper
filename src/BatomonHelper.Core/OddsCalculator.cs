@@ -19,7 +19,7 @@ public sealed class OddsCalculator : IOddsCalculator
     public OddsResult Calculate(CatalogSnapshot catalog, ShopOddsSnapshot snapshot)
     {
         if (catalog.Monsters.IsEmpty) return new([], [], 0, ["No catalog is available; import the wiki first."]);
-        var eligible = EligibleByRarity(catalog, snapshot);
+        var eligible = EligibleByRarity(catalog, snapshot.ActiveSet);
         var visibleOdds = snapshot.RarityOdds.ToDictionary(odds => odds.Rarity, odds => odds.Probability);
         var slots = snapshot.ItemUsesRemaining > 0 ? 4 : 5;
         var rarityOdds = ImmutableArray.CreateBuilder<RarityOdds>();
@@ -47,17 +47,11 @@ public sealed class OddsCalculator : IOddsCalculator
         return new(rarityOdds.ToImmutable(), monsterOdds.ToImmutable(), slots, notes.ToImmutable());
     }
 
-    private static Dictionary<Rarity, ImmutableArray<MonsterDefinition>> EligibleByRarity(CatalogSnapshot catalog, ShopOddsSnapshot snapshot)
+    private static Dictionary<Rarity, ImmutableArray<MonsterDefinition>> EligibleByRarity(CatalogSnapshot catalog, string activeSet)
     {
-        var excluded = snapshot.Team.Where(unit => unit.Level >= 3).Select(unit => unit.MonsterId).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var unit in snapshot.Team.Where(unit => unit.Level >= 3))
-        {
-            var baseSpecies = catalog.Monsters.FirstOrDefault(monster => monster.Id.Equals(unit.MonsterId, StringComparison.OrdinalIgnoreCase))?.BaseSpeciesId;
-            if (!string.IsNullOrWhiteSpace(baseSpecies)) excluded.Add(baseSpecies);
-        }
         return Enum.GetValues<Rarity>().ToDictionary(
             rarity => rarity,
-            rarity => catalog.Monsters.Where(monster => monster.Rarity == rarity && monster.ActiveSets.Contains(snapshot.ActiveSet) && !excluded.Contains(monster.Id)).ToImmutableArray());
+            rarity => catalog.Monsters.Where(monster => monster.Rarity == rarity && monster.ActiveSets.Contains(activeSet)).ToImmutableArray());
     }
 
     private static Rarity ResolveFallback(Rarity requested, IReadOnlyDictionary<Rarity, ImmutableArray<MonsterDefinition>> eligible)

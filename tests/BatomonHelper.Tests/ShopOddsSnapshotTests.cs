@@ -45,7 +45,7 @@ public sealed class ShopOddsSnapshotTests
         Assert.Equal("Gray Chip", root.GetProperty("shopItemOffer").GetProperty("name").GetString());
     }
 
-    private static ShopOddsSnapshot FixtureSnapshot() => new("Black Belt", [], 4, 45,
+    private static ShopOddsSnapshot FixtureSnapshot() => new("Black Belt", 4, 45,
         [new(Rarity.Common, .67m), new(Rarity.Uncommon, .30m), new(Rarity.Rare, .03m), new(Rarity.SuperRare, 0m), new(Rarity.Legendary, 0m)],
         1, 1, new("Gray Chip", 0), DateTimeOffset.UtcNow);
 }

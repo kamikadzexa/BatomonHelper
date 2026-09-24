@@ -34,14 +34,6 @@ public sealed record CatalogSnapshot(
         [], string.Empty, ["No wiki snapshot has been imported."], []);
 }
 
-public sealed record UnitState(
-    string MonsterId,
-    int Level,
-    bool IsShiny,
-    int Position,
-    ImmutableArray<string> Equipment,
-    ImmutableDictionary<string, int> Stats);
-
 public sealed record ValidationResult(bool IsValid, ImmutableArray<string> Errors)
 {
     public static ValidationResult Success { get; } = new(true, []);

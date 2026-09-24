@@ -33,22 +33,6 @@ public sealed class OddsCalculatorTests
     }
 
     [Fact]
-    public void Level_three_monster_and_its_base_species_are_excluded()
-    {
-        var catalog = new CatalogSnapshot("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
-        [
-            Monster("alpha", Rarity.Common), Monster("alpha-base", Rarity.Common),
-            new("alpha-advanced", "alpha-advanced", Rarity.Common, "alpha-base", ImmutableHashSet.Create(StringComparer.OrdinalIgnoreCase, "starter")),
-            Monster("beta", Rarity.Common)
-        ]);
-        var snapshot = Snapshot() with { Team = [Unit("alpha-advanced", 3, 0)] };
-        var result = _calculator.Calculate(catalog, snapshot);
-
-        Assert.DoesNotContain(result.MonsterOdds, x => x.MonsterId is "alpha-advanced" or "alpha-base");
-        Assert.Equal(2, result.RarityOdds.Single(x => x.Rarity == Rarity.Common).EligibleCount);
-    }
-
-    [Fact]
     public void Five_batomon_slots_apply_when_no_item_use_remains()
     {
         var result = _calculator.Calculate(Catalog(), Snapshot() with { ItemUsesRemaining = 0, ItemOffer = null });
@@ -63,7 +47,6 @@ public sealed class OddsCalculatorTests
         ]);
 
     private static MonsterDefinition Monster(string id, Rarity rarity) => new(id, id, rarity, null, ImmutableHashSet.Create(StringComparer.OrdinalIgnoreCase, "starter"));
-    private static UnitState Unit(string id, int level, int position) => new(id, level, false, position, [], ImmutableDictionary<string, int>.Empty);
-    private static ShopOddsSnapshot Snapshot() => new("Black Belt", [], 4, 45, Odds((Rarity.Common, 1m), (Rarity.Uncommon, 0m), (Rarity.Rare, 0m), (Rarity.SuperRare, 0m), (Rarity.Legendary, 0m)), 0, 1, null, DateTimeOffset.UtcNow);
+    private static ShopOddsSnapshot Snapshot() => new("Black Belt", 4, 45, Odds((Rarity.Common, 1m), (Rarity.Uncommon, 0m), (Rarity.Rare, 0m), (Rarity.SuperRare, 0m), (Rarity.Legendary, 0m)), 0, 1, null, DateTimeOffset.UtcNow);
     private static ImmutableArray<CapturedRarityOdds> Odds(params (Rarity Rarity, decimal Probability)[] values) => values.Select(value => new CapturedRarityOdds(value.Rarity, value.Probability)).ToImmutableArray();
 }

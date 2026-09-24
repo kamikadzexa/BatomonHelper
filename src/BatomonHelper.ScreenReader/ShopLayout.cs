@@ -22,21 +22,13 @@ public static class ShopLayout
     public static readonly NormalizedRect Gold = new(.457, .742, .085, .07);
     public static readonly NormalizedRect[] RibbonOdds =
     [
-        new(.235, .745, .04, .05), new(.275, .745, .04, .05), new(.315, .745, .04, .05),
-        new(.355, .745, .04, .05), new(.395, .745, .04, .05)
+        new(.252, .745, .028, .05), new(.292, .745, .028, .05), new(.329, .745, .028, .05),
+        new(.368, .745, .028, .05), new(.405, .745, .028, .05)
     ];
     public static readonly NormalizedRect ItemUseCounter = new(.69, .825, .09, .05);
     public static readonly NormalizedRect ShopItemName = new(.69, .935, .10, .045);
     public static readonly NormalizedRect ShopItemPrice = new(.77, .935, .035, .045);
     public static readonly NormalizedRect ShopProbe = new(.19, .82, .12, .17);
-
-    public static readonly NormalizedRect[] Team =
-    [
-        new(.31, .41, .105, .14), new(.42, .41, .105, .14), new(.53, .41, .105, .14),
-        new(.31, .57, .105, .14), new(.42, .57, .105, .14), new(.53, .57, .105, .14)
-    ];
-
-    public static NormalizedRect TeamLevel(NormalizedRect slot) => new(slot.X + .01, slot.Y + .01, .06, .04);
 
     public static Rectangle DetectContentBounds(Bitmap source)
     {
