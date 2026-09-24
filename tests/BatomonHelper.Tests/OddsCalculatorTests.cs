@@ -53,5 +53,5 @@ public sealed class OddsCalculatorTests
         ]);
 
     private static MonsterDefinition Monster(string id, Rarity rarity) => new(id, id, rarity, null, ImmutableHashSet.Create(StringComparer.OrdinalIgnoreCase, "starter"));
-    private static RunState State() => RunState.Empty with { ShopRank = 1, ActiveSet = "starter" };
+    private static ShopOddsInput State() => new(1, 1, "starter", [], [], [], new(), 0, false);
 }

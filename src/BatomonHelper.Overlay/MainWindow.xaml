@@ -42,7 +42,7 @@
         </DataGrid>
         <TextBlock Grid.Row="2" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#CBD6E5" Text="{Binding Notes}" />
       </Grid>
-      <TextBlock Grid.Row="4" Margin="0,8,0,0" FontSize="10" Foreground="#8290A5" Text="Never writes to game memory, Steam files, or game input." />
+      <TextBlock Grid.Row="4" Margin="0,8,0,0" FontSize="10" Foreground="#8290A5" Text="Never reads game memory, writes Steam files, or sends game input." />
     </Grid>
   </Border>
 </Window>

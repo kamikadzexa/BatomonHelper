@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\BatomonHelper.GameReader\BatomonHelper.GameReader.csproj" />
-  </ItemGroup>
-</Project>

@@ -12,7 +12,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\BatomonHelper.Core\BatomonHelper.Core.csproj" />
-    <ProjectReference Include="..\..\src\BatomonHelper.GameReader\BatomonHelper.GameReader.csproj" />
-    <ProjectReference Include="..\..\src\BatomonHelper.Capture\BatomonHelper.Capture.csproj" />
   </ItemGroup>
 </Project>

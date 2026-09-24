@@ -13,7 +13,6 @@ public sealed record OddsResult(
 public interface IOddsCalculator
 {
     OddsResult Calculate(CatalogSnapshot catalog, ShopOddsInput state);
-    OddsResult Calculate(CatalogSnapshot catalog, RunState state);
 }
 
 public sealed class OddsCalculator : IOddsCalculator
@@ -26,10 +25,6 @@ public sealed class OddsCalculator : IOddsCalculator
         [10] = [15, 20, 40, 20, 5], [11] = [10, 20, 35, 25, 10], [12] = [5, 15, 30, 35, 15],
         [13] = [1, 10, 30, 39, 20], [14] = [1, 2, 20, 47, 30]
     };
-
-    public OddsResult Calculate(CatalogSnapshot catalog, RunState state) => Calculate(catalog, new ShopOddsInput(
-        state.Day, state.ShopRank, state.ActiveSet, state.Team, state.Bench, state.Shop,
-        state.Effects, state.ItemUsesRemaining, state.HasEligibleItemOffer));
 
     public OddsResult Calculate(CatalogSnapshot catalog, ShopOddsInput state)
     {

@@ -1,6 +1,6 @@
 # BatomonHelper
 
-Personal, external Windows overlay for Batomon Showdown. It is a .NET 10 WPF solution for Visual Studio and deliberately never writes to the Steam installation, process memory, or game input.
+Personal, external Windows overlay for Batomon Showdown. It is a .NET 10 WPF solution for Visual Studio and never reads process memory, writes to Steam files, or sends game input.
 
 ## Run
 
@@ -27,16 +27,3 @@ The optional `reference-templates.json` alongside the overlay contains fixture-d
 The wiki importer caches raw provenance: source URLs, retrieval time, page hash, balance, and declared Steam build. It uses only public batomon.com pages and keeps the last valid SQLite snapshot offline if refresh fails. The odds engine covers rank weights, active-set/Level 3+ exclusions, fallback rarities, tickets, fifth-slot item fallback, Research Notes, VIP Pass, Mystic Incense notes, Rainbow Pearl notes, and overflow warnings.
 
 No recommendation engine is enabled yet; the `IRecommendationEngine` interface preserves an explainable, local-only next step.
-
-## Legacy memory tooling
-
-`BatomonHelper.GameReader`, `BatomonHelper.Capture`, and `BatomonHelper.Capture.Ui` remain in the solution as dormant developer tooling. The overlay no longer references their memory-profile, process-reading, or profile-output paths.
-
-```powershell
-dotnet run --project src/BatomonHelper.Capture -- baseline --out captures/shop.json --gold 10 --shop-rank 1 --day 1 --wins 0 --lives 3 --free-rerolls 0 --is-shop-locked 0 --team-count 1 --bench-count 0 --shop-count 5
-# Make exactly one game action yourself, then enter the values currently visible.
-dotnet run --project src/BatomonHelper.Capture -- filter --session captures/shop.json --action reroll-1 --gold 7 --shop-rank 1 --day 1
-dotnet run --project src/BatomonHelper.Capture -- observe --session captures/shop.json
-```
-
-Repeat each controlled action twice until a field has one candidate, then use `pointers` to search for a module-relative chain. Do not copy a generated path into `profiles/` until it survives a game restart and the reader validates it.
