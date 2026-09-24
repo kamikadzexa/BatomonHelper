@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BatomonHelper.Core\BatomonHelper.Core.csproj" />
+    <ProjectReference Include="..\..\src\BatomonHelper.GameReader\BatomonHelper.GameReader.csproj" />
+    <ProjectReference Include="..\..\src\BatomonHelper.Capture\BatomonHelper.Capture.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,24 @@
+{
+  "profileId": "example-only-25377295",
+  "steamBuildId": "25377295",
+  "executableSha256": "REPLACE_WITH_VERIFIED_HASH",
+  "moduleBaseRva": 0,
+  "scalars": {},
+  "team": null,
+  "bench": null,
+  "shop": null,
+  "trinkets": null,
+  "items": null,
+  "monsterIds": {},
+  "trainerIds": {},
+  "activeSets": {},
+  "trinketIds": {},
+  "itemIds": {},
+  "captureEvidence": {
+    "capturedAt": "0001-01-01T00:00:00+00:00",
+    "completedActions": [],
+    "restartValidated": false,
+    "confidence": 0,
+    "notes": ["Schema example only; no verified offsets."]
+  }
+}
