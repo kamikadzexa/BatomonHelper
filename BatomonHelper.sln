@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatomonHelper.Core", "src\B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatomonHelper.GameReader", "src\BatomonHelper.GameReader\BatomonHelper.GameReader.csproj", "{A5D08C49-3F2A-4C24-9B5F-EDF9E2187B1D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatomonHelper.ScreenReader", "src\BatomonHelper.ScreenReader\BatomonHelper.ScreenReader.csproj", "{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatomonHelper.Overlay", "src\BatomonHelper.Overlay\BatomonHelper.Overlay.csproj", "{CBAD0D86-A0C4-4EBF-B00D-DC6B7417C583}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatomonHelper.Tests", "tests\BatomonHelper.Tests\BatomonHelper.Tests.csproj", "{D679515B-CC41-426D-B9A0-F28DCD2E821A}"
@@ -28,6 +30,10 @@ Global
 		{A5D08C49-3F2A-4C24-9B5F-EDF9E2187B1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5D08C49-3F2A-4C24-9B5F-EDF9E2187B1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5D08C49-3F2A-4C24-9B5F-EDF9E2187B1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CBAD0D86-A0C4-4EBF-B00D-DC6B7417C583}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CBAD0D86-A0C4-4EBF-B00D-DC6B7417C583}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBAD0D86-A0C4-4EBF-B00D-DC6B7417C583}.Release|Any CPU.ActiveCfg = Release|Any CPU

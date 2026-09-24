@@ -12,6 +12,7 @@ public sealed record OddsResult(
 
 public interface IOddsCalculator
 {
+    OddsResult Calculate(CatalogSnapshot catalog, ShopOddsInput state);
     OddsResult Calculate(CatalogSnapshot catalog, RunState state);
 }
 
@@ -26,7 +27,11 @@ public sealed class OddsCalculator : IOddsCalculator
         [13] = [1, 10, 30, 39, 20], [14] = [1, 2, 20, 47, 30]
     };
 
-    public OddsResult Calculate(CatalogSnapshot catalog, RunState state)
+    public OddsResult Calculate(CatalogSnapshot catalog, RunState state) => Calculate(catalog, new ShopOddsInput(
+        state.Day, state.ShopRank, state.ActiveSet, state.Team, state.Bench, state.Shop,
+        state.Effects, state.ItemUsesRemaining, state.HasEligibleItemOffer));
+
+    public OddsResult Calculate(CatalogSnapshot catalog, ShopOddsInput state)
     {
         var notes = ImmutableArray.CreateBuilder<string>();
         if (catalog.Monsters.IsEmpty) return new([], [], 0, ["No catalog is available; import the wiki first."]);
@@ -58,11 +63,10 @@ public sealed class OddsCalculator : IOddsCalculator
 
         if (state.Effects.MysticIncenseQueued) notes.Add("Mystic Incense reserves one Mythical offer on the next fresh shop; its exact slot is game-state dependent.");
         if (state.Effects.RainbowPearl) notes.Add("Rainbow Pearl makes eligible future shop Batomon shiny.");
-        if (state.IsOverflow) notes.Add("Overflow is active: reroll, lock, and battle are unavailable until resolved.");
         return new(rarityOdds.ToImmutable(), monsterOdds.ToImmutable(), slots, notes.ToImmutable());
     }
 
-    private static Dictionary<Rarity, ImmutableArray<MonsterDefinition>> EligibleByRarity(CatalogSnapshot catalog, RunState state)
+    private static Dictionary<Rarity, ImmutableArray<MonsterDefinition>> EligibleByRarity(CatalogSnapshot catalog, ShopOddsInput state)
     {
         var owned = state.Team.Concat(state.Bench).Where(x => x.Level >= 3).Select(x => x.MonsterId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var unit in state.Team.Concat(state.Bench).Where(x => x.Level >= 3))
@@ -75,7 +79,7 @@ public sealed class OddsCalculator : IOddsCalculator
             rarity => catalog.Monsters.Where(m => m.Rarity == rarity && m.ActiveSets.Contains(state.ActiveSet) && !owned.Contains(m.Id)).ToImmutableArray());
     }
 
-    private static Dictionary<Rarity, decimal> BuildWeights(RunState state, ImmutableArray<string>.Builder notes)
+    private static Dictionary<Rarity, decimal> BuildWeights(ShopOddsInput state, ImmutableArray<string>.Builder notes)
     {
         if (state.Effects.ForceAllMythical || state.Effects.TicketRarity is not null)
         {
@@ -115,7 +119,7 @@ public sealed class OddsCalculator : IOddsCalculator
         return requested;
     }
 
-    private static int CalculateBatomonSlots(RunState state)
+    private static int CalculateBatomonSlots(ShopOddsInput state)
     {
         if (state.Effects.ForceAllMythical || state.Effects.TicketRarity is not null) return 5;
         return state.ItemUsesRemaining > 0 && state.HasEligibleItemOffer ? 4 : 5;

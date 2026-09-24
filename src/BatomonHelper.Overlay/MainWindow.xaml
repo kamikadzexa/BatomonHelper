@@ -12,10 +12,11 @@
         <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <StackPanel>
           <TextBlock FontWeight="Bold" FontSize="18" Text="Batomon Helper" />
-          <TextBlock FontSize="11" Foreground="#AAB7CA" Text="F8 toggles visibility · external read-only companion" />
+          <TextBlock FontSize="11" Foreground="#AAB7CA" Text="F8 toggles visibility · F9 captures focused shop · external read-only companion" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
           <Button Content="Refresh wiki" Command="{Binding RefreshWikiCommand}" />
+          <Button Content="Capture Shop (F9)" Command="{Binding CaptureShopCommand}" />
           <Button Content="Pin" Command="{Binding TogglePinnedCommand}" />
           <Button Content="×" Click="CloseWindow" />
         </StackPanel>

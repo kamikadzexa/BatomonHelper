@@ -1,5 +1,5 @@
 using BatomonHelper.Core;
-using BatomonHelper.GameReader;
+using BatomonHelper.ScreenReader;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -11,17 +11,15 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 {
     private readonly SnapshotRepository _repository;
     private readonly WikiImporter _wikiImporter;
-    private readonly IGameStateReader _reader = new ProfiledGameStateReader();
+    private readonly IShopScreenReader _screenReader = new WindowsShopScreenReader();
+    private readonly CaptureHistoryStore _history;
     private readonly IOddsCalculator _oddsCalculator = new OddsCalculator();
-    private readonly DispatcherTimer _timer;
     private CatalogSnapshot _catalog = CatalogSnapshot.Empty;
-    private MemoryProfile? _profile;
-    private SteamInstall? _install;
     private bool _isPinned;
-    private string _status = "Starting…";
+    private string _status = "Capture a focused Batomon shop with F9 or Capture Shop.";
     private string _warning = "";
     private string _provenance = "No catalog loaded.";
-    private string _runSummary = "Waiting for a game state.";
+    private string _runSummary = "No shop has been captured.";
     private string _notes = "";
 
     public OverlayViewModel()
@@ -29,17 +27,18 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BatomonHelper");
         Directory.CreateDirectory(appData);
         _repository = new SnapshotRepository(Path.Combine(appData, "batomon-helper.db"));
+        _history = new CaptureHistoryStore(Path.Combine(appData, "capture-history"));
         _wikiImporter = new WikiImporter(new BatomonWikiSource(new HttpClient { Timeout = TimeSpan.FromSeconds(30) }));
         RefreshWikiCommand = new AsyncCommand(RefreshWikiAsync);
+        CaptureShopCommand = new AsyncCommand(CaptureShopAsync);
         TogglePinnedCommand = new RelayCommand(TogglePinned);
-        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(750) };
-        _timer.Tick += async (_, _) => await RefreshStateAsync();
         _ = InitializeAsync();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<RarityRow> RarityRows { get; } = [];
     public ICommand RefreshWikiCommand { get; }
+    public ICommand CaptureShopCommand { get; }
     public ICommand TogglePinnedCommand { get; }
     public string Status { get => _status; private set => Set(ref _status, value); }
     public string Warning { get => _warning; private set { Set(ref _warning, value); OnPropertyChanged(nameof(WarningVisibility)); } }
@@ -52,13 +51,8 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     {
         await _repository.InitializeAsync();
         _catalog = await _repository.GetLatestAsync() ?? CatalogSnapshot.Empty;
-        _install = await SteamBuildDetector.DiscoverAsync();
-        var profiles = await new MemoryProfileStore(Path.Combine(AppContext.BaseDirectory, "profiles")).LoadAsync();
-        _profile = profiles.FirstOrDefault(p => _install is not null && p.SteamBuildId == _install.BuildId && p.ExecutableSha256.Equals(_install.ExecutableSha256, StringComparison.OrdinalIgnoreCase))
-            ?? profiles.FirstOrDefault(p => p.IsComplete);
         UpdateProvenance();
         if (_catalog == CatalogSnapshot.Empty || DateTimeOffset.UtcNow - _catalog.RetrievedAt > TimeSpan.FromDays(1)) await RefreshWikiAsync();
-        _timer.Start();
     }
 
     private async Task RefreshWikiAsync()
@@ -68,43 +62,84 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         if (result.Snapshot is null)
         {
             Warning = string.Join(" ", result.Errors);
-            Status = "Using cached catalog.";
+            Status = "Using cached catalog. Capture remains available for manual review.";
             return;
         }
         _catalog = result.Snapshot;
         await _repository.SaveAsync(_catalog);
         UpdateProvenance();
-        Status = "Wiki catalog refreshed.";
+        Status = "Wiki catalog refreshed. Capture a focused shop with F9.";
     }
 
-    private async Task RefreshStateAsync()
+    public async Task CaptureShopAsync()
     {
-        var install = _install ?? await SteamBuildDetector.DiscoverAsync();
-        if (install is not null) _install = install;
-        var verified = _profile is not null && _install is not null && _profile.SteamBuildId == _install.BuildId && _profile.ExecutableSha256.Equals(_install.ExecutableSha256, StringComparison.OrdinalIgnoreCase);
-        var result = await _reader.ReadAsync(_profile, allowStaleProfile: !verified, CancellationToken.None);
-        Status = result.Status;
-        Warning = result.IsUnverified ? $"UNVERIFIED BUILD: detected {_install?.BuildId ?? "unknown"}; profile {_profile?.SteamBuildId ?? "none"}. Odds are calculated with warnings and may be wrong." : string.Join(" ", result.Errors);
-        if (result.State is null) return;
-        var validation = RunStateValidator.Validate(result.State, _catalog);
-        if (!validation.IsValid) { Warning = string.Join(" ", validation.Errors); return; }
-        Render(_oddsCalculator.Calculate(_catalog, result.State), result.State);
+        var window = Application.Current.MainWindow;
+        var restoreOpacity = window is not null && window.Visibility == Visibility.Visible ? window.Opacity : 1d;
+        try
+        {
+            if (window is not null && window.Visibility == Visibility.Visible) { window.Opacity = 0; await Task.Delay(90); }
+            Status = "Capturing the focused Batomon shop…";
+            var result = await _screenReader.CaptureAsync(_catalog);
+            if (window is not null) window.Opacity = restoreOpacity;
+
+            if (result.State is null)
+            {
+                await SaveHistoryAsync(result, false);
+                Warning = string.Join(" ", result.Diagnostics.Select(diagnostic => diagnostic.Message));
+                Status = "Shop capture was not accepted; the previous state is unchanged.";
+                return;
+            }
+
+            var review = new CaptureReviewWindow(result, _catalog) { Owner = window };
+            var accepted = review.ShowDialog() == true && review.AcceptedState is not null;
+            if (!accepted)
+            {
+                await SaveHistoryAsync(result, false);
+                Status = "Shop capture was cancelled; the previous state is unchanged.";
+                return;
+            }
+
+            var state = review.AcceptedState!;
+            var validation = ShopStateValidator.Validate(state, _catalog);
+            if (!validation.IsValid)
+            {
+                await SaveHistoryAsync(result, false);
+                Warning = string.Join(" ", validation.Errors);
+                Status = "Correct the highlighted capture values and try again; the previous state is unchanged.";
+                return;
+            }
+
+            await SaveHistoryAsync(result with { State = state }, true);
+            Render(_oddsCalculator.Calculate(_catalog, state.ToOddsInput()), state);
+            Warning = result.Fields.Any(field => !field.IsResolved) ? "Some OCR fields were manually reviewed or remain low confidence." : "";
+            Status = $"Shop captured at {state.CapturedAt:HH:mm:ss}. Press F9 after your next shop change.";
+        }
+        catch (Exception exception)
+        {
+            Warning = exception.Message;
+            Status = "Shop capture failed; the previous state is unchanged.";
+        }
+        finally
+        {
+            if (window is not null) window.Opacity = restoreOpacity;
+        }
     }
 
-    private void Render(OddsResult odds, RunState state)
+    private async Task SaveHistoryAsync(ShopCaptureResult result, bool accepted)
+    {
+        try { await _history.SaveAsync(result, accepted); }
+        catch (Exception exception) { Warning = $"Capture history could not be saved: {exception.Message}"; }
+    }
+
+    private void Render(OddsResult odds, ShopState state)
     {
         RarityRows.Clear();
         foreach (var item in odds.RarityOdds) RarityRows.Add(new(item.Rarity.ToString(), item.Probability.ToString("P2"), item.EligibleCount, item.RolledAs.ToString()));
-        RunSummary = $"Day {state.Day} · Rank {state.ShopRank} · ${state.Gold} · {odds.BatomonSlotsNextShop} Batomon slot(s) next fresh shop";
+        RunSummary = $"Day {state.Hud.Day} · Rank {state.Hud.Rank} · HP {state.Hud.HitPoints} · reroll ${state.Hud.RerollCost} · {odds.BatomonSlotsNextShop} Batomon slot(s) next fresh shop";
         Notes = string.Join(" ", odds.Notes);
     }
 
-    private void UpdateProvenance()
-    {
-        Provenance = $"Wiki build {_catalog.DeclaredSteamBuild} · retrieved {_catalog.RetrievedAt:yyyy-MM-dd HH:mm} UTC · game build {_install?.BuildId ?? "not found"}";
-        if (_catalog.DeclaredSteamBuild != "unknown" && _install is not null && _catalog.DeclaredSteamBuild != _install.BuildId)
-            Warning = $"DATA BUILD MISMATCH: wiki {_catalog.DeclaredSteamBuild}; installed game {_install.BuildId}.";
-    }
+    private void UpdateProvenance() => Provenance = $"Wiki build {_catalog.DeclaredSteamBuild} · retrieved {_catalog.RetrievedAt:yyyy-MM-dd HH:mm} UTC · source: manual shop OCR";
 
     private void TogglePinned()
     {

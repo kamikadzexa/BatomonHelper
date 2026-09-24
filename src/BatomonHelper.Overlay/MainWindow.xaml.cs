@@ -5,6 +5,7 @@ namespace BatomonHelper.Overlay;
 public partial class MainWindow : Window
 {
     private const int HotkeyId = 0xB470;
+    private const int CaptureHotkeyId = 0xB471;
     private const int WmHotkey = 0x0312;
     private HwndSource? _source;
 
@@ -17,8 +18,9 @@ public partial class MainWindow : Window
             _source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
             _source?.AddHook(WndProc);
             NativeOverlay.RegisterHotKey(_source!.Handle, HotkeyId, 0, 0x77); // F8
+            NativeOverlay.RegisterHotKey(_source.Handle, CaptureHotkeyId, 0, 0x78); // F9
         };
-        Closed += (_, _) => { if (_source is not null) NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); };
+        Closed += (_, _) => { if (_source is not null) { NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId); } };
     }
 
     private IntPtr WndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -26,6 +28,11 @@ public partial class MainWindow : Window
         if (message == WmHotkey && wParam.ToInt32() == HotkeyId)
         {
             Visibility = Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
+            handled = true;
+        }
+        if (message == WmHotkey && wParam.ToInt32() == CaptureHotkeyId)
+        {
+            if (DataContext is OverlayViewModel viewModel) _ = viewModel.CaptureShopAsync();
             handled = true;
         }
         return IntPtr.Zero;
