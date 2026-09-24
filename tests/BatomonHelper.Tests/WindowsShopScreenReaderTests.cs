@@ -29,6 +29,31 @@ public sealed class WindowsShopScreenReaderTests
         Assert.All(result.Fields, field => Assert.True(field.IsResolved, field.Name));
     }
 
+    [Fact]
+    public async Task Recognizes_the_supplied_treasure_hunter_rank9_shop_capture()
+    {
+        var fixture = Path.Combine(AppContext.BaseDirectory, "Fixtures", "treasure-hunter-rank9.png");
+        using var image = new Bitmap(fixture);
+        var catalog = new CatalogSnapshot("test", "25377295", "22", DateTimeOffset.UtcNow, [], "hash", [], [])
+        {
+            Trainers = [new("treasure-hunter", "Treasure Hunter", "When you get Trinket gifts, your choices are 1 rarity tier higher.")],
+            Items = [new("gray-ticket", "Gray Ticket", "Reroll a shop with all Common monsters.", 0)]
+        };
+
+        var result = await new WindowsShopScreenReader().RecognizeImageAsync(image, catalog);
+
+        Assert.NotNull(result.Snapshot);
+        Assert.Equal("Treasure Hunter", result.Snapshot!.Trainer);
+        Assert.Equal(9, result.Snapshot.ShopRank);
+        Assert.Equal(22, result.Snapshot.Gold);
+        Assert.Equal([20, 25, 38, 15, 2], result.Snapshot.RarityOdds.OrderBy(odds => odds.Rarity).Select(odds => odds.Probability * 100m));
+        Assert.Equal(2, result.Snapshot.ItemUsesRemaining);
+        Assert.Equal(3, result.Snapshot.DailyItemLimit);
+        Assert.Equal("Gray Ticket", result.Snapshot.ItemOffer!.Name);
+        Assert.Equal(0, result.Snapshot.ItemOffer.Price);
+        Assert.All(result.Fields, field => Assert.True(field.IsResolved, field.Name));
+    }
+
     private static CatalogSnapshot Catalog() => new("test", "25377295", "22", DateTimeOffset.UtcNow, [], "hash", [],
         [new MonsterDefinition("bunchop", "Bunchop", Rarity.Common, null, ImmutableHashSet.Create("starter"))])
     {

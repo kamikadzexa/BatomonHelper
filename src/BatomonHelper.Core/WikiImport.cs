@@ -52,7 +52,11 @@ public sealed partial class WikiImporter(IWikiSource source)
             }));
 
             var valid = monsters.Where(m => m is not null).Cast<MonsterDefinition>().ToImmutableArray();
-            if (valid.Length != monsterIds.Length) throw new InvalidDataException("At least one catalog entry was incomplete.");
+            if (valid.Length != monsterIds.Length)
+            {
+                var incomplete = monsterIds.Zip(monsters).Where(entry => entry.Second is null).Select(entry => entry.First);
+                throw new InvalidDataException($"Catalog entries were incomplete: {string.Join(", ", incomplete)}.");
+            }
             var trainerIds = ReferenceIdRegex().Matches(pages[3]).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             var itemIds = ItemIdRegex().Matches(pages[4]).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             var trainers = await ImportReferencesAsync(trainerIds, "/trainers/", ParseTrainer, cancellationToken);
@@ -80,16 +84,32 @@ public sealed partial class WikiImporter(IWikiSource source)
 
     private static MonsterDefinition? ParseMonster(string id, string html)
     {
-        var rarity = Enum.GetValues<Rarity>().FirstOrDefault(r => Regex.IsMatch(html, $@"\b{Regex.Escape(DisplayRarity(r))}\b", RegexOptions.IgnoreCase));
-        if (!Regex.IsMatch(html, @"\b(Common|Uncommon|Rare|Super Rare|Legendary|Mythical)\b", RegexOptions.IgnoreCase)) return null;
+        var rarity = ParseRarity(html);
+        if (rarity is null) return null;
         var name = TitleRegex().Match(html).Groups["name"].Value;
         if (string.IsNullOrWhiteSpace(name)) name = string.Join(' ', id.Split('-', StringSplitOptions.RemoveEmptyEntries).Select(s => char.ToUpperInvariant(s[0]) + s[1..]));
         var activeSets = ImmutableHashSet.CreateBuilder<string>(StringComparer.OrdinalIgnoreCase);
         if (Regex.IsMatch(html, @"\bStarter\b", RegexOptions.IgnoreCase)) activeSets.Add("starter");
         var baseMatch = BaseSpeciesRegex().Match(html);
         var baseId = baseMatch.Success ? baseMatch.Groups["id"].Value : null;
-        return new(id, WebUtility.HtmlDecode(name).Trim(), rarity, baseId, activeSets.ToImmutable(), !html.Contains("no shiny", StringComparison.OrdinalIgnoreCase));
+        return new(id, WebUtility.HtmlDecode(name).Trim(), rarity.Value, baseId, activeSets.ToImmutable(), !html.Contains("no shiny", StringComparison.OrdinalIgnoreCase));
     }
+
+    private static Rarity? ParseRarity(string html)
+    {
+        var pageTitle = PageTitleRarityRegex().Match(html);
+        if (pageTitle.Success && TryParseRarity(pageTitle.Groups["rarity"].Value, out var metadataRarity)) return metadataRarity;
+
+        var tier = TierRegex().Match(html);
+        if (tier.Success && int.TryParse(tier.Groups["tier"].Value, out var tierValue) && tierValue is >= 1 and <= 6) return (Rarity)(tierValue - 1);
+
+        var title = TitleRegex().Match(html);
+        var details = title.Success ? html[(title.Index + title.Length)..Math.Min(html.Length, title.Index + title.Length + 1_500)] : html;
+        var rarityMatch = RarityRegex().Match(StripTags(WebUtility.HtmlDecode(details)));
+        return rarityMatch.Success && TryParseRarity(rarityMatch.Groups["rarity"].Value, out var contentRarity) ? contentRarity : null;
+    }
+
+    private static bool TryParseRarity(string value, out Rarity rarity) => Enum.TryParse(value.Replace(" ", string.Empty), true, out rarity);
 
     private static IReadOnlyDictionary<string, ImmutableHashSet<string>> ParseMonsterRegions(string html) => MonsterRegionRegex().Matches(html)
         .Select(match => (Id: IdRegex().Match(match.Value).Groups["id"].Value, Regions: RegionValueRegex().Matches(match.Value).Select(region => NormalizeRegion(region.Groups["region"].Value)).ToImmutableHashSet(StringComparer.OrdinalIgnoreCase)))
@@ -141,6 +161,9 @@ public sealed partial class WikiImporter(IWikiSource source)
     [GeneratedRegex("href\\s*=\\s*['\\\"]/trainers/(?<id>[a-z0-9-]+)['\\\"]", RegexOptions.IgnoreCase)] private static partial Regex ReferenceIdRegex();
     [GeneratedRegex("href\\s*=\\s*['\\\"]/items/(?<id>[a-z0-9-]+)['\\\"]", RegexOptions.IgnoreCase)] private static partial Regex ItemIdRegex();
     [GeneratedRegex("<h1[^>]*>(?<name>.*?)</h1>", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex TitleRegex();
+    [GeneratedRegex("<title>[^<]*?[—-]\\s*(?<rarity>Super\\s+Rare|Uncommon|Common|Rare|Legendary|Mythical)\\b", RegexOptions.IgnoreCase)] private static partial Regex PageTitleRarityRegex();
+    [GeneratedRegex("\\\"tier\\\"\\s*:\\s*(?<tier>[1-6])", RegexOptions.IgnoreCase)] private static partial Regex TierRegex();
+    [GeneratedRegex("\\b(?<rarity>Super\\s+Rare|Uncommon|Common|Rare|Legendary|Mythical)\\b", RegexOptions.IgnoreCase)] private static partial Regex RarityRegex();
     [GeneratedRegex("Steam build\\s*(?:<!--.*?-->\\s*)?(?<build>\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BuildRegex();
     [GeneratedRegex("Balance\\s*(?:<!--.*?-->\\s*)?(?<balance>\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BalanceRegex();
     [GeneratedRegex("base(?: species| form)?.{0,160}?href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BaseSpeciesRegex();

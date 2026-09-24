@@ -29,6 +29,28 @@ public sealed class WikiImporterTests
         Assert.Equal("Test item rule.", Assert.Single(result.Snapshot.Items).RuleText);
     }
 
+    [Theory]
+    [InlineData("Common", Rarity.Common)]
+    [InlineData("Uncommon", Rarity.Uncommon)]
+    [InlineData("Rare", Rarity.Rare)]
+    [InlineData("Super Rare", Rarity.SuperRare)]
+    [InlineData("Legendary", Rarity.Legendary)]
+    [InlineData("Mythical", Rarity.Mythical)]
+    public async Task Reads_the_creature_rarity_from_the_content_after_its_title(string rarityLabel, Rarity expectedRarity)
+    {
+        var pages = new Dictionary<string, string>
+        {
+            ["/"] = "<p>Balance 22 Steam build 25377295</p>",
+            ["/batomon"] = "<a href=\"/batomon/alpha\">Alpha</a><script>{\"regions\":[\"Jinto\"],\"id\":\"alpha\"}</script>",
+            ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
+            ["/batomon/alpha"] = $"<title>Alpha — {rarityLabel} Fire Batomon | batomon.com</title><nav>Common Uncommon Rare Super Rare Legendary Mythical</nav><h1>Alpha</h1><p>{rarityLabel} Fire Starter</p>"
+        };
+
+        var result = await new WikiImporter(new FakeSource(pages)).ImportAsync(CancellationToken.None);
+
+        Assert.Equal(expectedRarity, Assert.Single(result.Snapshot!.Monsters).Rarity);
+    }
+
     [Fact]
     public async Task Rejects_a_catalog_without_a_declared_build()
     {

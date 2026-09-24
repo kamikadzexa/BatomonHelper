@@ -18,6 +18,13 @@ namespace BatomonHelper.ScreenReader;
 public sealed class WindowsShopScreenReader : IShopScreenReader
 {
     private static readonly Rarity[] RibbonOrder = [Rarity.Common, Rarity.Uncommon, Rarity.Rare, Rarity.SuperRare, Rarity.Legendary];
+    private static readonly IReadOnlyDictionary<int, int[]> BaseRibbonOdds = new Dictionary<int, int[]>
+    {
+        [1] = [100, 0, 0, 0, 0], [2] = [90, 10, 0, 0, 0], [3] = [75, 25, 0, 0, 0], [4] = [67, 30, 3, 0, 0],
+        [5] = [55, 30, 15, 0, 0], [6] = [45, 32, 20, 3, 0], [7] = [30, 40, 25, 5, 0], [8] = [25, 30, 35, 10, 0],
+        [9] = [20, 25, 38, 15, 2], [10] = [15, 20, 40, 20, 5], [11] = [10, 20, 35, 25, 10], [12] = [5, 15, 30, 35, 15],
+        [13] = [1, 10, 30, 39, 20], [14] = [1, 2, 20, 47, 30]
+    };
 
     public async Task<ShopCaptureResult> CaptureAsync(CatalogSnapshot catalog, CancellationToken cancellationToken = default)
     {
@@ -68,8 +75,16 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         var fields = ImmutableArray.CreateBuilder<RecognizedField>();
         var trainer = await TrainerAsync(source, catalog.Trainers, fields, cancellationToken);
         var rank = await NumberAsync("ShopRank", source, ShopLayout.ShopRank, 1, 99, fields, cancellationToken);
+        var rankFieldIndex = fields.Count - 1;
         var gold = await NumberAsync("Gold", source, ShopLayout.Gold, 0, 9_999, fields, cancellationToken);
         var wholeRibbon = await ReadRibbonPercentagesAsync(source, cancellationToken);
+        if (TryRepairPixelFontRead(rank, wholeRibbon, out var repairedRank, out var repairedRibbon))
+        {
+            rank = repairedRank;
+            wholeRibbon = repairedRibbon;
+            var original = fields[rankFieldIndex];
+            fields[rankFieldIndex] = Field("ShopRank", rank.ToString(), .86, original.Candidates.Append(new RecognitionCandidate($"ribbon-consistency:{rank}", .86)));
+        }
         var ribbon = ImmutableArray.CreateBuilder<CapturedRarityOdds>();
         for (var index = 0; index < RibbonOrder.Length; index++)
         {
@@ -144,7 +159,7 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
     private async Task<int> PercentageAsync(string name, Bitmap source, NormalizedRect region, int? ribbonFallback, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
     {
         using var crop = Crop(source, region);
-        var text = await ReadOddsTextAsync(crop, cancellationToken);
+        var text = (await ReadOddsTextAsync(crop, cancellationToken)).Concat(await ReadTextAsync(crop, cancellationToken)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         var value = ExtractNumber(text, 0, 100);
         var valid = value is >= 0 and <= 100;
         if (!valid && ribbonFallback is { } fallback)
@@ -167,6 +182,24 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
             if (values.Length >= 5) return values.TakeLast(5).Cast<int?>().ToArray();
         }
         return [null, null, null, null, null];
+    }
+
+    // Pixel-font OCR occasionally reads the Rank digit as the first ribbon value and drops the final one.
+    // Repair only when four consecutive displayed percentages uniquely identify an unmodified base-rank ribbon.
+    private static bool TryRepairPixelFontRead(int recognizedRank, int?[] values, out int rank, out int?[] ribbon)
+    {
+        var matches = BaseRibbonOdds.Where(entry => values.Length == 5
+            && values[1..].SequenceEqual(entry.Value[..4].Select(value => (int?)value)))
+            .ToArray();
+        if (matches.Length == 1 && matches[0].Key != recognizedRank)
+        {
+            rank = matches[0].Key;
+            ribbon = matches[0].Value.Select(value => (int?)value).ToArray();
+            return true;
+        }
+        rank = recognizedRank;
+        ribbon = values;
+        return false;
     }
 
     private async Task<(int Current, int Total)> FractionAsync(Bitmap source, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
@@ -260,10 +293,13 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         using var enlarged = Enlarge(source, 6);
         using var binary = Binary(source);
         using var enlargedBinary = Enlarge(binary, 8);
+        using var lightMask = LightTextMask(source);
+        using var enlargedLightMask = Enlarge(lightMask, 8);
         using var inkMask = InkMask(source);
         using var enlargedInkMask = Enlarge(inkMask, 8);
         return (await ReadVariantAsync(enlarged, cancellationToken))
             .Concat(await ReadVariantAsync(enlargedBinary, cancellationToken))
+            .Concat(await ReadVariantAsync(enlargedLightMask, cancellationToken))
             .Concat(await ReadVariantAsync(enlargedInkMask, cancellationToken))
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.OrdinalIgnoreCase)

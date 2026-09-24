@@ -6,6 +6,18 @@ namespace BatomonHelper.Tests;
 public sealed class SnapshotRepositoryTests
 {
     [Fact]
+    public async Task Bundled_catalog_contains_the_full_rarity_distribution()
+    {
+        var database = Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db");
+        var catalog = await new SnapshotRepository(database, readOnly: true).GetLatestAsync();
+
+        Assert.NotNull(catalog);
+        Assert.Equal(149, catalog!.Monsters.Length);
+        Assert.All(Enum.GetValues<Rarity>(), rarity => Assert.Contains(catalog.Monsters, monster => monster.Rarity == rarity));
+        Assert.Contains(catalog.Monsters, monster => monster.Rarity != Rarity.Common);
+    }
+
+    [Fact]
     public async Task Keeps_the_latest_valid_catalog_snapshot_offline()
     {
         var database = Path.Combine(Path.GetTempPath(), $"batomon-helper-{Guid.NewGuid():N}.db");
