@@ -39,7 +39,7 @@
     </Style>
     <Style TargetType="ComboBoxItem"><Setter Property="Foreground" Value="#F7FAFF" /><Setter Property="Background" Value="#1B2D40" /><Setter Property="Padding" Value="8,6" /><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem"><Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><ContentPresenter /></Border><ControlTemplate.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#42627F" /></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#2C755F" /></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
   </Window.Resources>
-  <Border Background="{StaticResource PanelBackground}" BorderBrush="#536278" BorderThickness="1" CornerRadius="12" Padding="14">
+  <Border Margin="3" Background="{StaticResource PanelBackground}" BorderBrush="#78E2B8" BorderThickness="2" CornerRadius="10" Padding="14" SnapsToDevicePixels="True">
     <Grid>
       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
       <Border Grid.Row="0" Margin="-4,-4,-4,0" Padding="10,7" Background="#162638" BorderBrush="#78E2B8" BorderThickness="0,0,0,2" CornerRadius="7,7,0,0">
