@@ -14,7 +14,7 @@ public sealed class WikiImporterTests
             ["/mechanics/monster-pool"] = "<h1>Shop</h1>",
             ["/trainers"] = "<a class=\"catalog\" href=\"/trainers/black-belt\"><span>Black Belt</span></a>",
             ["/items"] = "<a class=\"catalog\" href=\"/items/gray-chip\"><span>Gray Chip</span></a>",
-            ["/batomon/regions/jinto"] = "<a href=\"/batomon/alpha\">Alpha</a>",
+            ["/batomon/regions/jinto"] = "<div data-monster-card=\"alpha\"></div>",
             ["/batomon/regions/pantra"] = "",
             ["/batomon/alpha"] = "<h1>Alpha</h1><p>Common Starter</p>",
             ["/trainers/black-belt"] = "<h1>Black Belt</h1><h2>Trainer ability</h2><p>Test trainer rule.</p>",
@@ -60,8 +60,8 @@ public sealed class WikiImporterTests
         {
             ["/"] = "Steam build 25377295", ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
             ["/batomon"] = "<a href=\"/batomon/alpha\"><div data-rarity=\"legendary\"></div></a>",
-            ["/batomon/regions/jinto"] = "<a href=\"/batomon/alpha\">Alpha</a>",
-            ["/batomon/regions/pantra"] = "<a href=\"/batomon/alpha\">Alpha</a>",
+            ["/batomon/regions/jinto"] = "<div data-monster-card=\"alpha\"></div>",
+            ["/batomon/regions/pantra"] = "<div data-monster-card=\"alpha\"></div>",
             ["/batomon/alpha"] = "<h1>Alpha</h1>"
         };
 
@@ -70,6 +70,24 @@ public sealed class WikiImporterTests
         var monster = Assert.Single(result.Snapshot!.Monsters);
         Assert.Equal(Rarity.Legendary, monster.Rarity);
         Assert.Equal(["Jinto region", "Pantra region"], monster.Regions.Order(StringComparer.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Region_pages_ignore_the_site_wide_catalog_navigation()
+    {
+        var pages = new Dictionary<string, string>
+        {
+            ["/"] = "Steam build 25377295", ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
+            ["/batomon"] = "<a href=\"/batomon/alpha\"><div data-rarity=\"common\"></div></a><a href=\"/batomon/beta\"><div data-rarity=\"common\"></div></a>",
+            ["/batomon/regions/jinto"] = "<a href=\"/batomon/beta\">Navigation</a><div data-monster-card=\"alpha\"></div>",
+            ["/batomon/regions/pantra"] = "<a href=\"/batomon/alpha\">Navigation</a><div data-monster-card=\"beta\"></div>",
+            ["/batomon/alpha"] = "<h1>Alpha</h1>", ["/batomon/beta"] = "<h1>Beta</h1>"
+        };
+
+        var result = await new WikiImporter(new FakeSource(pages)).ImportAsync(CancellationToken.None);
+
+        Assert.Equal(["Jinto region"], result.Snapshot!.Monsters.Single(monster => monster.Id == "alpha").Regions);
+        Assert.Equal(["Pantra region"], result.Snapshot.Monsters.Single(monster => monster.Id == "beta").Regions);
     }
 
     [Fact]

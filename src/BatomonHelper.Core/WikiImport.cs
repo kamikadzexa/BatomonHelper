@@ -127,7 +127,7 @@ public sealed partial class WikiImporter(IWikiSource source)
 
     private static void AddRegionMonsters(Dictionary<string, ImmutableHashSet<string>> regions, string html, string region)
     {
-        foreach (var id in MonsterIdRegex().Matches(html).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var id in MonsterCardIdRegex().Matches(html).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase))
             regions[id] = regions.GetValueOrDefault(id, ImmutableHashSet<string>.Empty).Add(region);
     }
 
@@ -170,6 +170,7 @@ public sealed partial class WikiImporter(IWikiSource source)
     private static string StripTags(string value) => TagRegex().Replace(value, string.Empty);
 
     [GeneratedRegex("href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase)] private static partial Regex MonsterIdRegex();
+    [GeneratedRegex("data-monster-card=\\\"(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase)] private static partial Regex MonsterCardIdRegex();
     [GeneratedRegex("<a\\b[^>]*href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"[^>]*>.*?data-rarity=\\\"(?<rarity>[^\\\"]+)\\\"", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex CatalogRarityRegex();
     [GeneratedRegex("\\{(?=[^{}]*\\\"id\\\"\\s*:\\s*\\\"[a-z0-9-]+\\\")(?=[^{}]*\\\"regions\\\"\\s*:\\s*\\[[^]]*\\])[^{}]*\\}", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex MonsterRegionRegex();
     [GeneratedRegex("\\\"(?<region>(?:Jinto|Pantra)(?:\\s+region)?)\\\"", RegexOptions.IgnoreCase)] private static partial Regex RegionValueRegex();
