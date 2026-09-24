@@ -54,6 +54,21 @@ public sealed class OddsCalculatorTests
         Assert.Equal(2, result.RarityOdds.Single(x => x.Rarity == Rarity.Common).EligibleCount);
     }
 
+    [Fact]
+    public void Evolution_forms_do_not_dilute_their_base_form_shop_chance()
+    {
+        var catalog = new CatalogSnapshot("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
+        [
+            Monster("base", Rarity.Common), Evolution("evolved", Rarity.Common, "base"), Monster("other", Rarity.Common)
+        ]);
+
+        var result = _calculator.Calculate(catalog, Snapshot());
+
+        Assert.Equal(2, result.RarityOdds.Single(x => x.Rarity == Rarity.Common).EligibleCount);
+        Assert.Equal(.5m, result.MonsterOdds.Single(x => x.MonsterId == "base").PerBatomonRoll);
+        Assert.DoesNotContain(result.MonsterOdds, x => x.MonsterId == "evolved");
+    }
+
     private static CatalogSnapshot Catalog() => new("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
         [
             Monster("alpha", Rarity.Common), Monster("beta", Rarity.Common), Monster("gamma", Rarity.Uncommon),
@@ -61,6 +76,7 @@ public sealed class OddsCalculatorTests
         ]);
 
     private static MonsterDefinition Monster(string id, Rarity rarity, params string[] regions) => new(id, id, rarity, null, ImmutableHashSet.Create(StringComparer.OrdinalIgnoreCase, "starter")) { Regions = regions.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase) };
+    private static MonsterDefinition Evolution(string id, Rarity rarity, string baseSpeciesId) => new(id, id, rarity, baseSpeciesId, ImmutableHashSet.Create(StringComparer.OrdinalIgnoreCase, "starter"));
     private static ShopOddsSnapshot Snapshot() => new("Black Belt", 4, 45, Odds((Rarity.Common, 1m), (Rarity.Uncommon, 0m), (Rarity.Rare, 0m), (Rarity.SuperRare, 0m), (Rarity.Legendary, 0m)), 0, 1, null, DateTimeOffset.UtcNow);
     private static ImmutableArray<CapturedRarityOdds> Odds(params (Rarity Rarity, decimal Probability)[] values) => values.Select(value => new CapturedRarityOdds(value.Rarity, value.Probability)).ToImmutableArray();
 }

@@ -23,7 +23,7 @@ public sealed record WikiImportResult(CatalogSnapshot? Snapshot, ImmutableArray<
 
 public sealed partial class WikiImporter(IWikiSource source)
 {
-    public static readonly string[] RequiredPages = ["/", "/batomon", "/mechanics/monster-pool", "/trainers", "/items"];
+    public static readonly string[] RequiredPages = ["/", "/batomon", "/mechanics/monster-pool", "/trainers", "/items", "/batomon/regions/jinto", "/batomon/regions/pantra"];
 
     public async Task<WikiImportResult> ImportAsync(CancellationToken cancellationToken)
     {
@@ -31,9 +31,12 @@ public sealed partial class WikiImporter(IWikiSource source)
         {
             var pages = await Task.WhenAll(RequiredPages.Select(path => source.GetStringAsync(path, cancellationToken)));
             var build = FindBuild(pages) ?? throw new InvalidDataException("The wiki snapshot did not declare a Steam build.");
+            var catalogRarities = ParseCatalogRarities(pages[1]);
             var monsterIds = MonsterIdRegex().Matches(pages[1]).Select(m => m.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             if (monsterIds.Length == 0) throw new InvalidDataException("The wiki catalog did not contain any Batomon links.");
             var monsterRegions = ParseMonsterRegions(pages[1]);
+            AddRegionMonsters(monsterRegions, pages[5], "Jinto region");
+            AddRegionMonsters(monsterRegions, pages[6], "Pantra region");
 
             using var limiter = new SemaphoreSlim(8);
             var monsters = await Task.WhenAll(monsterIds.Select(async id =>
@@ -41,7 +44,7 @@ public sealed partial class WikiImporter(IWikiSource source)
                 await limiter.WaitAsync(cancellationToken);
                 try
                 {
-                    var monster = ParseMonster(id, await source.GetStringAsync($"/batomon/{id}", cancellationToken));
+                    var monster = ParseMonster(id, await source.GetStringAsync($"/batomon/{id}", cancellationToken), catalogRarities.GetValueOrDefault(id));
                     return monster is null ? null : monster with
                     {
                         Regions = monsterRegions.GetValueOrDefault(id, ImmutableHashSet<string>.Empty),
@@ -82,15 +85,16 @@ public sealed partial class WikiImporter(IWikiSource source)
         }
     }
 
-    private static MonsterDefinition? ParseMonster(string id, string html)
+    private static MonsterDefinition? ParseMonster(string id, string html, Rarity? catalogRarity = null)
     {
-        var rarity = ParseRarity(html);
+        var rarity = ParseRarity(html) ?? catalogRarity;
         if (rarity is null) return null;
         var name = TitleRegex().Match(html).Groups["name"].Value;
         if (string.IsNullOrWhiteSpace(name)) name = string.Join(' ', id.Split('-', StringSplitOptions.RemoveEmptyEntries).Select(s => char.ToUpperInvariant(s[0]) + s[1..]));
         var activeSets = ImmutableHashSet.CreateBuilder<string>(StringComparer.OrdinalIgnoreCase);
         if (Regex.IsMatch(html, @"\bStarter\b", RegexOptions.IgnoreCase)) activeSets.Add("starter");
         var baseMatch = BaseSpeciesRegex().Match(html);
+        if (!baseMatch.Success) baseMatch = EvolvesFromRegex().Match(html);
         var baseId = baseMatch.Success ? baseMatch.Groups["id"].Value : null;
         return new(id, WebUtility.HtmlDecode(name).Trim(), rarity.Value, baseId, activeSets.ToImmutable(), !html.Contains("no shiny", StringComparison.OrdinalIgnoreCase));
     }
@@ -111,10 +115,21 @@ public sealed partial class WikiImporter(IWikiSource source)
 
     private static bool TryParseRarity(string value, out Rarity rarity) => Enum.TryParse(value.Replace(" ", string.Empty), true, out rarity);
 
-    private static IReadOnlyDictionary<string, ImmutableHashSet<string>> ParseMonsterRegions(string html) => MonsterRegionRegex().Matches(html)
+    private static Dictionary<string, ImmutableHashSet<string>> ParseMonsterRegions(string html) => MonsterRegionRegex().Matches(html)
         .Select(match => (Id: IdRegex().Match(match.Value).Groups["id"].Value, Regions: RegionValueRegex().Matches(match.Value).Select(region => NormalizeRegion(region.Groups["region"].Value)).ToImmutableHashSet(StringComparer.OrdinalIgnoreCase)))
         .GroupBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
         .ToDictionary(group => group.Key, group => group.Last().Regions, StringComparer.OrdinalIgnoreCase);
+
+    private static IReadOnlyDictionary<string, Rarity> ParseCatalogRarities(string html) => CatalogRarityRegex().Matches(html)
+        .Select(match => TryParseRarity(match.Groups["rarity"].Value, out var rarity) ? (Id: match.Groups["id"].Value, Rarity: (Rarity?)rarity) : default)
+        .Where(entry => entry.Rarity is not null)
+        .ToDictionary(entry => entry.Id, entry => entry.Rarity!.Value, StringComparer.OrdinalIgnoreCase);
+
+    private static void AddRegionMonsters(Dictionary<string, ImmutableHashSet<string>> regions, string html, string region)
+    {
+        foreach (var id in MonsterIdRegex().Matches(html).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase))
+            regions[id] = regions.GetValueOrDefault(id, ImmutableHashSet<string>.Empty).Add(region);
+    }
 
     private async Task<ImmutableArray<TDefinition>> ImportReferencesAsync<TDefinition>(IEnumerable<string> ids, string pathPrefix, Func<string, string, TDefinition> parser, CancellationToken cancellationToken)
     {
@@ -155,6 +170,7 @@ public sealed partial class WikiImporter(IWikiSource source)
     private static string StripTags(string value) => TagRegex().Replace(value, string.Empty);
 
     [GeneratedRegex("href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase)] private static partial Regex MonsterIdRegex();
+    [GeneratedRegex("<a\\b[^>]*href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"[^>]*>.*?data-rarity=\\\"(?<rarity>[^\\\"]+)\\\"", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex CatalogRarityRegex();
     [GeneratedRegex("\\{(?=[^{}]*\\\"id\\\"\\s*:\\s*\\\"[a-z0-9-]+\\\")(?=[^{}]*\\\"regions\\\"\\s*:\\s*\\[[^]]*\\])[^{}]*\\}", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex MonsterRegionRegex();
     [GeneratedRegex("\\\"(?<region>(?:Jinto|Pantra)(?:\\s+region)?)\\\"", RegexOptions.IgnoreCase)] private static partial Regex RegionValueRegex();
     [GeneratedRegex("\\\"id\\\"\\s*:\\s*\\\"(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase)] private static partial Regex IdRegex();
@@ -167,6 +183,7 @@ public sealed partial class WikiImporter(IWikiSource source)
     [GeneratedRegex("Steam build\\s*(?:<!--.*?-->\\s*)?(?<build>\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BuildRegex();
     [GeneratedRegex("Balance\\s*(?:<!--.*?-->\\s*)?(?<balance>\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BalanceRegex();
     [GeneratedRegex("base(?: species| form)?.{0,160}?href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BaseSpeciesRegex();
+    [GeneratedRegex(@"\\?""evolvesFrom\\?""\s*:\s*\[\s*\{[^{}]*?\\?""id\\?""\s*:\s*\\?""(?<id>[a-z0-9-]+)\\?""", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex EvolvesFromRegex();
     [GeneratedRegex("<[^>]+>")] private static partial Regex TagRegex();
     [GeneratedRegex("\\$(?<price>\\d+)")] private static partial Regex PriceRegex();
     [GeneratedRegex("<h2[^>]*>(?<heading>.*?)</h2>\\s*<p[^>]*>(?<effect>.*?)</p>", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex ReferenceEffectRegex();

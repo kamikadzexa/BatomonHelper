@@ -21,6 +21,20 @@ public sealed class CreatureCatalogFilterTests
     }
 
     [Fact]
+    public void Excludes_evolution_forms_from_the_creature_browser()
+    {
+        var catalog = new CatalogSnapshot("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
+        [
+            Monster("Beetbud", Rarity.Common, "Jinto region"),
+            new MonsterDefinition("beetdown", "Beetdown", Rarity.Common, "beetbud", ImmutableHashSet.Create("starter")) { Regions = ImmutableHashSet.Create("Jinto region") }
+        ]);
+
+        var filtered = CreatureCatalogFilter.Apply(catalog, null, MonsterRegionFilter.All, null).ToArray();
+
+        Assert.Equal(["Beetbud"], filtered.Select(monster => monster.Name));
+    }
+
+    [Fact]
     public async Task Loads_the_committed_offline_catalog_with_sprite_paths()
     {
         var database = Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db");

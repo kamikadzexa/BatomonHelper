@@ -52,7 +52,7 @@ public sealed class OddsCalculator : IOddsCalculator
         var selectedRegion = snapshot.RegionFilter == MonsterRegionFilter.All ? null : $"{snapshot.RegionFilter} region";
         return Enum.GetValues<Rarity>().ToDictionary(
             rarity => rarity,
-            rarity => catalog.Monsters.Where(monster => monster.Rarity == rarity && monster.ActiveSets.Contains(snapshot.ActiveSet) && (selectedRegion is null || monster.Regions.Contains(selectedRegion))).ToImmutableArray());
+            rarity => catalog.Monsters.Where(monster => monster.BaseSpeciesId is null && monster.Rarity == rarity && monster.ActiveSets.Contains(snapshot.ActiveSet) && (selectedRegion is null || monster.Regions.Contains(selectedRegion))).ToImmutableArray());
     }
 
     private static Rarity ResolveFallback(Rarity requested, IReadOnlyDictionary<Rarity, ImmutableArray<MonsterDefinition>> eligible)
