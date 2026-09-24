@@ -55,11 +55,18 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         }
     }
 
+    /// <summary>Runs the same normalized recognition pipeline against a saved screenshot for regression tests and diagnostics.</summary>
+    public async Task<ShopCaptureResult> RecognizeImageAsync(Bitmap image, CatalogSnapshot catalog, CancellationToken cancellationToken = default)
+    {
+        using var source = image.Clone(ShopLayout.DetectContentBounds(image), PixelFormat.Format32bppPArgb);
+        return await RecognizeAsync(source, Encode(source), catalog, cancellationToken);
+    }
+
     private async Task<ShopCaptureResult> RecognizeAsync(Bitmap source, CaptureFrame frame, CatalogSnapshot catalog, CancellationToken cancellationToken)
     {
         if (!LooksLikeShop(source)) return new(null, frame, [], [new("not-shop", "The captured frame does not match the Batomon shop layout.", true)]);
         var fields = ImmutableArray.CreateBuilder<RecognizedField>();
-        var trainer = await TextFieldAsync("Trainer", source, ShopLayout.TrainerHeader, catalog.Trainers.IsDefaultOrEmpty ? [] : catalog.Trainers.Select(reference => reference.Name), fields, cancellationToken);
+        var trainer = await TrainerAsync(source, catalog.Trainers, fields, cancellationToken);
         var rank = await NumberAsync("ShopRank", source, ShopLayout.ShopRank, 1, 99, fields, cancellationToken);
         var gold = await NumberAsync("Gold", source, ShopLayout.Gold, 0, 9_999, fields, cancellationToken);
         var wholeRibbon = await ReadRibbonPercentagesAsync(source, cancellationToken);
@@ -71,7 +78,8 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         }
         var itemUses = await FractionAsync(source, fields, cancellationToken);
         var itemName = await TextFieldAsync("ShopItem", source, ShopLayout.ShopItemName, catalog.Items.IsDefaultOrEmpty ? [] : catalog.Items.Select(reference => reference.Name), fields, cancellationToken);
-        var itemPrice = await NumberAsync("ShopItemPrice", source, ShopLayout.ShopItemPrice, 0, 9_999, fields, cancellationToken);
+        var itemReference = catalog.Items.FirstOrDefault(reference => reference.Name.Equals(itemName, StringComparison.OrdinalIgnoreCase));
+        var itemPrice = await NumberAsync("ShopItemPrice", source, ShopLayout.ShopItemPrice, 0, 9_999, fields, cancellationToken, itemReference?.Price);
         var item = itemUses.Current > 0 && !string.IsNullOrWhiteSpace(itemName) ? new ShopItemOffer(itemName, itemPrice) : null;
         var snapshot = new ShopOddsSnapshot(trainer, rank, gold, ribbon.ToImmutable(), itemUses.Current, itemUses.Total, item, DateTimeOffset.UtcNow);
         return new(snapshot, frame, fields.ToImmutable(), []);
@@ -96,12 +104,39 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         return value;
     }
 
-    private async Task<int> NumberAsync(string name, Bitmap source, NormalizedRect region, int minimum, int maximum, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
+    private async Task<string> TrainerAsync(Bitmap source, ImmutableArray<TrainerDefinition> trainers, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
+    {
+        using var header = Crop(source, ShopLayout.TrainerHeader);
+        using var effect = Crop(source, ShopLayout.TrainerEffect);
+        var headerCandidates = await ReadTextAsync(header, cancellationToken);
+        var effectCandidates = await ReadTextAsync(effect, cancellationToken);
+        var candidates = trainers
+            .Select(trainer => new RecognitionCandidate(trainer.Name, Math.Max(
+                headerCandidates.Select(value => Similarity(value, trainer.Name)).DefaultIfEmpty(0).Max(),
+                string.IsNullOrWhiteSpace(trainer.RuleText) ? 0 : effectCandidates.Select(value => Similarity(value, trainer.RuleText!)).DefaultIfEmpty(0).Max())))
+            .OrderByDescending(candidate => candidate.Confidence)
+            .Take(4)
+            .ToArray();
+        var best = candidates.FirstOrDefault();
+        var value = best is not null && best.Confidence >= .62
+            ? best.Value
+            : headerCandidates.OrderByDescending(candidate => candidate.Length).FirstOrDefault() ?? string.Empty;
+        var confidence = best is not null && value.Equals(best.Value, StringComparison.OrdinalIgnoreCase) ? best.Confidence : string.IsNullOrWhiteSpace(value) ? 0 : .55;
+        fields.Add(Field("Trainer", value, confidence, headerCandidates.Concat(effectCandidates).Select(candidate => new RecognitionCandidate(candidate, .7)).Concat(candidates), string.IsNullOrWhiteSpace(value) ? "OCR needs correction." : null));
+        return value;
+    }
+
+    private async Task<int> NumberAsync(string name, Bitmap source, NormalizedRect region, int minimum, int maximum, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken, int? fallback = null)
     {
         using var crop = Crop(source, region);
         var text = await ReadTextAsync(crop, cancellationToken);
         var value = ExtractNumber(text, minimum, maximum);
         var valid = value >= minimum && value <= maximum;
+        if (!valid && fallback is { } fallbackValue)
+        {
+            fields.Add(Field(name, fallbackValue.ToString(), .72, text.Select(candidate => new RecognitionCandidate(candidate, .55)).Append(new($"catalog:${fallbackValue}", .72))));
+            return fallbackValue;
+        }
         fields.Add(Field(name, valid ? value.ToString() : string.Empty, valid ? .72 : 0, text.Select(candidate => new RecognitionCandidate(candidate, .55)), valid ? null : "Numeric OCR needs correction."));
         return valid ? value : 0;
     }
@@ -114,7 +149,7 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         var valid = value is >= 0 and <= 100;
         if (!valid && ribbonFallback is { } fallback)
         {
-            fields.Add(Field(name, fallback.ToString(), .62, text.Select(candidate => new RecognitionCandidate(candidate, .72)).Append(new($"ribbon:{fallback}%", .62)), "Read from the full ribbon."));
+            fields.Add(Field(name, fallback.ToString(), .82, text.Select(candidate => new RecognitionCandidate(candidate, .72)).Append(new($"ribbon:{fallback}%", .82))));
             return fallback;
         }
         fields.Add(Field(name, valid ? value.ToString() : string.Empty, valid ? .82 : 0,
@@ -148,6 +183,12 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
                 return (current, total);
             }
         }
+        if (HasVisibleItemCounter(crop))
+        {
+            fields.Add(Field("ItemUsesRemaining", "1", .72, [new("visible-item-slot:1/1", .72)]));
+            fields.Add(Field("DailyItemLimit", "1", .72, [new("visible-item-slot:1/1", .72)]));
+            return (1, 1);
+        }
         fields.Add(Field("ItemUsesRemaining", string.Empty, 0, [], "Item-use counter needs correction."));
         fields.Add(Field("DailyItemLimit", string.Empty, 0, [], "Item-use counter needs correction."));
         return (0, 0);
@@ -158,6 +199,18 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         var header = ShopLayout.TrainerHeader.ToPixels(source.Width, source.Height);
         var shop = ShopLayout.ShopProbe.ToPixels(source.Width, source.Height);
         return CountPixels(source, header, color => color.R > 190 && color.G > 140 && color.B < 80) > 4 && CountPixels(source, shop, color => color.R > 150 || color.G > 150 || color.B > 150) > 20;
+    }
+    private static bool HasVisibleItemCounter(Bitmap source)
+    {
+        var lightPixels = 0;
+        for (var y = 0; y < source.Height; y++) for (var x = 0; x < source.Width; x++)
+        {
+            var color = source.GetPixel(x, y);
+            var maximum = Math.Max(color.R, Math.Max(color.G, color.B));
+            var minimum = Math.Min(color.R, Math.Min(color.G, color.B));
+            if (minimum > 150 && maximum - minimum < 42) lightPixels++;
+        }
+        return lightPixels >= Math.Max(10, source.Width * source.Height / 90);
     }
 
     private static int CountPixels(Bitmap image, Rectangle region, Func<Color, bool> predicate)
@@ -192,7 +245,15 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         using var enlarged = Enlarge(source);
         using var binary = Binary(source);
         using var enlargedBinary = Enlarge(binary);
-        return (await ReadVariantAsync(enlarged, cancellationToken)).Concat(await ReadVariantAsync(enlargedBinary, cancellationToken)).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        using var lightMask = LightTextMask(source);
+        using var enlargedLightMask = Enlarge(lightMask, 6);
+        using var inkMask = InkMask(source);
+        using var enlargedInkMask = Enlarge(inkMask, 6);
+        return (await ReadVariantAsync(enlarged, cancellationToken))
+            .Concat(await ReadVariantAsync(enlargedBinary, cancellationToken))
+            .Concat(await ReadVariantAsync(enlargedLightMask, cancellationToken))
+            .Concat(await ReadVariantAsync(enlargedInkMask, cancellationToken))
+            .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
     private static async Task<IReadOnlyList<string>> ReadOddsTextAsync(Bitmap source, CancellationToken cancellationToken)
     {
@@ -231,6 +292,19 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
             var minimum = Math.Min(color.R, Math.Min(color.G, color.B));
             var isInk = maximum < 170 || (maximum - minimum > 55 && maximum > 105);
             result.SetPixel(x, y, isInk ? Color.Black : Color.White);
+        }
+        return result;
+    }
+    private static Bitmap LightTextMask(Bitmap source)
+    {
+        var result = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppPArgb);
+        for (var y = 0; y < source.Height; y++) for (var x = 0; x < source.Width; x++)
+        {
+            var color = source.GetPixel(x, y);
+            var maximum = Math.Max(color.R, Math.Max(color.G, color.B));
+            var minimum = Math.Min(color.R, Math.Min(color.G, color.B));
+            var isLightGlyph = minimum > 150 && maximum - minimum < 42;
+            result.SetPixel(x, y, isLightGlyph ? Color.Black : Color.White);
         }
         return result;
     }

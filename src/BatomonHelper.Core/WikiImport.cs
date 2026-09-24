@@ -42,7 +42,11 @@ public sealed partial class WikiImporter(IWikiSource source)
                 try
                 {
                     var monster = ParseMonster(id, await source.GetStringAsync($"/batomon/{id}", cancellationToken));
-                    return monster is null ? null : monster with { Regions = monsterRegions.GetValueOrDefault(id, ImmutableHashSet<string>.Empty) };
+                    return monster is null ? null : monster with
+                    {
+                        Regions = monsterRegions.GetValueOrDefault(id, ImmutableHashSet<string>.Empty),
+                        SpritePath = $"assets/wiki/monsters/{id}.png"
+                    };
                 }
                 finally { limiter.Release(); }
             }));
@@ -105,7 +109,7 @@ public sealed partial class WikiImporter(IWikiSource source)
     }
 
     private static TrainerDefinition ParseTrainer(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Trainer ability"));
-    private static ItemDefinition ParseItem(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Item effect"));
+    private static ItemDefinition ParseItem(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Item effect"), ParsePrice(html));
     private static string ParseReferenceName(string id, string html)
     {
         var name = StripTags(WebUtility.HtmlDecode(TitleRegex().Match(html).Groups["name"].Value)).Trim();
@@ -117,6 +121,11 @@ public sealed partial class WikiImporter(IWikiSource source)
         if (!match.Success || !match.Groups["heading"].Value.Contains(heading, StringComparison.OrdinalIgnoreCase)) return null;
         var text = StripTags(WebUtility.HtmlDecode(match.Groups["effect"].Value)).Trim();
         return string.IsNullOrWhiteSpace(text) ? null : text;
+    }
+    private static int? ParsePrice(string html)
+    {
+        var match = PriceRegex().Match(StripTags(WebUtility.HtmlDecode(html)));
+        return match.Success && int.TryParse(match.Groups["price"].Value, out var price) ? price : null;
     }
 
     private static string? FindBuild(IEnumerable<string> pages) => pages.Select(page => BuildRegex().Match(page)).FirstOrDefault(m => m?.Success == true)?.Groups["build"].Value;
@@ -134,5 +143,6 @@ public sealed partial class WikiImporter(IWikiSource source)
     [GeneratedRegex("Balance\\s*(?:<!--.*?-->\\s*)?(?<balance>\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BalanceRegex();
     [GeneratedRegex("base(?: species| form)?.{0,160}?href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BaseSpeciesRegex();
     [GeneratedRegex("<[^>]+>")] private static partial Regex TagRegex();
+    [GeneratedRegex("\\$(?<price>\\d+)")] private static partial Regex PriceRegex();
     [GeneratedRegex("<h2[^>]*>(?<heading>.*?)</h2>\\s*<p[^>]*>(?<effect>.*?)</p>", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex ReferenceEffectRegex();
 }

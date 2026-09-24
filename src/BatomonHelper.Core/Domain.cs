@@ -10,14 +10,15 @@ public sealed record MonsterDefinition(
     Rarity Rarity,
     string? BaseSpeciesId,
     ImmutableHashSet<string> ActiveSets,
-    bool HasShiny = true)
+    bool HasShiny = true,
+    string? SpritePath = null)
 {
     public ImmutableHashSet<string> Regions { get; init; } = [];
 }
 
 public sealed record TrainerDefinition(string Id, string Name, string? RuleText = null);
 
-public sealed record ItemDefinition(string Id, string Name, string? RuleText = null);
+public sealed record ItemDefinition(string Id, string Name, string? RuleText = null, int? Price = null);
 
 public sealed record CatalogSnapshot(
     string SnapshotId,

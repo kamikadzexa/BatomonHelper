@@ -10,4 +10,10 @@
     <ProjectReference Include="..\BatomonHelper.Core\BatomonHelper.Core.csproj" />
     <ProjectReference Include="..\BatomonHelper.ScreenReader\BatomonHelper.ScreenReader.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\assets\wiki\**\*">
+      <Link>assets\wiki\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

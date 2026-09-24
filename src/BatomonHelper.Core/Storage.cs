@@ -3,9 +3,14 @@ using System.Text.Json;
 
 namespace BatomonHelper.Core;
 
-public sealed class SnapshotRepository(string databasePath)
+public sealed class SnapshotRepository(string databasePath, bool readOnly = false)
 {
-    private readonly string _connectionString = new SqliteConnectionStringBuilder { DataSource = databasePath, Pooling = false }.ToString();
+    private readonly string _connectionString = new SqliteConnectionStringBuilder
+    {
+        DataSource = databasePath,
+        Pooling = false,
+        Mode = readOnly ? SqliteOpenMode.ReadOnly : SqliteOpenMode.ReadWriteCreate
+    }.ToString();
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {

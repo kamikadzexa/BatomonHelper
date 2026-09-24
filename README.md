@@ -10,7 +10,7 @@ dotnet run --project src/BatomonHelper.Overlay
 dotnet test BatomonHelper.sln --no-restore
 ```
 
-Press `F8` to hide/show the overlay. **Pin** enables click-through mode. Choose **All regions**, **Jinto region**, or **Pantra region** before `F9`/ **Capture Shop**; the selection filters the eligible creature pool. Review and correct the proposed state before accepting it; the overlay keeps its previous state if the capture is cancelled or invalid.
+Press `F8` to hide/show the Creature Browser. **Pin** enables click-through mode. Use its name, region, and rarity filters to browse the bundled catalog; the selected region also filters the eligible creature pool for `F9`/ **Capture Shop**. Review and correct the proposed state before accepting it; the browser keeps its previous state if the capture is cancelled or invalid.
 
 ## OCR shop reader
 
@@ -20,6 +20,6 @@ The review dialog shows recognition confidence and alternatives. Accepted and re
 
 ## Data and limits
 
-The wiki importer caches public catalog provenance, including Batomon, trainer, and item references. The odds engine starts from the captured ribbon, uses the full Starter set while creature identification is disabled, and uses four Batomon slots while an item use remains (five otherwise). It does not simulate item purchases or infer hidden effects.
+The app ships a version-pinned SQLite wiki snapshot and creature sprites in `assets/wiki`, and never refreshes them at runtime. To deliberately refresh that Git-tracked bundle for a future release, run `dotnet run --project tools/BatomonHelper.CatalogBundler`. The odds engine starts from the captured ribbon, uses the full Starter set while creature identification is disabled, and uses four Batomon slots while an item use remains (five otherwise). It does not simulate item purchases or infer hidden effects.
 
 No recommendation engine is enabled yet; the `IRecommendationEngine` interface preserves an explainable, local-only next step.

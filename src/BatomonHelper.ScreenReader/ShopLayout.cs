@@ -18,6 +18,7 @@ public readonly record struct NormalizedRect(double X, double Y, double Width, d
 public static class ShopLayout
 {
     public static readonly NormalizedRect TrainerHeader = new(.008, .100, .20, .065);
+    public static readonly NormalizedRect TrainerEffect = new(.012, .395, .195, .205);
     public static readonly NormalizedRect ShopRank = new(.197, .745, .055, .05);
     public static readonly NormalizedRect Gold = new(.457, .742, .085, .07);
     public static readonly NormalizedRect Ribbon = new(.195, .735, .250, .075);
