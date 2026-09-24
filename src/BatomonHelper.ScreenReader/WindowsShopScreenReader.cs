@@ -185,11 +185,12 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
     }
 
     // Pixel-font OCR occasionally reads the Rank digit as the first ribbon value and drops the final one.
-    // Repair only when four consecutive displayed percentages uniquely identify an unmodified base-rank ribbon.
+    // It can also invent a leading value while correctly reading the remaining four percentages.
     private static bool TryRepairPixelFontRead(int recognizedRank, int?[] values, out int rank, out int?[] ribbon)
     {
-        var matches = BaseRibbonOdds.Where(entry => values.Length == 5
-            && values[1..].SequenceEqual(entry.Value[..4].Select(value => (int?)value)))
+        var matches = BaseRibbonOdds.Where(entry => values.Length == 5 &&
+            (values[1..].SequenceEqual(entry.Value[..4].Select(value => (int?)value)) ||
+             values[1..].SequenceEqual(entry.Value[1..].Select(value => (int?)value))))
             .ToArray();
         if (matches.Length == 1 && matches[0].Key != recognizedRank)
         {

@@ -69,6 +69,36 @@ public sealed class OddsCalculatorTests
         Assert.DoesNotContain(result.MonsterOdds, x => x.MonsterId == "evolved");
     }
 
+    [Fact]
+    public void Shop_odds_include_available_creatures_even_when_the_catalog_has_no_active_set_metadata()
+    {
+        var catalog = new CatalogSnapshot("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
+        [
+            Monster("available", Rarity.Common, "Jinto region") with { ActiveSets = [] },
+            Monster("starter", Rarity.Common, "Jinto region")
+        ]);
+
+        var result = _calculator.Calculate(catalog, Snapshot() with { RegionFilter = MonsterRegionFilter.Jinto });
+
+        Assert.Equal(2, result.RarityOdds.Single(x => x.Rarity == Rarity.Common).EligibleCount);
+        Assert.All(result.MonsterOdds, odds => Assert.Equal(.5m, odds.PerBatomonRoll));
+    }
+
+    [Theory]
+    [InlineData("ignit")]
+    [InlineData("talonite")]
+    [InlineData("purple-egg")]
+    public void Shop_odds_exclude_unavailable_creatures_and_eggs(string id)
+    {
+        var catalog = new CatalogSnapshot("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
+        [Monster("available", Rarity.Common), Monster(id, Rarity.Common)]);
+
+        var result = _calculator.Calculate(catalog, Snapshot());
+
+        Assert.Equal(1, result.RarityOdds.Single(x => x.Rarity == Rarity.Common).EligibleCount);
+        Assert.Equal(["available"], result.MonsterOdds.Select(odds => odds.MonsterId));
+    }
+
     private static CatalogSnapshot Catalog() => new("test", "1", "1", DateTimeOffset.UtcNow, [], "hash", [],
         [
             Monster("alpha", Rarity.Common), Monster("beta", Rarity.Common), Monster("gamma", Rarity.Uncommon),

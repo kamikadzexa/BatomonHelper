@@ -22,11 +22,13 @@ public partial class CaptureReviewWindow : Window
     }
 
     public ShopOddsSnapshot? AcceptedSnapshot { get; private set; }
+    public ImmutableArray<RecognizedField> AcceptedFields { get; private set; } = [];
 
     private void Accept_Click(object sender, RoutedEventArgs e)
     {
         if (_result.Snapshot is null || DataContext is not CaptureReviewViewModel viewModel) return;
-        AcceptedSnapshot = ShopOddsSnapshotCorrections.Apply(_result.Snapshot, viewModel.Fields.Select(field => field.ToField()), _catalog);
+        AcceptedFields = viewModel.Fields.Select(field => field.ToField()).ToImmutableArray();
+        AcceptedSnapshot = ShopOddsSnapshotCorrections.Apply(_result.Snapshot, AcceptedFields, _catalog);
         DialogResult = true;
     }
 }
