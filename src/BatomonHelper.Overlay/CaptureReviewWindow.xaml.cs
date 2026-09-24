@@ -39,7 +39,6 @@ public sealed class CaptureReviewViewModel
     public CaptureReviewViewModel(ShopCaptureResult result)
     {
         Fields = new(result.Fields.Select(field => new ReviewField(field)));
-        Diagnostics = string.Join(" ", result.Diagnostics.Select(diagnostic => diagnostic.Message));
         if (result.Frame is not null)
         {
             var image = new BitmapImage();
@@ -51,22 +50,26 @@ public sealed class CaptureReviewViewModel
 
     public BitmapSource? Image { get; }
     public ObservableCollection<ReviewField> Fields { get; }
-    public string Diagnostics { get; }
 }
 
 public sealed class ReviewField : INotifyPropertyChanged
 {
     private string _value;
+    private readonly double _confidence;
     public ReviewField(RecognizedField field)
     {
-        Name = field.Name; _value = field.Value; Confidence = field.Confidence;
-        Detail = string.Join(", ", field.Candidates.Select(candidate => candidate.Value));
-        if (!string.IsNullOrWhiteSpace(field.Diagnostic)) Detail = string.IsNullOrWhiteSpace(Detail) ? field.Diagnostic : $"{Detail} — {field.Diagnostic}";
+        Name = field.Name; _value = field.Value; _confidence = field.Confidence;
     }
     public event PropertyChangedEventHandler? PropertyChanged;
     public string Name { get; }
+    public string DisplayName => Name switch
+    {
+        "ShopRank" => "Shop rank",
+        "Gold" => "Gold",
+        "Rarity" => "Rarity",
+        "ItemAvailable" => "Item in the fifth slot",
+        _ => System.Text.RegularExpressions.Regex.Replace(Name, "([a-z])([A-Z])", "$1 $2")
+    };
     public string Value { get => _value; set { if (_value == value) return; _value = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value))); } }
-    public double Confidence { get; }
-    public string Detail { get; }
-    public RecognizedField ToField() => new(Name, Value, Confidence, true, [], null);
+    public RecognizedField ToField() => new(Name, Value, _confidence, true, [], null);
 }

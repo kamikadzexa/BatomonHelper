@@ -145,7 +145,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             _itemAvailable = snapshot.ItemAvailable;
             OnPropertyChanged(nameof(ItemAvailable));
             Render(CalculateOdds(snapshot), snapshot);
-            Warning = result.Fields.Any(field => !field.IsResolved) ? "Some OCR fields were manually reviewed or remain low confidence." : string.Empty;
+            Warning = string.Empty;
             Status = $"Shop captured at {snapshot.CapturedAt:HH:mm:ss}. Press F9 after your next shop change.";
         }
         catch (Exception exception)

@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        VersionLabel.Text = $"v{typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}";
         DataContext = new OverlayViewModel();
         PreviewKeyDown += (_, e) =>
         {

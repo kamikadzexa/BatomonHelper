@@ -10,6 +10,16 @@ dotnet run --project src/BatomonHelper.Overlay
 dotnet test BatomonHelper.sln --no-restore
 ```
 
+## Windows release installer
+
+Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then run:
+
+```powershell
+.\Installer\Build-Installer.ps1
+```
+
+The script publishes a framework-dependent x64 build, downloads and embeds the required .NET 10 Windows Desktop Runtime when it is not already staged, and creates `Installer\output\BatomonHelper-Setup-1.0.0.exe`. The installer is machine-wide, creates Start Menu and desktop shortcuts, and has no automatic update capability.
+
 Press `F8` to hide/show the Creature Browser. **Pin** enables click-through mode. Use its name, region, and rarity filters to browse the bundled catalog; the selected region also filters the eligible creature pool for `F9`/ **Capture Shop**. Review and correct the proposed state before accepting it; the browser keeps its previous state if the capture is cancelled or invalid.
 
 ## OCR shop reader

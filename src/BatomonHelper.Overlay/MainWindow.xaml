@@ -1,7 +1,7 @@
 <Window x:Class="BatomonHelper.Overlay.MainWindow" x:Name="OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Batomon Helper" Width="980" Height="720" MinWidth="720" MinHeight="480" Topmost="True"
+        Title="Batomon Helper" Icon="Assets/batomon-helper.ico" Width="980" Height="720" MinWidth="720" MinHeight="480" Topmost="True"
         WindowStyle="None" ResizeMode="CanResizeWithGrip" AllowsTransparency="True" Background="Transparent">
   <Window.Resources>
     <Style x:Key="OverlayButton" TargetType="Button">
@@ -63,6 +63,7 @@
         <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <StackPanel x:Name="DragSurface" Background="Transparent" MouseLeftButtonDown="DragWindow">
           <TextBlock FontWeight="Bold" FontSize="21" Text="Batomon Helper" />
+          <TextBlock x:Name="VersionLabel" Margin="0,1,0,0" FontSize="10" Foreground="#8495A9" />
           <TextBlock FontSize="12" Foreground="#AAB7CA" Text="Resize freely · F8 toggles visibility · F9 captures focused shop · offline wiki catalog" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
@@ -85,7 +86,7 @@
           <Button Style="{StaticResource OverlayButton}" Content="−" Command="{Binding DecreaseRankCommand}" ToolTip="Calculate one rank lower" />
           <TextBlock VerticalAlignment="Center" MinWidth="54" TextAlignment="Center" Text="{Binding RankLabel}" />
           <Button Style="{StaticResource OverlayButton}" Content="+" Command="{Binding IncreaseRankCommand}" ToolTip="Calculate one rank higher" />
-          <Button Style="{StaticResource OverlayButton}" Content="Reset" Command="{Binding ResetCommand}" ToolTip="Reset manual browsing to Rank 1 with an item available" />
+          <Button Style="{StaticResource OverlayButton}" Content="Reset" Command="{Binding ResetCommand}" ToolTip="Reset browsing to Rank 1 with an item available" />
         </StackPanel>
       </Grid>
       <Border Grid.Row="3" Margin="0,0,0,8" Padding="10,8" Background="#162638" BorderBrush="#34516A" BorderThickness="1" CornerRadius="6">
