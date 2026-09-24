@@ -38,6 +38,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<RarityRow> RarityRows { get; } = [];
     public ObservableCollection<CreatureRow> EligibleCreatureRows { get; } = [];
+    public IReadOnlyList<RegionFilterOption> RegionFilters { get; } = [new(MonsterRegionFilter.All, "All regions"), new(MonsterRegionFilter.Jinto, "Jinto region"), new(MonsterRegionFilter.Pantra, "Pantra region")];
     public ICommand RefreshWikiCommand { get; }
     public ICommand CaptureShopCommand { get; }
     public ICommand TogglePinnedCommand { get; }
@@ -47,13 +48,15 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     public string Provenance { get => _provenance; private set => Set(ref _provenance, value); }
     public string RunSummary { get => _runSummary; private set => Set(ref _runSummary, value); }
     public string Notes { get => _notes; private set => Set(ref _notes, value); }
+    private RegionFilterOption _selectedRegionFilter = new(MonsterRegionFilter.All, "All regions");
+    public RegionFilterOption SelectedRegionFilter { get => _selectedRegionFilter; set => Set(ref _selectedRegionFilter, value); }
 
     private async Task InitializeAsync()
     {
         await _repository.InitializeAsync();
         _catalog = await _repository.GetLatestAsync() ?? CatalogSnapshot.Empty;
         UpdateProvenance();
-        if (_catalog == CatalogSnapshot.Empty || DateTimeOffset.UtcNow - _catalog.RetrievedAt > TimeSpan.FromDays(1)) await RefreshWikiAsync();
+        if (_catalog == CatalogSnapshot.Empty || _catalog.Trainers.IsDefaultOrEmpty || _catalog.Items.IsDefaultOrEmpty || _catalog.Monsters.Any(monster => monster.Regions.IsEmpty) || DateTimeOffset.UtcNow - _catalog.RetrievedAt > TimeSpan.FromDays(1)) await RefreshWikiAsync();
     }
 
     private async Task RefreshWikiAsync()
@@ -78,6 +81,15 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         var restoreOpacity = window is not null && window.Visibility == Visibility.Visible ? window.Opacity : 1d;
         try
         {
+            if (_catalog == CatalogSnapshot.Empty || _catalog.Trainers.IsDefaultOrEmpty || _catalog.Items.IsDefaultOrEmpty)
+            {
+                await RefreshWikiAsync();
+                if (_catalog == CatalogSnapshot.Empty || _catalog.Trainers.IsDefaultOrEmpty || _catalog.Items.IsDefaultOrEmpty)
+                {
+                    Status = "The wiki catalog is required before a shop capture.";
+                    return;
+                }
+            }
             if (window is not null && window.Visibility == Visibility.Visible) { window.Opacity = 0; await Task.Delay(90); }
             Status = "Capturing the focused Batomon shop…";
             var result = await _screenReader.CaptureAsync(_catalog);
@@ -90,6 +102,14 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
                 Status = "Shop capture was not accepted; the previous state is unchanged.";
                 return;
             }
+
+            result = result with
+            {
+                Snapshot = result.Snapshot with
+                {
+                    RegionFilter = SelectedRegionFilter.Value
+                }
+            };
 
             var review = new CaptureReviewWindow(result, _catalog) { Owner = window };
             var accepted = review.ShowDialog() == true && review.AcceptedSnapshot is not null;
@@ -138,7 +158,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         foreach (var item in odds.RarityOdds) RarityRows.Add(new(item.Rarity.ToString(), item.Probability.ToString("P2"), item.EligibleCount, item.RolledAs.ToString()));
         EligibleCreatureRows.Clear();
         foreach (var monster in odds.MonsterOdds) EligibleCreatureRows.Add(new(monster.Name, monster.Rarity.ToString(), monster.PerBatomonRoll.ToString("P2"), monster.NextShopChance.ToString("P2")));
-        RunSummary = $"{snapshot.Trainer ?? "Unknown trainer"} · Rank {snapshot.ShopRank} · ${snapshot.Gold} · item {snapshot.ItemUsesRemaining}/{snapshot.DailyItemLimit}: {snapshot.ItemOffer?.Name ?? "none"} · {odds.BatomonSlotsNextShop} Batomon slot(s) next shop";
+        RunSummary = $"{snapshot.Trainer ?? "Unknown trainer"} · Rank {snapshot.ShopRank} · ${snapshot.Gold} · item {snapshot.ItemUsesRemaining}/{snapshot.DailyItemLimit}: {snapshot.ItemOffer?.Name ?? "none"} · {snapshot.RegionFilter} · {odds.BatomonSlotsNextShop} Batomon slot(s) next shop";
         Notes = string.Join(" ", new[] { snapshot.ItemOffer?.RuleText }.Concat(odds.Notes).Where(note => !string.IsNullOrWhiteSpace(note)));
     }
 
@@ -156,6 +176,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 
 public sealed record RarityRow(string Name, string Chance, int Eligible, string Fallback);
 public sealed record CreatureRow(string Name, string Rarity, string PerRoll, string NextShop);
+public sealed record RegionFilterOption(MonsterRegionFilter Value, string Name);
 
 public sealed class RelayCommand(Action action) : ICommand
 {

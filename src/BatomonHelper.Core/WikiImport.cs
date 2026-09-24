@@ -33,19 +33,26 @@ public sealed partial class WikiImporter(IWikiSource source)
             var build = FindBuild(pages) ?? throw new InvalidDataException("The wiki snapshot did not declare a Steam build.");
             var monsterIds = MonsterIdRegex().Matches(pages[1]).Select(m => m.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             if (monsterIds.Length == 0) throw new InvalidDataException("The wiki catalog did not contain any Batomon links.");
+            var monsterRegions = ParseMonsterRegions(pages[1]);
 
             using var limiter = new SemaphoreSlim(8);
             var monsters = await Task.WhenAll(monsterIds.Select(async id =>
             {
                 await limiter.WaitAsync(cancellationToken);
-                try { return ParseMonster(id, await source.GetStringAsync($"/batomon/{id}", cancellationToken)); }
+                try
+                {
+                    var monster = ParseMonster(id, await source.GetStringAsync($"/batomon/{id}", cancellationToken));
+                    return monster is null ? null : monster with { Regions = monsterRegions.GetValueOrDefault(id, ImmutableHashSet<string>.Empty) };
+                }
                 finally { limiter.Release(); }
             }));
 
             var valid = monsters.Where(m => m is not null).Cast<MonsterDefinition>().ToImmutableArray();
             if (valid.Length != monsterIds.Length) throw new InvalidDataException("At least one catalog entry was incomplete.");
-            var trainers = ParseReferences<TrainerDefinition>(pages[3], TrainerIdRegex, "trainer");
-            var items = ParseReferences<ItemDefinition>(pages[4], ItemIdRegex, "item");
+            var trainerIds = ReferenceIdRegex().Matches(pages[3]).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var itemIds = ItemIdRegex().Matches(pages[4]).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var trainers = await ImportReferencesAsync(trainerIds, "/trainers/", ParseTrainer, cancellationToken);
+            var items = await ImportReferencesAsync(itemIds, "/items/", ParseItem, cancellationToken);
             var warnings = ImmutableArray.CreateBuilder<string>();
             if (valid.Any(m => m.ActiveSets.IsEmpty)) warnings.Add("Some catalog entries have no declared active set and will not be rolled.");
             if (trainers.IsEmpty) warnings.Add("The trainer reference list was unavailable; trainer OCR will require review.");
@@ -80,25 +87,36 @@ public sealed partial class WikiImporter(IWikiSource source)
         return new(id, WebUtility.HtmlDecode(name).Trim(), rarity, baseId, activeSets.ToImmutable(), !html.Contains("no shiny", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static ImmutableArray<TDefinition> ParseReferences<TDefinition>(string html, Func<Regex> matcher, string fallbackKind)
-        where TDefinition : class
-    {
-        var entries = matcher().Matches(html)
-            .Select(match => (Id: match.Groups["id"].Value, Name: StripTags(WebUtility.HtmlDecode(match.Groups["name"].Value)).Trim()))
-            .Where(entry => !string.IsNullOrWhiteSpace(entry.Id))
-            .GroupBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.First())
-            .Select(entry => string.IsNullOrWhiteSpace(entry.Name)
-                ? (Id: entry.Id, Name: string.Join(' ', entry.Id.Split('-', StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0]) + part[1..])))
-                : entry)
-            .ToArray();
+    private static IReadOnlyDictionary<string, ImmutableHashSet<string>> ParseMonsterRegions(string html) => MonsterRegionRegex().Matches(html)
+        .Select(match => (Id: match.Groups["id"].Value, Regions: RegionValueRegex().Matches(match.Groups["regions"].Value).Select(region => region.Groups["region"].Value).ToImmutableHashSet(StringComparer.OrdinalIgnoreCase)))
+        .GroupBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
+        .ToDictionary(group => group.Key, group => group.Last().Regions, StringComparer.OrdinalIgnoreCase);
 
-        return entries.Select(entry => fallbackKind switch
+    private async Task<ImmutableArray<TDefinition>> ImportReferencesAsync<TDefinition>(IEnumerable<string> ids, string pathPrefix, Func<string, string, TDefinition> parser, CancellationToken cancellationToken)
+    {
+        using var limiter = new SemaphoreSlim(8);
+        var entries = await Task.WhenAll(ids.Select(async id =>
         {
-            "trainer" => (TDefinition)(object)new TrainerDefinition(entry.Id, entry.Name),
-            "item" => (TDefinition)(object)new ItemDefinition(entry.Id, entry.Name),
-            _ => throw new ArgumentOutOfRangeException(nameof(fallbackKind))
-        }).ToImmutableArray();
+            await limiter.WaitAsync(cancellationToken);
+            try { return parser(id, await source.GetStringAsync(pathPrefix + id, cancellationToken)); }
+            finally { limiter.Release(); }
+        }));
+        return entries.ToImmutableArray();
+    }
+
+    private static TrainerDefinition ParseTrainer(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Trainer ability"));
+    private static ItemDefinition ParseItem(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Item effect"));
+    private static string ParseReferenceName(string id, string html)
+    {
+        var name = StripTags(WebUtility.HtmlDecode(TitleRegex().Match(html).Groups["name"].Value)).Trim();
+        return string.IsNullOrWhiteSpace(name) ? string.Join(' ', id.Split('-', StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0]) + part[1..])) : name;
+    }
+    private static string? ParseReferenceEffect(string html, string heading)
+    {
+        var match = ReferenceEffectRegex().Match(html);
+        if (!match.Success || !match.Groups["heading"].Value.Contains(heading, StringComparison.OrdinalIgnoreCase)) return null;
+        var text = StripTags(WebUtility.HtmlDecode(match.Groups["effect"].Value)).Trim();
+        return string.IsNullOrWhiteSpace(text) ? null : text;
     }
 
     private static string? FindBuild(IEnumerable<string> pages) => pages.Select(page => BuildRegex().Match(page)).FirstOrDefault(m => m?.Success == true)?.Groups["build"].Value;
@@ -107,11 +125,14 @@ public sealed partial class WikiImporter(IWikiSource source)
     private static string StripTags(string value) => TagRegex().Replace(value, string.Empty);
 
     [GeneratedRegex("href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase)] private static partial Regex MonsterIdRegex();
-    [GeneratedRegex("href=\\\"/trainers/(?<id>[a-z0-9-]+)\\\"[^>]*>(?<name>.*?)</a>", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex TrainerIdRegex();
-    [GeneratedRegex("href=\\\"/items/(?<id>[a-z0-9-]+)\\\"[^>]*>(?<name>.*?)</a>", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex ItemIdRegex();
+    [GeneratedRegex("\\\"id\\\":\\\"(?<id>[a-z0-9-]+)\\\".*?\\\"regions\\\":\\[(?<regions>.*?)\\]", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex MonsterRegionRegex();
+    [GeneratedRegex("\\\"(?<region>(?:Jinto|Pantra) region)\\\"", RegexOptions.IgnoreCase)] private static partial Regex RegionValueRegex();
+    [GeneratedRegex("href\\s*=\\s*['\\\"]/trainers/(?<id>[a-z0-9-]+)['\\\"]", RegexOptions.IgnoreCase)] private static partial Regex ReferenceIdRegex();
+    [GeneratedRegex("href\\s*=\\s*['\\\"]/items/(?<id>[a-z0-9-]+)['\\\"]", RegexOptions.IgnoreCase)] private static partial Regex ItemIdRegex();
     [GeneratedRegex("<h1[^>]*>(?<name>.*?)</h1>", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex TitleRegex();
     [GeneratedRegex("Steam build\\s*(?:<!--.*?-->\\s*)?(?<build>\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BuildRegex();
     [GeneratedRegex("Balance\\s*(?:<!--.*?-->\\s*)?(?<balance>\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BalanceRegex();
     [GeneratedRegex("base(?: species| form)?.{0,160}?href=\\\"/batomon/(?<id>[a-z0-9-]+)\\\"", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex BaseSpeciesRegex();
     [GeneratedRegex("<[^>]+>")] private static partial Regex TagRegex();
+    [GeneratedRegex("<h2[^>]*>(?<heading>.*?)</h2>\\s*<p[^>]*>(?<effect>.*?)</p>", RegexOptions.IgnoreCase | RegexOptions.Singleline)] private static partial Regex ReferenceEffectRegex();
 }

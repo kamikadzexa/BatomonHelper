@@ -17,9 +17,10 @@ public readonly record struct NormalizedRect(double X, double Y, double Width, d
 /// <summary>Only the stable visual regions needed for a next-shop odds snapshot.</summary>
 public static class ShopLayout
 {
-    public static readonly NormalizedRect TrainerHeader = new(.008, .115, .20, .055);
+    public static readonly NormalizedRect TrainerHeader = new(.008, .100, .20, .065);
     public static readonly NormalizedRect ShopRank = new(.197, .745, .055, .05);
     public static readonly NormalizedRect Gold = new(.457, .742, .085, .07);
+    public static readonly NormalizedRect Ribbon = new(.195, .735, .250, .075);
     public static readonly NormalizedRect[] RibbonOdds =
     [
         new(.252, .745, .028, .05), new(.292, .745, .028, .05), new(.329, .745, .028, .05),

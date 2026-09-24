@@ -62,10 +62,11 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         var trainer = await TextFieldAsync("Trainer", source, ShopLayout.TrainerHeader, catalog.Trainers.IsDefaultOrEmpty ? [] : catalog.Trainers.Select(reference => reference.Name), fields, cancellationToken);
         var rank = await NumberAsync("ShopRank", source, ShopLayout.ShopRank, 1, 99, fields, cancellationToken);
         var gold = await NumberAsync("Gold", source, ShopLayout.Gold, 0, 9_999, fields, cancellationToken);
+        var wholeRibbon = await ReadRibbonPercentagesAsync(source, cancellationToken);
         var ribbon = ImmutableArray.CreateBuilder<CapturedRarityOdds>();
         for (var index = 0; index < RibbonOrder.Length; index++)
         {
-            var percent = await PercentageAsync($"{RibbonOrder[index]}Odds", source, ShopLayout.RibbonOdds[index], fields, cancellationToken);
+            var percent = await PercentageAsync($"{RibbonOrder[index]}Odds", source, ShopLayout.RibbonOdds[index], wholeRibbon[index], fields, cancellationToken);
             ribbon.Add(new(RibbonOrder[index], percent / 100m));
         }
         var itemUses = await FractionAsync(source, fields, cancellationToken);
@@ -105,15 +106,32 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
         return valid ? value : 0;
     }
 
-    private async Task<int> PercentageAsync(string name, Bitmap source, NormalizedRect region, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
+    private async Task<int> PercentageAsync(string name, Bitmap source, NormalizedRect region, int? ribbonFallback, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
     {
         using var crop = Crop(source, region);
         var text = await ReadOddsTextAsync(crop, cancellationToken);
         var value = ExtractNumber(text, 0, 100);
         var valid = value is >= 0 and <= 100;
+        if (!valid && ribbonFallback is { } fallback)
+        {
+            fields.Add(Field(name, fallback.ToString(), .62, text.Select(candidate => new RecognitionCandidate(candidate, .72)).Append(new($"ribbon:{fallback}%", .62)), "Read from the full ribbon."));
+            return fallback;
+        }
         fields.Add(Field(name, valid ? value.ToString() : string.Empty, valid ? .82 : 0,
             text.Select(candidate => new RecognitionCandidate(candidate, .72)), valid ? null : "Colored-ribbon OCR needs correction."));
         return valid ? value : 0;
+    }
+
+    private static async Task<int?[]> ReadRibbonPercentagesAsync(Bitmap source, CancellationToken cancellationToken)
+    {
+        using var crop = Crop(source, ShopLayout.Ribbon);
+        var candidates = (await ReadTextAsync(crop, cancellationToken)).Concat(await ReadOddsTextAsync(crop, cancellationToken));
+        foreach (var candidate in candidates)
+        {
+            var values = Regex.Matches(NormalizeDigits(candidate), @"\d+").Select(match => int.TryParse(match.Value, out var value) ? value : -1).Where(value => value is >= 0 and <= 100).ToArray();
+            if (values.Length >= 5) return values.TakeLast(5).Cast<int?>().ToArray();
+        }
+        return [null, null, null, null, null];
     }
 
     private async Task<(int Current, int Total)> FractionAsync(Bitmap source, ImmutableArray<RecognizedField>.Builder fields, CancellationToken cancellationToken)
@@ -179,9 +197,12 @@ public sealed class WindowsShopScreenReader : IShopScreenReader
     private static async Task<IReadOnlyList<string>> ReadOddsTextAsync(Bitmap source, CancellationToken cancellationToken)
     {
         using var enlarged = Enlarge(source, 6);
+        using var binary = Binary(source);
+        using var enlargedBinary = Enlarge(binary, 8);
         using var inkMask = InkMask(source);
         using var enlargedInkMask = Enlarge(inkMask, 8);
         return (await ReadVariantAsync(enlarged, cancellationToken))
+            .Concat(await ReadVariantAsync(enlargedBinary, cancellationToken))
             .Concat(await ReadVariantAsync(enlargedInkMask, cancellationToken))
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.OrdinalIgnoreCase)

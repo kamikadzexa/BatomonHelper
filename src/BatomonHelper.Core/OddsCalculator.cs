@@ -19,7 +19,7 @@ public sealed class OddsCalculator : IOddsCalculator
     public OddsResult Calculate(CatalogSnapshot catalog, ShopOddsSnapshot snapshot)
     {
         if (catalog.Monsters.IsEmpty) return new([], [], 0, ["No catalog is available; import the wiki first."]);
-        var eligible = EligibleByRarity(catalog, snapshot.ActiveSet);
+        var eligible = EligibleByRarity(catalog, snapshot);
         var visibleOdds = snapshot.RarityOdds.ToDictionary(odds => odds.Rarity, odds => odds.Probability);
         var slots = snapshot.ItemUsesRemaining > 0 ? 4 : 5;
         var rarityOdds = ImmutableArray.CreateBuilder<RarityOdds>();
@@ -47,11 +47,12 @@ public sealed class OddsCalculator : IOddsCalculator
         return new(rarityOdds.ToImmutable(), monsterOdds.ToImmutable(), slots, notes.ToImmutable());
     }
 
-    private static Dictionary<Rarity, ImmutableArray<MonsterDefinition>> EligibleByRarity(CatalogSnapshot catalog, string activeSet)
+    private static Dictionary<Rarity, ImmutableArray<MonsterDefinition>> EligibleByRarity(CatalogSnapshot catalog, ShopOddsSnapshot snapshot)
     {
+        var selectedRegion = snapshot.RegionFilter == MonsterRegionFilter.All ? null : $"{snapshot.RegionFilter} region";
         return Enum.GetValues<Rarity>().ToDictionary(
             rarity => rarity,
-            rarity => catalog.Monsters.Where(monster => monster.Rarity == rarity && monster.ActiveSets.Contains(activeSet)).ToImmutableArray());
+            rarity => catalog.Monsters.Where(monster => monster.Rarity == rarity && monster.ActiveSets.Contains(snapshot.ActiveSet) && (selectedRegion is null || monster.Regions.Contains(selectedRegion))).ToImmutableArray());
     }
 
     private static Rarity ResolveFallback(Rarity requested, IReadOnlyDictionary<Rarity, ImmutableArray<MonsterDefinition>> eligible)

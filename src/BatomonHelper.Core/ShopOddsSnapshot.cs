@@ -2,6 +2,8 @@ using System.Collections.Immutable;
 
 namespace BatomonHelper.Core;
 
+public enum MonsterRegionFilter { All, Jinto, Pantra }
+
 /// <summary>One manually requested read of the visible shop-odds UI.</summary>
 public sealed record ShopOddsSnapshot(
     string? Trainer,
@@ -12,7 +14,10 @@ public sealed record ShopOddsSnapshot(
     int DailyItemLimit,
     ShopItemOffer? ItemOffer,
     DateTimeOffset CapturedAt,
-    string ActiveSet = "starter");
+    string ActiveSet = "starter")
+{
+    public MonsterRegionFilter RegionFilter { get; init; } = MonsterRegionFilter.All;
+}
 
 public sealed record CapturedRarityOdds(Rarity Rarity, decimal Probability);
 public sealed record ShopItemOffer(string Name, int Price, string? RuleText = null);

@@ -10,7 +10,7 @@ dotnet run --project src/BatomonHelper.Overlay
 dotnet test BatomonHelper.sln --no-restore
 ```
 
-Press `F8` to hide/show the overlay. **Pin** enables click-through mode. Focus a visible Batomon shop and press `F9` (or **Capture Shop**) to take a one-shot OCR capture. Review and correct the proposed state before accepting it; the overlay keeps its previous state if the capture is cancelled or invalid.
+Press `F8` to hide/show the overlay. **Pin** enables click-through mode. Choose **All regions**, **Jinto region**, or **Pantra region** before `F9`/ **Capture Shop**; the selection filters the eligible creature pool. Review and correct the proposed state before accepting it; the overlay keeps its previous state if the capture is cancelled or invalid.
 
 ## OCR shop reader
 
