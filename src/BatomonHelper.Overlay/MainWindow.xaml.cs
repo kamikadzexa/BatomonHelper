@@ -6,6 +6,7 @@ public partial class MainWindow : Window
 {
     private const int HotkeyId = 0xB470;
     private const int CaptureHotkeyId = 0xB471;
+    private const int SuggestShoppingHotkeyId = 0xB472;
     private const int WmHotkey = 0x0312;
     private HwndSource? _source;
     private bool _isExpanded;
@@ -14,6 +15,7 @@ public partial class MainWindow : Window
     private WindowState _windowedState;
     private WindowStyle _windowedStyle;
     private ResizeMode _windowedResizeMode;
+    public bool ExcludedFromCapture { get; private set; }
 
     public static readonly DependencyProperty IsFullscreenProperty = DependencyProperty.Register(
         nameof(IsFullscreen), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
@@ -45,15 +47,27 @@ public partial class MainWindow : Window
         SourceInitialized += (_, _) =>
         {
             _source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+            // Keep the helper visible while desktop captures see the game behind it.
+            // WPF per-pixel layered windows (AllowsTransparency) cannot use this affinity.
+            ExcludedFromCapture = NativeOverlay.ExcludeFromCapture(_source!.Handle);
             _source?.AddHook(WndProc);
-            NativeOverlay.RegisterHotKey(_source!.Handle, HotkeyId, 0, 0x77); // F8
-            NativeOverlay.RegisterHotKey(_source.Handle, CaptureHotkeyId, 0, 0x78); // F9
+            var visibilityKey = NativeOverlay.RegisterHotKey(_source!.Handle, HotkeyId, 0x4000, 0x77); // F8
+            var captureKey = NativeOverlay.RegisterHotKey(_source.Handle, CaptureHotkeyId, 0x4000, 0x78); // F9
+            if ((!visibilityKey || !captureKey) && DataContext is OverlayViewModel keyModel)
+                keyModel.ReportHotkeyConflict($"Could not register {(!visibilityKey ? "F8 visibility " : "")}{(!captureKey ? "F9 capture" : "")}: another application owns the shortcut.");
+            RegisterShoppingHotkeys();
         };
-        Closed += (_, _) => { if (DataContext is OverlayViewModel viewModel) viewModel.StopCaptures(); if (_source is not null) { NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId); } };
+        Closed += (_, _) => { if (DataContext is OverlayViewModel viewModel) viewModel.StopCaptures(); if (_source is not null) { NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, SuggestShoppingHotkeyId); } };
     }
 
     private IntPtr WndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if (message == WmHotkey && wParam.ToInt32() == SuggestShoppingHotkeyId)
+        {
+            if (DataContext is OverlayViewModel shoppingModel) _ = shoppingModel.SuggestShoppingAsync();
+            AdviceTabs.SelectedIndex = 0;
+            handled = true;
+        }
         if (message == WmHotkey && wParam.ToInt32() == HotkeyId)
         {
             Visibility = Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
@@ -65,6 +79,14 @@ public partial class MainWindow : Window
             handled = true;
         }
         return IntPtr.Zero;
+    }
+
+    public void RegisterShoppingHotkeys()
+    {
+        if (_source is null || DataContext is not OverlayViewModel viewModel) return;
+        NativeOverlay.UnregisterHotKey(_source.Handle, SuggestShoppingHotkeyId);
+        if (!NativeOverlay.RegisterHotKey(_source.Handle, SuggestShoppingHotkeyId, 0x4000, 0x79)) // F10, no repeat
+            viewModel.ReportHotkeyConflict("Could not register F10 advice: another application owns the shortcut. Use Suggest move in the helper.");
     }
 
     private void DragWindow(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); }

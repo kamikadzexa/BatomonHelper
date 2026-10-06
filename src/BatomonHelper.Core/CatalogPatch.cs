@@ -41,7 +41,8 @@ public static class CatalogPatches
                 values = values.SetItem(change.Property, change.Value);
                 notes.Add($"Patch {patch.Version}: {change.Property} {change.PreviousValue} → {change.Value}");
             }
-            return notes.Count == 0 ? monster : monster with { ReferenceValues = values, ReferenceNotes = notes.ToImmutable() };
+            return notes.Count == 0 ? monster : monster with { ReferenceValues = values, ReferenceNotes = notes.ToImmutable(),
+                Rules = ReconcileRules(monster.Rules, patch.Changes.Where(c => c.MonsterId == monster.Id)) };
         }).ToImmutableArray();
         var updated = catalog with
         {
@@ -49,5 +50,41 @@ public static class CatalogPatches
             SourceUrls = catalog.SourceUrls.Append(patch.SourceUrl).Distinct().ToImmutableArray()
         };
         return updated with { ContentHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(updated with { ContentHash = "" })))) };
+    }
+
+    private static MonsterRules? ReconcileRules(MonsterRules? rules, IEnumerable<CatalogBalanceChange> changes)
+    {
+        if (rules is null) return null;
+        foreach (var change in changes)
+        {
+            if (change.Property == "Cost") continue; // ReferenceValues contains the new cost; captured prices remain authoritative.
+            if (change.Property == "Cooldown" && decimal.TryParse(change.PreviousValue, System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var before) && decimal.TryParse(change.Value,
+                System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var after))
+            {
+                rules = rules with { Levels = rules.Levels.Select(l => l.Cooldown == before ? l with { Cooldown = after } : l).ToImmutableArray(),
+                    ShinyLevels = rules.ShinyLevels.Select(l => l.Cooldown == before ? l with { Cooldown = after } : l).ToImmutableArray() };
+                continue;
+            }
+            // Patch notes specify normal levels 1–3, not shiny or level 4. Preserve their data as explicitly unverified.
+            var prior = change.PreviousValue.TrimStart('x').Split('/');
+            var current = change.Value.TrimStart('x').Split('/');
+            var abilities = rules.Abilities;
+            for (var i = 0; i < Math.Min(prior.Length, current.Length); i++)
+            {
+                if (!abilities.TryGetValue(i + 1, out var text)) continue;
+                var pattern = change.Property switch
+                {
+                    "Rock allies triggered" => @"(?<=Trigger\s)" + prior[i] + @"(?=\s+random Rock allies)",
+                    "Damage per trinket gained" => @"(?<=\+)" + prior[i] + @"(?=\s+Damage)",
+                    "Damage per Bug bought" => @"(?<=\+)" + prior[i] + @"(?=\s+Damage)",
+                    "Burn-to-Damage multiplier" => @"\b" + prior[i] + @"(?=\s+times)",
+                    _ => "(?!)"
+                };
+                abilities = abilities.SetItem(i + 1, System.Text.RegularExpressions.Regex.Replace(text, pattern, current[i], System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+            }
+            rules = rules with { Abilities = abilities, UnverifiedPatchFields = rules.UnverifiedPatchFields.Add(change.Property + ": shiny and level 4 not specified by patch").Distinct().ToImmutableArray() };
+        }
+        return rules;
     }
 }

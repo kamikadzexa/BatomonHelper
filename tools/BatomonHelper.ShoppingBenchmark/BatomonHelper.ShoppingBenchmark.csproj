@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0-windows10.0.22621.0</TargetFramework><RuntimeIdentifier>win-x64</RuntimeIdentifier></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../src/BatomonHelper.Core/BatomonHelper.Core.csproj" /><ProjectReference Include="../../src/BatomonHelper.ScreenReader/BatomonHelper.ScreenReader.csproj" /></ItemGroup>
+  <ItemGroup><None Include="../../assets/wiki/**/*" Link="assets/wiki/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" /><None Include="../../assets/recognition/digits.json" Link="assets/recognition/digits.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
+</Project>

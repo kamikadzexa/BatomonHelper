@@ -113,6 +113,7 @@ public sealed partial class WikiImporter(IWikiSource source)
         {
             SpriteUrl = sprite, ShinySpriteUrl = shiny,
             ReferenceValues = ParseMonsterReferenceValues(id, body),
+            Rules = WikiPayload.MonsterRules(id, body),
             ShinySpritePath = shiny is null ? null : $"assets/wiki/monsters/{id}-shiny.png"
         };
     }

@@ -9,7 +9,7 @@ namespace BatomonHelper.Overlay;
 
 public sealed record BoardCardRow(string Name, string? SpritePath, string Level, string Variant, string Stats, string Price);
 
-public sealed class OverlayViewModel : INotifyPropertyChanged
+public sealed partial class OverlayViewModel : INotifyPropertyChanged
 {
     private readonly SnapshotRepository _repository;
     private readonly IBoardScreenReader _screenReader = new WindowsBoardScreenReader();
@@ -54,6 +54,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         DecreaseRankCommand = new RelayCommand(() => ChangeRank(-1));
         IncreaseRankCommand = new RelayCommand(() => ChangeRank(1));
         ResetCommand = new RelayCommand(ResetManualState);
+        InitializeShoppingCommands();
         _ = InitializeAsync();
     }
 
@@ -110,6 +111,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             RefreshItemRows();
             RefreshTrinketRows();
             ResetManualState();
+            await InitializeShoppingAsync();
             Status = $"Loaded {_catalog.Monsters.Length} bundled creatures. Press F9 to capture the focused shop.";
         }
         catch (Exception exception)
@@ -119,9 +121,15 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         }
     }
 
-    public Task CaptureShopAsync() => _captureQueue.RequestAsync();
+    public async Task CaptureShopAsync()
+    {
+        CancelShoppingAdvice("Capturing the shop; previous advice cleared.");
+        _shoppingCaptureInProgress = true;
+        try { await _captureQueue.RequestAsync(); }
+        finally { _shoppingCaptureInProgress = false; }
+    }
 
-    public void StopCaptures() => _captureCancellation.Cancel();
+    public void StopCaptures() { _captureCancellation.Cancel(); StopShopping(); }
 
     private async Task CaptureBoardOnceAsync()
     {
@@ -136,7 +144,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
                 Status = "The bundled catalog is unavailable; shop capture cannot start.";
                 return;
             }
-            if (window is not null && window.Visibility == Visibility.Visible)
+            if (window is not null && window.Visibility == Visibility.Visible && window is not MainWindow { ExcludedFromCapture: true })
             { window.Opacity = 0; await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render); await Task.Delay(20, _captureCancellation.Token); }
             Status = "Reading the Batomon board…";
             var result = await _screenReader.CaptureAsync(_catalog, _captureCancellation.Token);
@@ -162,6 +170,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             var snapshot = board.ToShopOddsSnapshot(_catalog);
             var odds = CalculateOdds(snapshot);
             _boardState.Publish(result, _catalog, acceptedFields is null ? null : board);
+            AcceptShoppingCapture(board, result);
             _capturedSnapshot = snapshot;
             _itemAvailable = snapshot.ItemAvailable;
             OnPropertyChanged(nameof(ItemAvailable));

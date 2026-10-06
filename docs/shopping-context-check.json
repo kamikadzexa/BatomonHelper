@@ -1,0 +1,49 @@
+{
+  "measuredAt": "2026-10-06T19:46:11.240356+00:00",
+  "settings": {
+    "Endpoint": "http://127.0.0.1:11434",
+    "Model": "qwen3.5:9b-q4_K_M",
+    "ContextTokens": 16384,
+    "TimeoutSeconds": 90,
+    "Thinking": false,
+    "InputEnabled": false,
+    "RerollKey": "R",
+    "ApproveKey": "F10",
+    "PauseKey": "F7",
+    "VerifiedAdapters": []
+  },
+  "gameRunning": true,
+  "measurements": [
+    {
+      "fixture": "tests/BatomonHelper.Tests/Fixtures/treasure-day9.png",
+      "error": "Required strategy context (86365 characters) exceeds the configured budget. Increase context or refresh more concise knowledge.",
+      "elapsedMilliseconds": 1939.7241,
+      "candidateCount": 43,
+      "contextSections": {
+        "state": 3020,
+        "goal": 127,
+        "objective": 4,
+        "legalActions": 5343,
+        "actionRules": 1068,
+        "probabilities": 28534,
+        "probabilitiesEstimated": 4,
+        "probabilityNote": 168,
+        "trainer": 261,
+        "creatures": 12483,
+        "creatureIndexColumns": 46,
+        "creatureIndex": 7840,
+        "items": 2,
+        "itemIndex": 1619,
+        "trinkets": 2,
+        "trinketIndex": 3971,
+        "knowledgeVersion": 96,
+        "references": 18686,
+        "referenceIndex": 2781,
+        "recentActions": 2
+      },
+      "gpuSamples": [
+        "2026/10/06 22:46:11.168, 9108, 12288, 41"
+      ]
+    }
+  ]
+}

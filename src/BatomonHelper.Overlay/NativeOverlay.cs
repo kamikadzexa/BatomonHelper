@@ -9,6 +9,11 @@ internal static class NativeOverlay
     private const uint SwpNoActivate = 0x0010;
     private const int GwlExstyle = -20;
     private const long WsExTransparent = 0x00000020L;
+    private const uint WdaExcludeFromCapture = 0x00000011;
+
+    public static bool ExcludeFromCapture(IntPtr hwnd) =>
+        SetWindowDisplayAffinity(hwnd, WdaExcludeFromCapture) &&
+        GetWindowDisplayAffinity(hwnd, out var affinity) && affinity == WdaExcludeFromCapture;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct NativeRect
@@ -54,6 +59,8 @@ internal static class NativeOverlay
 
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static extern bool RegisterHotKey(IntPtr handle, int id, uint modifiers, uint virtualKeyCode);
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static extern bool UnregisterHotKey(IntPtr handle, int id);
+    [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool SetWindowDisplayAffinity(IntPtr hwnd, uint affinity);
+    [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetWindowDisplayAffinity(IntPtr hwnd, out uint affinity);
     [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
     [DllImport("user32.dll", CharSet = CharSet.Auto)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int width, int height, uint flags);

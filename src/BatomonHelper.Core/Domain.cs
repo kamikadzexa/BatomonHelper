@@ -19,6 +19,7 @@ public sealed record MonsterDefinition(
     public string? ShinySpriteUrl { get; init; }
     public ImmutableDictionary<string, string> ReferenceValues { get; init; } = ImmutableDictionary<string, string>.Empty;
     public ImmutableArray<string> ReferenceNotes { get; init; } = [];
+    public MonsterRules? Rules { get; init; }
 }
 
 public sealed record TrainerDefinition(string Id, string Name, string? RuleText = null)

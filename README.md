@@ -24,7 +24,7 @@ Press `F8` to hide/show the overlay and `F9` / **Capture Board** to refresh the 
 
 ## Full-board capture
 
-The reader captures the game client once, restores the overlay immediately after acquisition, and recognizes off the UI thread. Normalized fixed regions support 16:9 views at least 640×360 and verified black pillarbox/letterbox bars. Three shop anchors must agree. Foreground sprite templates recognize normal and shiny variants independently; grayscale offers can leave shiny status uncertain. Pixel-font templates separate HUD, level, badge, ribbon, and price styles. A reused Windows OCR engine receives pixel buffers directly, batches compatible crops, and retries only unresolved text.
+The reader captures the game client once and recognizes off the UI thread. The helper uses Windows capture exclusion so it stays visible during F9 screenshots. Its window uses an opaque background because WPF per-pixel transparency prevents capture exclusion. If Windows cannot apply exclusion, explicit F9 capture retains the brief hide-and-restore fallback. Normalized fixed regions support 16:9 views at least 640×360 and verified black pillarbox/letterbox bars. Three shop anchors must agree. Foreground sprite templates recognize normal and shiny variants independently; grayscale offers can leave shiny status uncertain. Pixel-font templates separate HUD, level, badge, ribbon, and price styles. A reused Windows OCR engine receives pixel buffers directly, batches compatible crops, and retries only unresolved text.
 
 Confident, validated boards apply immediately as one accepted board plus its `ShopOddsSnapshot` projection. An uncertain required value opens correction with field crops and named candidates. You can add a missed visible badge or mark a badge absent. Invalid corrections and cancellation preserve the previous accepted board. Absent values, unread values, and numeric zero remain distinct; wiki base stats never replace current stats. An absent item-use counter remains absent. The displayed rarity ribbon is authoritative, with no rank-table substitution.
 
@@ -50,4 +50,12 @@ Five creatures have no shiny asset declared by the wiki; those omissions are rep
 
 The odds engine starts from the captured ribbon and retains the existing region, level-three, and item controls. It does not simulate purchases or infer hidden stat effects.
 
-No recommendation engine is enabled yet; the `IRecommendationEngine` interface preserves an explainable, local-only next step.
+## F10 advice
+
+Press F9 to capture and accept the shop, then F10 to ask the local model for one suggested move. The Advice tab shows the move, its reason, the tactical goal, its expected result, and a conditional next step. F10 uses the latest accepted capture without taking another screenshot or changing game focus. After making a move yourself, use F9 and F10 again. A new capture cancels pending advice; repeated F10 presses during inference are ignored.
+
+Advice combines the accepted prices, stats, rarity odds and board slots with locally bundled abilities, trainer effects, mechanics and composition evidence. Backpack contents, sale values, merge progress and run eligibility remain unknown when they are absent from the capture; affected moves are excluded and pool-dependent odds are estimates. Browsing filters do not change the captured run state. Previous advice is not treated as an action you performed.
+
+Install Ollama and pull `qwen3.5:9b-q4_K_M`; localhost port 11434, 16K context and a 90-second timeout are the defaults. Model settings remain editable in the helper. There are no approval controls, game input adapters, background polling or automatic battle/result handling. F8 visibility, F9 capture, F10 advice and F11 fullscreen remain available.
+
+Thinking mode reserves up to 4096 generated tokens for reasoning and the final JSON. If the reply reaches its output limit, the single repair requests an answer with thinking disabled and a 2048-token limit. Citation and lookup IDs are constrained to the local catalog and reference bundle. Requests, final replies, finish reasons, token counts and validation failures are saved in `%LOCALAPPDATA%\BatomonHelper\shopping-journal`; private thinking traces are not saved. The UI reports the actual validation error if repair fails.

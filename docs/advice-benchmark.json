@@ -1,0 +1,92 @@
+{
+  "measuredAt": "2026-10-06T20:27:04.0027952+00:00",
+  "settings": {
+    "Endpoint": "http://127.0.0.1:11434",
+    "Model": "qwen3.5:9b-q4_K_M",
+    "ContextTokens": 16384,
+    "TimeoutSeconds": 90,
+    "Thinking": false
+  },
+  "gameRunning": true,
+  "measurements": [
+    {
+      "fixture": "tests/BatomonHelper.Tests/Fixtures/board-day1.png",
+      "elapsedMilliseconds": 7312.2375,
+      "decision": {
+        "Revision": "1A9F287AED51E69D0AEDD37854521D4F396356EF9E7148EF1354CD21A8E54AD6",
+        "Action": {
+          "Id": "BuyCreature:Shop:1:Team:0:",
+          "Kind": 0,
+          "Label": "Buy Scorchimp into Team 1",
+          "Source": {
+            "Area": 2,
+            "Index": 1
+          },
+          "Target": {
+            "Area": 0,
+            "Index": 0
+          },
+          "Cost": 10,
+          "Locked": null,
+          "ExpectedResult": "Offer disappears, gold changes by the captured price, and the purchased creature occupies the target.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Scorchimp is the cheapest starter (10g) with a burn effect that synergizes with Magmite\u0027s shield, providing balanced offense and defense for early survival.",
+        "Objective": "Buy Scorchimp into Team 1 to secure an affordable damage source and burn utility.",
+        "References": [
+          "scorchimp",
+          "cake"
+        ],
+        "InferenceMilliseconds": 5909.5229,
+        "NextStep": "If gold allows, purchase the free Cake (c040) next to boost team damage; otherwise, save gold or reroll if a higher-value creature appears."
+      },
+      "candidateCount": 44,
+      "contextSections": {
+        "state": 3086,
+        "goal": 127,
+        "stateLegend": 371,
+        "objective": 4,
+        "legalActions": 5687,
+        "actionRules": 932,
+        "probabilities": 5341,
+        "probabilitiesEstimated": 4,
+        "probabilityNote": 168,
+        "trainer": 207,
+        "creatures": 4311,
+        "creatureIndexColumns": 13,
+        "creatureIndex": 3596,
+        "items": 139,
+        "lookupNote": 153,
+        "trinkets": 2,
+        "knowledgeVersion": 96,
+        "references": 11604,
+        "referenceSourceBase": 22,
+        "referenceIndex": 1177,
+        "recentActions": 2
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 37373,
+          "PromptTokens": 11660,
+          "ElapsedMilliseconds": 5907.3163
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/06 23:26:58.133, 9419, 12288, 32",
+        "2026/10/06 23:26:58.690, 9419, 12288, 100",
+        "2026/10/06 23:26:59.249, 9419, 12288, 100",
+        "2026/10/06 23:26:59.810, 9419, 12288, 99",
+        "2026/10/06 23:27:00.366, 9419, 12288, 100",
+        "2026/10/06 23:27:00.924, 9419, 12288, 100",
+        "2026/10/06 23:27:01.485, 9413, 12288, 100",
+        "2026/10/06 23:27:02.042, 9418, 12288, 99",
+        "2026/10/06 23:27:02.602, 9419, 12288, 84",
+        "2026/10/06 23:27:03.158, 9419, 12288, 89",
+        "2026/10/06 23:27:03.718, 9419, 12288, 66"
+      ]
+    }
+  ]
+}
