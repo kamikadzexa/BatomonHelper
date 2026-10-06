@@ -72,7 +72,15 @@ internal sealed class SpriteMatcher
         var box = PixelImage.Bounds(dark, image.Width, image.Height);
         if (box.IsEmpty) return new(null, SlotOccupancy.Unknown, ShinyState.Unknown, 0, 0, false, []);
         var foreground = image.Crop(box);
-        var colored = foreground.Mask(c => Math.Max(c.R, Math.Max(c.G, c.B)) - Math.Min(c.R, Math.Min(c.G, c.B)) > 35).Count(value => value);
+        var colored = 0;
+        for (var y = 0; y < foreground.Height; y++) for (var x = 0; x < foreground.Width; x++)
+        {
+            // Shop lock icons and level labels keep their color on grayscale offers.
+            var ix = box.X + x; var iy = box.Y + y;
+            if (iy < image.Height * .45 && (ix < image.Width * .45 || ix > image.Width * .60)) continue;
+            var c = foreground.At(x, y);
+            if (Math.Max(c.R, Math.Max(c.G, c.B)) - Math.Min(c.R, Math.Min(c.G, c.B)) > 35) colored++;
+        }
         var grayscale = colored < foreground.Width * foreground.Height * .015;
         var offsets = new int[17 * 3 * 48 * 48];
         for (var dy = -6; dy <= 10; dy++) for (var dx = -1; dx <= 1; dx++) for (var y = 0; y < 48; y++) for (var x = 0; x < 48; x++)

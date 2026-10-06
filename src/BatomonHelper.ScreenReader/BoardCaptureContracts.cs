@@ -41,8 +41,10 @@ public static class BoardLayout
     public static readonly NormalizedRect[] Bench = [R(524, 212, 199, 156), R(754, 212, 199, 156), R(984, 212, 199, 156), R(1214, 212, 199, 156)];
     public static readonly NormalizedRect[] Shop = [R(411, 933, 223, 145), R(661, 933, 223, 145), R(910, 933, 223, 145), R(1160, 933, 223, 145), R(1409, 933, 223, 145)];
     public static NormalizedRect Sprite(NormalizedRect slot, bool shop) => slot with { Height = slot.Height - .023 };
-    public static NormalizedRect Badges(NormalizedRect slot, bool shop) => slot with { Y = slot.Y + slot.Height - .023, Height = .023 };
+    public static NormalizedRect Badges(NormalizedRect slot, bool shop) => slot with { Y = slot.Y + slot.Height - .023, Height = .031 };
     public static NormalizedRect Level(NormalizedRect slot) => new(slot.X + 60d / 2048, slot.Y, 18d / 2048, 25d / 1152);
+    public static NormalizedRect ShopLevelHeader(NormalizedRect slot) => new(slot.X + 8d / 2048, slot.Y + 8d / 1152, 35d / 2048, 32d / 1152);
+    public static NormalizedRect ShopLevel(NormalizedRect slot) => new(slot.X + 62d / 2048, slot.Y + 8d / 1152, 24d / 2048, 32d / 1152);
     public static NormalizedRect Price(NormalizedRect slot) => new(slot.X + slot.Width - .025, .940, .025, .028);
     public static NormalizedRect Name(NormalizedRect slot) => new(slot.X, .937, slot.Width - .026, .037);
 }

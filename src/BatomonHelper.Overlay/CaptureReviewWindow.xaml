@@ -40,7 +40,7 @@
               <StackPanel>
                 <TextBlock Foreground="#B7C7D9" FontSize="13" FontWeight="SemiBold" Text="{Binding DisplayName}" />
                 <Image Source="{Binding Crop}" MaxHeight="85" Stretch="Uniform" HorizontalAlignment="Left" Margin="0,6" />
-                <ComboBox IsEditable="True" ItemsSource="{Binding CandidateLabels}" Text="{Binding DisplayValue, UpdateSourceTrigger=PropertyChanged}" FontSize="20" Padding="5" Foreground="#10202E" />
+                <ComboBox Style="{StaticResource DarkComboBox}" IsEditable="True" ItemsSource="{Binding CandidateLabels}" Text="{Binding DisplayValue, UpdateSourceTrigger=PropertyChanged}" FontSize="20" Padding="5" />
                 <TextBlock Text="{Binding Diagnostic}" TextWrapping="Wrap" Foreground="#FFCE79" Margin="0,5,0,0" />
                 <Button Style="{StaticResource ReviewButton}" Content="Add visible badge" Command="{Binding AddBadgeCommand}" Visibility="{Binding AddBadgeVisibility}" Margin="0,8,0,0" />
               </StackPanel>

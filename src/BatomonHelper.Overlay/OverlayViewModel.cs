@@ -86,6 +86,8 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     public RarityFilterOption SelectedItemRarityFilter { get => _selectedItemRarityFilter; set { if (Set(ref _selectedItemRarityFilter, value)) RefreshItemRows(); } }
     public RarityFilterOption SelectedTrinketRarityFilter { get => _selectedTrinketRarityFilter; set { if (Set(ref _selectedTrinketRarityFilter, value)) RefreshTrinketRows(); } }
     public string CreatureCount => $"{CreatureRows.Count} creatures";
+    public string CatalogVersionText => $"Wiki {_catalog.WikiVersion ?? "snapshot"} · build {_catalog.DeclaredSteamBuild} · Balance {_catalog.Balance ?? "unknown"}" +
+        (_catalog.ReferencePatchVersion is null ? "" : $" · reference patch {_catalog.ReferencePatchVersion}");
     public string ItemCount => $"{ItemRows.Count} items";
     public string TrinketCount => $"{TrinketRows.Count} trinkets";
     public string RankLabel => _snapshot is null ? "Rank —" : $"Rank {_snapshot.ShopRank}";
@@ -104,6 +106,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
                 return;
             }
             RefreshCreatureRows();
+            OnPropertyChanged(nameof(CatalogVersionText));
             RefreshItemRows();
             RefreshTrinketRows();
             ResetManualState();
@@ -249,7 +252,9 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         {
             _oddsByMonster.TryGetValue(monster.Id, out var odds);
             var sprite = monster.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, monster.SpritePath.Replace('/', Path.DirectorySeparatorChar));
-            CreatureRows.Add(new(monster.Id, monster.Name, DisplayRarity(monster.Rarity), (int)monster.Rarity, string.Join(", ", monster.Regions.OrderBy(region => region)), odds?.PerBatomonRoll, odds?.NextShopChance, sprite, _levelThreeCreatureIds.Contains(monster.Id), SetCreatureLevelThree));
+            var reference = string.Join("\n", monster.ReferenceValues.Select(value => $"{value.Key}: {value.Value}"));
+            if (!monster.ReferenceNotes.IsEmpty) reference += "\n\n" + string.Join("\n", monster.ReferenceNotes) + "\n" + _catalog.SourceUrls.LastOrDefault();
+            CreatureRows.Add(new(monster.Id, monster.Name, DisplayRarity(monster.Rarity), (int)monster.Rarity, string.Join(", ", monster.Regions.OrderBy(region => region)), odds?.PerBatomonRoll, odds?.NextShopChance, sprite, _levelThreeCreatureIds.Contains(monster.Id), SetCreatureLevelThree, reference));
         }
         OnPropertyChanged(nameof(CreatureCount));
     }
@@ -363,7 +368,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-public sealed class CreatureBrowserRow(string id, string name, string rarity, int rarityOrder, string regions, decimal? perRoll, decimal? nextShop, string? spritePath, bool isLevelThree, Action<string, bool> levelThreeChanged) : INotifyPropertyChanged
+public sealed class CreatureBrowserRow(string id, string name, string rarity, int rarityOrder, string regions, decimal? perRoll, decimal? nextShop, string? spritePath, bool isLevelThree, Action<string, bool> levelThreeChanged, string referenceTooltip = "") : INotifyPropertyChanged
 {
     private bool _isLevelThree = isLevelThree;
     private readonly Action<string, bool> _levelThreeChanged = levelThreeChanged;
@@ -373,6 +378,7 @@ public sealed class CreatureBrowserRow(string id, string name, string rarity, in
     public string Rarity { get; } = rarity;
     public int RarityOrder { get; } = rarityOrder;
     public string Regions { get; } = regions;
+    public string ReferenceTooltip { get; } = referenceTooltip;
     public decimal PerRollValue { get; } = perRoll ?? -1m;
     public decimal NextShopValue { get; } = nextShop ?? -1m;
     public string PerRoll => perRoll?.ToString("P2") ?? "—";

@@ -156,12 +156,26 @@ public sealed class WindowsBoardScreenReader : IBoardScreenReader
         {
             var crop = source.Crop(region); var hash = crop.Fingerprint();
             if (_cache.TryGetValue(name, out var cached) && cached.Hash == hash) { _cacheHits++; return cached.Field with { Region = region }; }
+            if (name.Contains(".Stats[", StringComparison.Ordinal)) crop = BadgeDetector.IsolateDigits(crop);
             var family = name == "ShopRank" ? "rank" : name == "TeamHp" ? "hp" : name is "Day" or "Lives" or "Wins" or "Gold" or "ItemUses" ? "hud" : null;
             var read = _digits.Read(crop, palette, family);
-            if (palette == "level") read = new[] { read, _digits.Read(crop, "silver"), _digits.Read(crop, family: "level") }.MaxBy(entry => entry.Confidence);
+            if (palette == "level")
+            {
+                // White sparkle strokes beside a shiny creature are not a level digit.
+                // Select the actual level palette by ink coverage, not whichever
+                // isolated decoration happens to score best against a glyph.
+                var colorInk = crop.Mask(c => PixelDigits.Ink(c, "level")).Count(value => value);
+                var silverInk = crop.Mask(c => PixelDigits.Ink(c, "silver")).Count(value => value);
+                if (silverInk > colorInk) read = _digits.Read(crop, "silver");
+            }
             var raw = read.Text; var confidence = read.Confidence;
             // Windows OCR exposes no confidence score. Its fallback remains a reviewable proposal.
-            if (confidence < .80 || raw.Length == 0) { raw = await Ocr(crop, palette); confidence = string.IsNullOrWhiteSpace(raw) ? 0 : .70; }
+            if (confidence < .80 || raw.Length == 0)
+            {
+                var proposal = await Ocr(crop, palette);
+                raw = string.IsNullOrWhiteSpace(proposal) ? read.Text : proposal;
+                confidence = string.IsNullOrWhiteSpace(proposal) ? 0 : .70;
+            }
             if (name == "ShopRank" && !Regex.IsMatch(raw, @"\d"))
             {
                 raw = await Ocr(source.Crop(new NormalizedRect(465d / 2048, 870d / 1152, 28d / 2048, 31d / 1152)), palette);
@@ -170,7 +184,9 @@ public sealed class WindowsBoardScreenReader : IBoardScreenReader
                 // automatically and must never become a rank-table substitute for the ribbon.
                 if (string.IsNullOrWhiteSpace(raw)) raw = read.Text;
             }
-            var entry = new RecognizedField(name, raw.Replace('O', '0').Replace('o', '0'), confidence, confidence >= .80, [new(read.Text, read.Confidence), new(raw, confidence)], confidence < .80 ? "Unresolved numeric glyphs." : null) { Region = region };
+            var entry = new RecognizedField(name, raw.Replace('O', '0').Replace('o', '0'), confidence, confidence >= .80,
+                read.Candidates.Append(new(raw, confidence)).Where(candidate => !string.IsNullOrWhiteSpace(candidate.Value))
+                    .DistinctBy(candidate => candidate.Value).ToImmutableArray(), confidence < .80 ? "Unresolved numeric glyphs." : null) { Region = region };
             _cache[name] = (hash, entry); return entry;
         }
         async Task<RecognizedField> CachedText(string name, NormalizedRect region)
@@ -238,7 +254,7 @@ public sealed class WindowsBoardScreenReader : IBoardScreenReader
                 if (isShop && kind != SlotOccupancy.Empty && (kind == SlotOccupancy.Unknown || match.Score < .90))
                 {
                     var name = await CachedText(prefix + ".Name", BoardLayout.Name(region));
-                    var monsters = catalog.Monsters.Where(entry => NormalizeName(entry.Name) == NormalizeName(name.Value)).ToArray();
+                    var monsters = catalog.Monsters.Where(entry => CreatureNames.Matches(entry, name.Value)).ToArray();
                     var items = catalog.Items.Where(entry => NormalizeName(entry.Name) == NormalizeName(name.Value)).ToArray();
                     // Text alone cannot resolve a mismatching sprite or its shiny status.
                     if (monsters.Length == 1 && monsters[0].Id == match.Id && match.Score >= .76) { kind = SlotOccupancy.Creature; id = match.Id; }
@@ -256,6 +272,16 @@ public sealed class WindowsBoardScreenReader : IBoardScreenReader
                         var levelRegion = BoardLayout.Level(region);
                         level = await Number(prefix + ".Level", levelRegion, 1, 4, "level");
                     }
+                    else
+                    {
+                        var header = BoardLayout.ShopLevelHeader(region);
+                        // An absent level label has no implied level. Its outlined LV prefix
+                        // establishes visibility independently of the level digit's palette.
+                        var label = source.Crop(header);
+                        var ink = label.Mask(c => c.R < 65 && c.G < 65 && c.B < 65).Count(value => value);
+                        if (ink > label.Width * label.Height * .15)
+                            level = await Number(prefix + ".Level", BoardLayout.ShopLevel(region), 1, 4, "level");
+                    }
                     stats = await Badges(prefix, BoardLayout.Badges(region, isShop));
                 }
                 if (isShop && kind != SlotOccupancy.Empty) price = await Number(prefix + ".Price", BoardLayout.Price(region), 0, 9999, "price");
@@ -269,56 +295,14 @@ public sealed class WindowsBoardScreenReader : IBoardScreenReader
             var crop = source.Crop(region); var hash = crop.Fingerprint();
             if (_badgeCache.TryGetValue(prefix, out var cached) && cached.Hash == hash) { fields.AddRange(cached.Fields); _cacheHits++; return cached.Stats; }
             var firstField = fields.Count; var stats = ImmutableArray.CreateBuilder<VisibleStat>();
-            // Read the white digit cores first; the surrounding face establishes the badge's type.
-            // Looking only for uninterrupted face colors clips digits which cover most of a badge.
-            var radius = Math.Max(2, (int)Math.Ceiling(source.Width / 640d * 2));
-            var white = crop.Mask(c => Math.Min(c.R, Math.Min(c.G, c.B)) >= 235);
-            var numeric = new bool[white.Length]; var pending = new Queue<int>(); var component = new List<int>();
-            // White slot corners are connected to the panel background. Digit cores are small,
-            // separate components below the top of the badge band.
-            for (var seed = 0; seed < white.Length; seed++)
+            foreach (var badge in BadgeDetector.Find(crop, source.Width / 640d))
             {
-                if (!white[seed]) continue;
-                pending.Enqueue(seed); white[seed] = false; component.Clear();
-                int left = crop.Width, right = -1, top = crop.Height, bottom = -1;
-                while (pending.TryDequeue(out var position))
-                {
-                    var x = position % crop.Width; var y = position / crop.Width; component.Add(position);
-                    left = Math.Min(left, x); right = Math.Max(right, x); top = Math.Min(top, y); bottom = Math.Max(bottom, y);
-                    Visit(x > 0 ? position - 1 : -1); Visit(x + 1 < crop.Width ? position + 1 : -1);
-                    Visit(y > 0 ? position - crop.Width : -1); Visit(y + 1 < crop.Height ? position + crop.Width : -1);
-                    Visit(x > 0 && y > 0 ? position - crop.Width - 1 : -1); Visit(x + 1 < crop.Width && y > 0 ? position - crop.Width + 1 : -1);
-                    Visit(x > 0 && y + 1 < crop.Height ? position + crop.Width - 1 : -1); Visit(x + 1 < crop.Width && y + 1 < crop.Height ? position + crop.Width + 1 : -1);
-                }
-                if (top >= crop.Height * .10 && bottom - top >= crop.Height * .45 && right - left < crop.Width * .25)
-                    foreach (var position in component) numeric[position] = true;
-                void Visit(int position) { if (position >= 0 && white[position]) { white[position] = false; pending.Enqueue(position); } }
-            }
-            var runs = new List<(int Left, int Right)>(); int begin = -1;
-            for (var x = 0; x <= crop.Width; x++)
-            {
-                var used = x < crop.Width && Enumerable.Range(0, crop.Height).Any(y => numeric[y * crop.Width + x]);
-                if (used && begin < 0) begin = x;
-                if (!used && begin >= 0)
-                {
-                    if (runs.Count > 0 && begin - runs[^1].Right <= crop.Height * .35) runs[^1] = (runs[^1].Left, x);
-                    else runs.Add((begin, x));
-                    begin = -1;
-                }
-            }
-            foreach (var run in runs)
-            {
-                var top = crop.Height; var bottom = -1;
-                for (var x = run.Left; x < run.Right; x++) for (var y = 0; y < crop.Height; y++) if (numeric[y * crop.Width + x]) { top = Math.Min(top, y); bottom = Math.Max(bottom, y); }
-                if (bottom - top < crop.Height * .30) continue;
-                var surround = Rectangle.FromLTRB(Math.Max(0, run.Left - radius), Math.Max(0, top - radius), Math.Min(crop.Width, run.Right + radius), Math.Min(crop.Height, bottom + radius + 1));
-                var colors = new List<VisibleStatKind>();
-                for (var y = surround.Top; y < surround.Bottom; y++) for (var x = surround.Left; x < surround.Right; x++) { var kind = BadgeKind(crop.At(x, y)); if (kind != VisibleStatKind.Unknown) colors.Add(kind); }
-                var statKind = colors.GroupBy(kind => kind).MaxBy(group => group.Count())?.Key ?? VisibleStatKind.Unknown;
-                var absolute = new NormalizedRect(region.X + run.Left / (double)source.Width, region.Y + top / (double)source.Height, (run.Right - run.Left) / (double)source.Width, (bottom - top + 1) / (double)source.Height);
+                var absolute = new NormalizedRect(region.X + badge.Bounds.X / (double)source.Width,
+                    region.Y + badge.Bounds.Y / (double)source.Height, badge.Bounds.Width / (double)source.Width,
+                    badge.Bounds.Height / (double)source.Height);
                 var value = await Number($"{prefix}.Stats[{stats.Count}].Value", absolute, 0, 9_999_999);
-                fields.Add(new($"{prefix}.Stats[{stats.Count}].Kind", statKind.ToString(), .95, statKind != VisibleStatKind.Unknown, []) { Region = absolute });
-                stats.Add(new(statKind, value));
+                fields.Add(new($"{prefix}.Stats[{stats.Count}].Kind", badge.Kind.ToString(), .95, true, []) { Region = absolute });
+                stats.Add(new(badge.Kind, value));
             }
             // Distinguish a visibly absent badge from an unread or occluded badge, never substitute zero.
             if (stats.Count == 0)
@@ -340,9 +324,9 @@ public sealed class WindowsBoardScreenReader : IBoardScreenReader
         { _ocrCalls++; var elapsed = Stopwatch.StartNew(); var text = await _ocr.ReadAsync(crop, cancellationToken, palette); _ocrMilliseconds += elapsed.Elapsed.TotalMilliseconds; return text; }
     }
     private static string NormalizeName(string text) => Regex.Replace(text.ToLowerInvariant(), "[^a-z0-9?]", "");
-    private static VisibleStatKind BadgeKind(Color c)
+    internal static VisibleStatKind BadgeKind(Color c)
     {
-        if (Distance(c, 239, 66, 107) < 45) return VisibleStatKind.Damage;
+        if (Distance(c, 239, 66, 107) < 45 || (c.R > 220 && c.G is > 45 and < 135 && c.B is > 80 and < 180)) return VisibleStatKind.Damage;
         if (Distance(c, 248, 144, 40) < 45) return VisibleStatKind.Burn;
         if (c.R > 220 && c.G > 190 && c.B < 110) return VisibleStatKind.Shock;
         if (Distance(c, 33, 140, 165) < 35 || Distance(c, 63, 172, 191) < 35) return VisibleStatKind.Multicast;

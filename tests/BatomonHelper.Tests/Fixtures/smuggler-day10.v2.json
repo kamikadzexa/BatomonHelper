@@ -1,0 +1,3094 @@
+{
+  "Version": 2,
+  "CapturedAt": "2026-10-06T16:51:15.0038813+00:00",
+  "Accepted": true,
+  "Result": {
+    "Snapshot": {
+      "TrainerId": "smuggler",
+      "Day": 10,
+      "Lives": 1,
+      "Wins": 5,
+      "WinTarget": 10,
+      "TeamHp": 17300,
+      "Gold": 31,
+      "ShopRank": 11,
+      "RarityOdds": [
+        {
+          "Rarity": 0,
+          "Probability": 0.1
+        },
+        {
+          "Rarity": 1,
+          "Probability": 0.2
+        },
+        {
+          "Rarity": 2,
+          "Probability": 0.35
+        },
+        {
+          "Rarity": 3,
+          "Probability": 0.25
+        },
+        {
+          "Rarity": 4,
+          "Probability": 0.1
+        }
+      ],
+      "RerollCost": null,
+      "FreeRerolls": 7,
+      "ItemUsesRemaining": null,
+      "ItemUsesMaximum": null,
+      "ItemUsesCounterVisible": false,
+      "ShopLocked": true,
+      "Team": [
+        {
+          "Index": 0,
+          "Occupancy": 1,
+          "DefinitionId": "galvanine",
+          "Variant": 0,
+          "Level": 1,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": 12
+            },
+            {
+              "Kind": 5,
+              "Value": 6
+            }
+          ],
+          "Price": null,
+          "Affordable": null
+        },
+        {
+          "Index": 1,
+          "Occupancy": 1,
+          "DefinitionId": "humbolt",
+          "Variant": 0,
+          "Level": 3,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": null
+            },
+            {
+              "Kind": 5,
+              "Value": 7
+            },
+            {
+              "Kind": 7,
+              "Value": 4
+            }
+          ],
+          "Price": null,
+          "Affordable": null
+        },
+        {
+          "Index": 2,
+          "Occupancy": 1,
+          "DefinitionId": "pylong",
+          "Variant": 0,
+          "Level": 1,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": 1
+            },
+            {
+              "Kind": 5,
+              "Value": 15
+            }
+          ],
+          "Price": null,
+          "Affordable": null
+        },
+        {
+          "Index": 3,
+          "Occupancy": 1,
+          "DefinitionId": "plunderbird",
+          "Variant": 1,
+          "Level": 3,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": null
+            },
+            {
+              "Kind": 1,
+              "Value": null
+            },
+            {
+              "Kind": 7,
+              "Value": 5
+            }
+          ],
+          "Price": null,
+          "Affordable": null
+        },
+        {
+          "Index": 4,
+          "Occupancy": 1,
+          "DefinitionId": "ironcore",
+          "Variant": 0,
+          "Level": 2,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": 30
+            }
+          ],
+          "Price": null,
+          "Affordable": null
+        },
+        {
+          "Index": 5,
+          "Occupancy": 1,
+          "DefinitionId": "clawnetic",
+          "Variant": 0,
+          "Level": 1,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": null
+            }
+          ],
+          "Price": null,
+          "Affordable": null
+        }
+      ],
+      "Bench": [
+        {
+          "Index": 0,
+          "Occupancy": 0,
+          "DefinitionId": null,
+          "Variant": 2,
+          "Level": null,
+          "Stats": [],
+          "Price": null,
+          "Affordable": null
+        },
+        {
+          "Index": 1,
+          "Occupancy": 1,
+          "DefinitionId": "pylong",
+          "Variant": 0,
+          "Level": 1,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": 1
+            },
+            {
+              "Kind": 5,
+              "Value": 16
+            }
+          ],
+          "Price": null,
+          "Affordable": null
+        },
+        {
+          "Index": 2,
+          "Occupancy": 0,
+          "DefinitionId": null,
+          "Variant": 2,
+          "Level": null,
+          "Stats": [],
+          "Price": null,
+          "Affordable": null
+        },
+        {
+          "Index": 3,
+          "Occupancy": 0,
+          "DefinitionId": null,
+          "Variant": 2,
+          "Level": null,
+          "Stats": [],
+          "Price": null,
+          "Affordable": null
+        }
+      ],
+      "Shop": [
+        {
+          "Index": 0,
+          "Occupancy": 1,
+          "DefinitionId": "zephyrex",
+          "Variant": 2,
+          "Level": null,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": null
+            }
+          ],
+          "Price": 60,
+          "Affordable": false
+        },
+        {
+          "Index": 1,
+          "Occupancy": 1,
+          "DefinitionId": "prismagon",
+          "Variant": 2,
+          "Level": null,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": null
+            }
+          ],
+          "Price": 45,
+          "Affordable": false
+        },
+        {
+          "Index": 2,
+          "Occupancy": 1,
+          "DefinitionId": "brawlmantis",
+          "Variant": 0,
+          "Level": null,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": null
+            }
+          ],
+          "Price": 30,
+          "Affordable": true
+        },
+        {
+          "Index": 3,
+          "Occupancy": 1,
+          "DefinitionId": "ninflora",
+          "Variant": 2,
+          "Level": null,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": 50
+            }
+          ],
+          "Price": 32,
+          "Affordable": false
+        },
+        {
+          "Index": 4,
+          "Occupancy": 1,
+          "DefinitionId": "pylong",
+          "Variant": 0,
+          "Level": null,
+          "Stats": [
+            {
+              "Kind": 0,
+              "Value": 1
+            },
+            {
+              "Kind": 5,
+              "Value": 15
+            }
+          ],
+          "Price": 40,
+          "Affordable": false
+        }
+      ],
+      "CapturedAt": "2026-10-06T16:50:43.8974519+00:00",
+      "RegionFilter": 0
+    },
+    "Frame": null,
+    "Fields": [
+      {
+        "Name": "TrainerId",
+        "Value": "smuggler",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "smuggler",
+            "Confidence": 0.9307228836758461
+          },
+          {
+            "Value": "mysterious-trainer",
+            "Confidence": 0.7555005802944174
+          },
+          {
+            "Value": "gamer",
+            "Confidence": 0.7540681961934277
+          },
+          {
+            "Value": "",
+            "Confidence": 0.85
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.01416015625,
+          "Y": 0.1831597222222222,
+          "Width": 0.18896484375,
+          "Height": 0.21875
+        }
+      },
+      {
+        "Name": "Day",
+        "Value": "10",
+        "Confidence": 0.9649130603362608,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "10",
+            "Confidence": 0.9649130603362608
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.419921875,
+          "Y": 0.015625,
+          "Width": 0.16552734375,
+          "Height": 0.06597222222222222
+        }
+      },
+      {
+        "Name": "Lives",
+        "Value": "1",
+        "Confidence": 0.9711801022188882,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "1",
+            "Confidence": 0.9711801022188882
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.3642578125,
+          "Y": 0.027777777777777776,
+          "Width": 0.0341796875,
+          "Height": 0.052083333333333336
+        }
+      },
+      {
+        "Name": "Wins",
+        "Value": "5",
+        "Confidence": 0.9310126963730853,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "5/10",
+            "Confidence": 0.9310126963730853
+          },
+          {
+            "Value": "5/10",
+            "Confidence": 0.9310126963730853
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.634765625,
+          "Y": 0.026909722222222224,
+          "Width": 0.1025390625,
+          "Height": 0.051215277777777776
+        }
+      },
+      {
+        "Name": "WinTarget",
+        "Value": "10",
+        "Confidence": 0.9310126963730853,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "5/10",
+            "Confidence": 0.9310126963730853
+          },
+          {
+            "Value": "5/10",
+            "Confidence": 0.9310126963730853
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.634765625,
+          "Y": 0.026909722222222224,
+          "Width": 0.1025390625,
+          "Height": 0.051215277777777776
+        }
+      },
+      {
+        "Name": "TeamHp",
+        "Value": "17300",
+        "Confidence": 0.9056714877347772,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "17300",
+            "Confidence": 0.9056714877347772
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.0537109375,
+          "Y": 0.6848958333333334,
+          "Width": 0.15087890625,
+          "Height": 0.030381944444444444
+        }
+      },
+      {
+        "Name": "Gold",
+        "Value": "31",
+        "Confidence": 0.9096565385866525,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "31",
+            "Confidence": 0.9096565385866525
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4658203125,
+          "Y": 0.7569444444444444,
+          "Width": 0.0673828125,
+          "Height": 0.03819444444444445
+        }
+      },
+      {
+        "Name": "ShopRank",
+        "Value": "11",
+        "Confidence": 0.9999949998749958,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "11",
+            "Confidence": 0.9999949998749958
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.20068359375,
+          "Y": 0.7552083333333334,
+          "Width": 0.0400390625,
+          "Height": 0.026909722222222224
+        }
+      },
+      {
+        "Name": "CommonOdds",
+        "Value": "10",
+        "Confidence": 0.9999883326527248,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "10",
+            "Confidence": 0.9999883326527248
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.25439453125,
+          "Y": 0.7552083333333334,
+          "Width": 0.0263671875,
+          "Height": 0.026909722222222224
+        }
+      },
+      {
+        "Name": "UncommonOdds",
+        "Value": "20",
+        "Confidence": 0.9999954546487572,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "20",
+            "Confidence": 0.9999954546487572
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.29150390625,
+          "Y": 0.7552083333333334,
+          "Width": 0.02294921875,
+          "Height": 0.026909722222222224
+        }
+      },
+      {
+        "Name": "RareOdds",
+        "Value": "35",
+        "Confidence": 0.9999875007811849,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "35",
+            "Confidence": 0.9999875007811849
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.328125,
+          "Y": 0.7552083333333334,
+          "Width": 0.02294921875,
+          "Height": 0.026909722222222224
+        }
+      },
+      {
+        "Name": "SuperRareOdds",
+        "Value": "25",
+        "Confidence": 0.9999875007811849,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "25",
+            "Confidence": 0.9999875007811849
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.3662109375,
+          "Y": 0.7552083333333334,
+          "Width": 0.02294921875,
+          "Height": 0.026909722222222224
+        }
+      },
+      {
+        "Name": "LegendaryOdds",
+        "Value": "10",
+        "Confidence": 0.9999883326527248,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "10",
+            "Confidence": 0.9999883326527248
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.40380859375,
+          "Y": 0.7552083333333334,
+          "Width": 0.02294921875,
+          "Height": 0.026909722222222224
+        }
+      },
+      {
+        "Name": "RerollMode",
+        "Value": "Free",
+        "Confidence": 0.9,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Free",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Paid",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.00830078125,
+          "Y": 0.9157986111111112,
+          "Width": 0.146484375,
+          "Height": 0.05295138888888889
+        }
+      },
+      {
+        "Name": "RerollCount",
+        "Value": "7",
+        "Confidence": 0.9328839909072703,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.1025390625,
+          "Y": 0.9157986111111112,
+          "Width": 0.0361328125,
+          "Height": 0.042534722222222224
+        }
+      },
+      {
+        "Name": "ShopLocked",
+        "Value": "True",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.72265625,
+          "Y": 0.7465277777777778,
+          "Width": 0.0703125,
+          "Height": 0.035590277777777776
+        }
+      },
+      {
+        "Name": "Team[0].Occupant",
+        "Value": "monster:galvanine",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:galvanine",
+            "Confidence": 1
+          },
+          {
+            "Value": "monster:cicadence",
+            "Confidence": 0.7821589711153278
+          },
+          {
+            "Value": "item:nana-berry",
+            "Confidence": 0.7810104221868928
+          },
+          {
+            "Value": "monster:scorbble",
+            "Confidence": 0.7807038712921066
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.31689453125,
+          "Y": 0.4123263888888889,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[0].Variant",
+        "Value": "Normal",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.31689453125,
+          "Y": 0.4123263888888889,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[0].Level",
+        "Value": "1",
+        "Confidence": 0.9104906917397921,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "1",
+            "Confidence": 0.9104906917397921
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.34619140625,
+          "Y": 0.4123263888888889,
+          "Width": 0.0087890625,
+          "Height": 0.021701388888888888
+        }
+      },
+      {
+        "Name": "Team[0].Stats[0].Value",
+        "Value": "12",
+        "Confidence": 0.9104906917397921,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "12",
+            "Confidence": 0.9104906917397921
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.34811885335353326,
+          "Y": 0.532047657454752,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[0].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.34811885335353326,
+          "Y": 0.532047657454752,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[0].Stats[1].Value",
+        "Value": "6",
+        "Confidence": 0.9662248372279116,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "6",
+            "Confidence": 0.9662248372279116
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.374413019335456,
+          "Y": 0.532047657454752,
+          "Width": 0.0049301561216105174,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[0].Stats[1].Kind",
+        "Value": "Shock",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.374413019335456,
+          "Y": 0.532047657454752,
+          "Width": 0.0049301561216105174,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[1].Occupant",
+        "Value": "monster:humbolt",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:humbolt",
+            "Confidence": 1
+          },
+          {
+            "Value": "item:battery-pack",
+            "Confidence": 0.7331715524493626
+          },
+          {
+            "Value": "item:black-sludge",
+            "Confidence": 0.7309516100017989
+          },
+          {
+            "Value": "monster:bunchop",
+            "Confidence": 0.7179125816993464
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4287109375,
+          "Y": 0.4123263888888889,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[1].Variant",
+        "Value": "Normal",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4287109375,
+          "Y": 0.4123263888888889,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[1].Level",
+        "Value": "3",
+        "Confidence": 0.9026781917397921,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "3",
+            "Confidence": 0.9026781917397921
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4580078125,
+          "Y": 0.4123263888888889,
+          "Width": 0.0087890625,
+          "Height": 0.021701388888888888
+        }
+      },
+      {
+        "Name": "Team[1].Stats[0].Value",
+        "Value": "",
+        "Confidence": 0,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "69",
+            "Confidence": 0
+          }
+        ],
+        "Diagnostic": "Read Team[1].Stats[0].Value.",
+        "Region": {
+          "X": 0.4496641010168447,
+          "Y": 0.532047657454752,
+          "Width": 0.009449465899753493,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[1].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4496641010168447,
+          "Y": 0.532047657454752,
+          "Width": 0.009449465899753493,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[1].Stats[1].Value",
+        "Value": "7",
+        "Confidence": 0.9000740250731255,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "7",
+            "Confidence": 0.9000740250731255
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4755474206552999,
+          "Y": 0.532047657454752,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[1].Stats[1].Kind",
+        "Value": "Shock",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4755474206552999,
+          "Y": 0.532047657454752,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[1].Stats[2].Value",
+        "Value": "4",
+        "Confidence": 0.9532040038945784,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "4",
+            "Confidence": 0.9532040038945784
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.49567889148520955,
+          "Y": 0.532047657454752,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[1].Stats[2].Kind",
+        "Value": "Multicast",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.49567889148520955,
+          "Y": 0.532047657454752,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[2].Occupant",
+        "Value": "monster:pylong",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:pylong",
+            "Confidence": 1
+          },
+          {
+            "Value": "item:green-ticket",
+            "Confidence": 0.7200632511068944
+          },
+          {
+            "Value": "monster:cairnage",
+            "Confidence": 0.7136082938922695
+          },
+          {
+            "Value": "monster:brawlmantis",
+            "Confidence": 0.7133095662507427
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.54052734375,
+          "Y": 0.4123263888888889,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[2].Variant",
+        "Value": "Normal",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.54052734375,
+          "Y": 0.4123263888888889,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[2].Level",
+        "Value": "1",
+        "Confidence": 0.9948706705612449,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "1",
+            "Confidence": 0.9948706705612449
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.56982421875,
+          "Y": 0.4123263888888889,
+          "Width": 0.0087890625,
+          "Height": 0.021701388888888888
+        }
+      },
+      {
+        "Name": "Team[2].Stats[0].Value",
+        "Value": "1",
+        "Confidence": 0.9104906917397921,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "1",
+            "Confidence": 0.9104906917397921
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.5758601292882087,
+          "Y": 0.532047657454752,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[2].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.5758601292882087,
+          "Y": 0.532047657454752,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[2].Stats[1].Value",
+        "Value": "15",
+        "Confidence": 0.9104906917397921,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "15",
+            "Confidence": 0.9104906917397921
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.5959916001181184,
+          "Y": 0.532047657454752,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[2].Stats[1].Kind",
+        "Value": "Shock",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.5959916001181184,
+          "Y": 0.532047657454752,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[3].Occupant",
+        "Value": "monster:plunderbird",
+        "Confidence": 0.9774089173623245,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:plunderbird",
+            "Confidence": 0.9774089173623245
+          },
+          {
+            "Value": "monster:nekoffin",
+            "Confidence": 0.71268720821662
+          },
+          {
+            "Value": "item:golden-gift",
+            "Confidence": 0.7121244942421413
+          },
+          {
+            "Value": "monster:ironcore",
+            "Confidence": 0.7115773420479303
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.31689453125,
+          "Y": 0.5737847222222222,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[3].Variant",
+        "Value": "Shiny",
+        "Confidence": 0.9774089173623245,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.31689453125,
+          "Y": 0.5737847222222222,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[3].Level",
+        "Value": "3",
+        "Confidence": 0.9026781917397921,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "3",
+            "Confidence": 0.9026781917397921
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.34619140625,
+          "Y": 0.5737847222222222,
+          "Width": 0.0087890625,
+          "Height": 0.021701388888888888
+        }
+      },
+      {
+        "Name": "Team[3].Stats[0].Value",
+        "Value": "",
+        "Confidence": 0,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "8",
+            "Confidence": 0
+          }
+        ],
+        "Diagnostic": "Read Team[3].Stats[0].Value.",
+        "Region": {
+          "X": 0.3394910801407149,
+          "Y": 0.6935059907880853,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[3].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.3394910801407149,
+          "Y": 0.6935059907880853,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[3].Stats[1].Value",
+        "Value": "",
+        "Confidence": 0,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "68",
+            "Confidence": 0
+          }
+        ],
+        "Diagnostic": "Read Team[3].Stats[1].Value.",
+        "Region": {
+          "X": 0.3596225509706245,
+          "Y": 0.6935059907880853,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[3].Stats[1].Kind",
+        "Value": "Heal",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.3596225509706245,
+          "Y": 0.6935059907880853,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[3].Stats[2].Value",
+        "Value": "5",
+        "Confidence": 0.9365323584064588,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "5",
+            "Confidence": 0.9365323584064588
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.38304079254827444,
+          "Y": 0.6935059907880853,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[3].Stats[2].Kind",
+        "Value": "Multicast",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.38304079254827444,
+          "Y": 0.6935059907880853,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[4].Occupant",
+        "Value": "monster:ironcore",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:ironcore",
+            "Confidence": 1
+          },
+          {
+            "Value": "monster:shellter",
+            "Confidence": 0.7596623093681917
+          },
+          {
+            "Value": "monster:magmite",
+            "Confidence": 0.7355471220746364
+          },
+          {
+            "Value": "monster:plunderbird",
+            "Confidence": 0.7339827113641155
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4287109375,
+          "Y": 0.5737847222222222,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[4].Variant",
+        "Value": "Normal",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4287109375,
+          "Y": 0.5737847222222222,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[4].Level",
+        "Value": "2",
+        "Confidence": 0.9156990250731255,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "2",
+            "Confidence": 0.9156990250731255
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4580078125,
+          "Y": 0.5737847222222222,
+          "Width": 0.0087890625,
+          "Height": 0.021701388888888888
+        }
+      },
+      {
+        "Name": "Team[4].Stats[0].Value",
+        "Value": "30",
+        "Confidence": 0.9662248372279116,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "30",
+            "Confidence": 0.9662248372279116
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.47226064990755956,
+          "Y": 0.6935059907880853,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[4].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.47226064990755956,
+          "Y": 0.6935059907880853,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[5].Occupant",
+        "Value": "monster:clawnetic",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:clawnetic",
+            "Confidence": 1
+          },
+          {
+            "Value": "monster:purple-egg",
+            "Confidence": 0.7556295771320577
+          },
+          {
+            "Value": "monster:dragon-egg-0",
+            "Confidence": 0.7555421484833249
+          },
+          {
+            "Value": "item:pom-berry",
+            "Confidence": 0.7530058331576358
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.54052734375,
+          "Y": 0.5737847222222222,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[5].Variant",
+        "Value": "Normal",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.54052734375,
+          "Y": 0.5737847222222222,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Team[5].Level",
+        "Value": "1",
+        "Confidence": 0.9948706705612449,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "1",
+            "Confidence": 0.9948706705612449
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.56982421875,
+          "Y": 0.5737847222222222,
+          "Width": 0.0087890625,
+          "Height": 0.021701388888888888
+        }
+      },
+      {
+        "Name": "Team[5].Stats[0].Value",
+        "Value": "",
+        "Confidence": 0,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "60",
+            "Confidence": 0
+          }
+        ],
+        "Diagnostic": "Read Team[5].Stats[0].Value.",
+        "Region": {
+          "X": 0.5844879025010271,
+          "Y": 0.6935059907880853,
+          "Width": 0.010682004930156122,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Team[5].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.5844879025010271,
+          "Y": 0.6935059907880853,
+          "Width": 0.010682004930156122,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Bench[0].Occupant",
+        "Value": "empty",
+        "Confidence": 0.98,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.255859375,
+          "Y": 0.1840277777777778,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Bench[1].Occupant",
+        "Value": "monster:pylong",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:pylong",
+            "Confidence": 1
+          },
+          {
+            "Value": "item:green-ticket",
+            "Confidence": 0.7177105508870215
+          },
+          {
+            "Value": "monster:celestia",
+            "Confidence": 0.7152435167615433
+          },
+          {
+            "Value": "monster:fumungus",
+            "Confidence": 0.7151273382916385
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.3681640625,
+          "Y": 0.1840277777777778,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Bench[1].Variant",
+        "Value": "Normal",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.3681640625,
+          "Y": 0.1840277777777778,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Bench[1].Level",
+        "Value": "1",
+        "Confidence": 0.9948706705612449,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "1",
+            "Confidence": 0.9948706705612449
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.3974609375,
+          "Y": 0.1840277777777778,
+          "Width": 0.0087890625,
+          "Height": 0.021701388888888888
+        }
+      },
+      {
+        "Name": "Bench[1].Stats[0].Value",
+        "Value": "1",
+        "Confidence": 0.9104906917397921,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "1",
+            "Confidence": 0.9104906917397921
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.40267515535127363,
+          "Y": 0.30155766577388193,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Bench[1].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.40267515535127363,
+          "Y": 0.30155766577388193,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Bench[1].Stats[1].Value",
+        "Value": "16",
+        "Confidence": 0.8844490250731255,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "16",
+            "Confidence": 0.8844490250731255
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.42280662618118325,
+          "Y": 0.30155766577388193,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Bench[1].Stats[1].Kind",
+        "Value": "Shock",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.42280662618118325,
+          "Y": 0.30155766577388193,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Bench[2].Occupant",
+        "Value": "empty",
+        "Confidence": 0.98,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.48046875,
+          "Y": 0.1840277777777778,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Bench[3].Occupant",
+        "Value": "empty",
+        "Confidence": 0.98,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.5927734375,
+          "Y": 0.1840277777777778,
+          "Width": 0.09716796875,
+          "Height": 0.11241666666666666
+        }
+      },
+      {
+        "Name": "Shop[0].Occupant",
+        "Value": "monster:zephyrex",
+        "Confidence": 0.9201772969724288,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:zephyrex",
+            "Confidence": 0.9201772969724288
+          },
+          {
+            "Value": "monster:spinarai",
+            "Confidence": 0.7845636293733179
+          },
+          {
+            "Value": "monster:shellter",
+            "Confidence": 0.7840162271805274
+          },
+          {
+            "Value": "monster:furnadon",
+            "Confidence": 0.7822803195352215
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.20068359375,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[0].Variant",
+        "Value": "Unknown",
+        "Confidence": 0.9201772969724288,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": "Confirm normal or shiny; grayscale may hide its palette.",
+        "Region": {
+          "X": 0.20068359375,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[0].Stats[0].Value",
+        "Value": "",
+        "Confidence": 0,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "145",
+            "Confidence": 0
+          }
+        ],
+        "Diagnostic": "Read Shop[0].Stats[0].Value.",
+        "Region": {
+          "X": 0.24669838421836482,
+          "Y": 0.9207989509780051,
+          "Width": 0.015612161051766639,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[0].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.24669838421836482,
+          "Y": 0.9207989509780051,
+          "Width": 0.015612161051766639,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[0].Price",
+        "Value": "60",
+        "Confidence": 0.8907363873145504,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "60",
+            "Confidence": 0.8907363873145504
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.2845703125,
+          "Y": 0.94,
+          "Width": 0.025,
+          "Height": 0.028
+        }
+      },
+      {
+        "Name": "Shop[1].Occupant",
+        "Value": "monster:prismagon",
+        "Confidence": 0.9067552182163188,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:prismagon",
+            "Confidence": 0.9067552182163188
+          },
+          {
+            "Value": "monster:noxalith",
+            "Confidence": 0.7902006920415225
+          },
+          {
+            "Value": "monster:sirenade",
+            "Confidence": 0.7826348039215686
+          },
+          {
+            "Value": "monster:ginsage",
+            "Confidence": 0.7816135620915032
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.32275390625,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[1].Variant",
+        "Value": "Unknown",
+        "Confidence": 0.9067552182163188,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": "Confirm normal or shiny; grayscale may hide its palette.",
+        "Region": {
+          "X": 0.32275390625,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[1].Stats[0].Value",
+        "Value": "",
+        "Confidence": 0,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "100",
+            "Confidence": 0
+          }
+        ],
+        "Diagnostic": "Read Shop[1].Stats[0].Value.",
+        "Region": {
+          "X": 0.36712531134449466,
+          "Y": 0.9207989509780051,
+          "Width": 0.01725554642563681,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[1].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.36712531134449466,
+          "Y": 0.9207989509780051,
+          "Width": 0.01725554642563681,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[1].Price",
+        "Value": "45",
+        "Confidence": 0.8829238873145504,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "45",
+            "Confidence": 0.8829238873145504
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.406640625,
+          "Y": 0.94,
+          "Width": 0.025,
+          "Height": 0.028
+        }
+      },
+      {
+        "Name": "Shop[2].Occupant",
+        "Value": "monster:brawlmantis",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:brawlmantis",
+            "Confidence": 1
+          },
+          {
+            "Value": "monster:shellter",
+            "Confidence": 0.7761162710698314
+          },
+          {
+            "Value": "item:recruiting-flyer",
+            "Confidence": 0.7712183676889559
+          },
+          {
+            "Value": "monster:cairnage",
+            "Confidence": 0.770237908496732
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4443359375,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[2].Variant",
+        "Value": "Normal",
+        "Confidence": 1,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.4443359375,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[2].Stats[0].Value",
+        "Value": "",
+        "Confidence": 0,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "60",
+            "Confidence": 0
+          }
+        ],
+        "Diagnostic": "Read Shop[2].Stats[0].Value.",
+        "Region": {
+          "X": 0.491994113342235,
+          "Y": 0.9207989509780051,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[2].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.491994113342235,
+          "Y": 0.9207989509780051,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[2].Price",
+        "Value": "30",
+        "Confidence": 0.9097757099772824,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "30",
+            "Confidence": 0.9097757099772824
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.52822265625,
+          "Y": 0.94,
+          "Width": 0.025,
+          "Height": 0.028
+        }
+      },
+      {
+        "Name": "Shop[3].Occupant",
+        "Value": "monster:ninflora",
+        "Confidence": 0.9454582116534557,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:ninflora",
+            "Confidence": 0.9454582116534557
+          },
+          {
+            "Value": "item:black-sludge",
+            "Confidence": 0.7930155303711699
+          },
+          {
+            "Value": "monster:blazewing",
+            "Confidence": 0.7777425842131724
+          },
+          {
+            "Value": "monster:dragonarch",
+            "Confidence": 0.7774171737660581
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.56640625,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[3].Variant",
+        "Value": "Unknown",
+        "Confidence": 0.9454582116534557,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": "Confirm normal or shiny; grayscale may hide its palette.",
+        "Region": {
+          "X": 0.56640625,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[3].Stats[0].Value",
+        "Value": "50",
+        "Confidence": 0.9792456705612449,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "50",
+            "Confidence": 0.9792456705612449
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.614064425842235,
+          "Y": 0.9207989509780051,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[3].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.614064425842235,
+          "Y": 0.9207989509780051,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[3].Price",
+        "Value": "32",
+        "Confidence": 0.909944657837316,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "32",
+            "Confidence": 0.909944657837316
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.65029296875,
+          "Y": 0.94,
+          "Width": 0.025,
+          "Height": 0.028
+        }
+      },
+      {
+        "Name": "Shop[4].Occupant",
+        "Value": "monster:pylong",
+        "Confidence": 0.9188221534227726,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "monster:pylong",
+            "Confidence": 0.9188221534227726
+          },
+          {
+            "Value": "monster:cobrex",
+            "Confidence": 0.7678431372549019
+          },
+          {
+            "Value": "monster:magmalith",
+            "Confidence": 0.7659725039441064
+          },
+          {
+            "Value": "monster:miasmaw",
+            "Confidence": 0.765202614379085
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.68798828125,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[4].Variant",
+        "Value": "Normal",
+        "Confidence": 0.9188221534227726,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Normal",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "Shiny",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.68798828125,
+          "Y": 0.8098958333333334,
+          "Width": 0.10888671875,
+          "Height": 0.10286805555555556
+        }
+      },
+      {
+        "Name": "Shop[4].Stats[0].Value",
+        "Value": "1",
+        "Confidence": 0.9104906917397921,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "1",
+            "Confidence": 0.9104906917397921
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.7274295302228841,
+          "Y": 0.9207989509780051,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[4].Stats[0].Kind",
+        "Value": "Damage",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.7274295302228841,
+          "Y": 0.9207989509780051,
+          "Width": 0.0045193097781429745,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[4].Stats[1].Value",
+        "Value": "15",
+        "Confidence": 0.9792456705612449,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "15",
+            "Confidence": 0.9792456705612449
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.7475610010527938,
+          "Y": 0.9207989509780051,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[4].Stats[1].Kind",
+        "Value": "Shock",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.7475610010527938,
+          "Y": 0.9207989509780051,
+          "Width": 0.011092851273623664,
+          "Height": 0.013878743608473338
+        }
+      },
+      {
+        "Name": "Shop[4].Price",
+        "Value": "40",
+        "Confidence": 0.9175882099772824,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "40",
+            "Confidence": 0.9175882099772824
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.771875,
+          "Y": 0.94,
+          "Width": 0.025,
+          "Height": 0.028
+        }
+      },
+      {
+        "Name": "ItemUsesCounterVisible",
+        "Value": "False",
+        "Confidence": 0.95,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "True",
+            "Confidence": 0.5
+          },
+          {
+            "Value": "False",
+            "Confidence": 0.5
+          }
+        ],
+        "Diagnostic": null,
+        "Region": {
+          "X": 0.6904296875,
+          "Y": 0.8350694444444444,
+          "Width": 0.0234375,
+          "Height": 0.027777777777777776
+        }
+      }
+    ],
+    "Diagnostics": [],
+    "Timings": {
+      "RecognitionMilliseconds": 1068.9981,
+      "OcrCalls": 8,
+      "CacheHits": 2,
+      "OcrMilliseconds": 133.7435,
+      "AcquisitionMilliseconds": 45.2837,
+      "SpriteCacheHits": 0
+    },
+    "RequiresReview": true,
+    "IsShop": true
+  },
+  "AcceptedSnapshot": {
+    "TrainerId": "smuggler",
+    "Day": 10,
+    "Lives": 1,
+    "Wins": 5,
+    "WinTarget": 10,
+    "TeamHp": 17300,
+    "Gold": 31,
+    "ShopRank": 11,
+    "RarityOdds": [
+      {
+        "Rarity": 0,
+        "Probability": 0.1
+      },
+      {
+        "Rarity": 1,
+        "Probability": 0.2
+      },
+      {
+        "Rarity": 2,
+        "Probability": 0.35
+      },
+      {
+        "Rarity": 3,
+        "Probability": 0.25
+      },
+      {
+        "Rarity": 4,
+        "Probability": 0.1
+      }
+    ],
+    "RerollCost": null,
+    "FreeRerolls": 7,
+    "ItemUsesRemaining": null,
+    "ItemUsesMaximum": null,
+    "ItemUsesCounterVisible": false,
+    "ShopLocked": true,
+    "Team": [
+      {
+        "Index": 0,
+        "Occupancy": 1,
+        "DefinitionId": "galvanine",
+        "Variant": 0,
+        "Level": 1,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 12
+          },
+          {
+            "Kind": 5,
+            "Value": 6
+          }
+        ],
+        "Price": null,
+        "Affordable": null
+      },
+      {
+        "Index": 1,
+        "Occupancy": 1,
+        "DefinitionId": "humbolt",
+        "Variant": 0,
+        "Level": 3,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 69
+          },
+          {
+            "Kind": 5,
+            "Value": 7
+          },
+          {
+            "Kind": 7,
+            "Value": 4
+          }
+        ],
+        "Price": null,
+        "Affordable": null
+      },
+      {
+        "Index": 2,
+        "Occupancy": 1,
+        "DefinitionId": "pylong",
+        "Variant": 0,
+        "Level": 1,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 1
+          },
+          {
+            "Kind": 5,
+            "Value": 15
+          }
+        ],
+        "Price": null,
+        "Affordable": null
+      },
+      {
+        "Index": 3,
+        "Occupancy": 1,
+        "DefinitionId": "plunderbird",
+        "Variant": 1,
+        "Level": 3,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 8
+          },
+          {
+            "Kind": 1,
+            "Value": 68
+          },
+          {
+            "Kind": 7,
+            "Value": 5
+          }
+        ],
+        "Price": null,
+        "Affordable": null
+      },
+      {
+        "Index": 4,
+        "Occupancy": 1,
+        "DefinitionId": "ironcore",
+        "Variant": 0,
+        "Level": 2,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 30
+          }
+        ],
+        "Price": null,
+        "Affordable": null
+      },
+      {
+        "Index": 5,
+        "Occupancy": 1,
+        "DefinitionId": "clawnetic",
+        "Variant": 0,
+        "Level": 1,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 60
+          }
+        ],
+        "Price": null,
+        "Affordable": null
+      }
+    ],
+    "Bench": [
+      {
+        "Index": 0,
+        "Occupancy": 0,
+        "DefinitionId": null,
+        "Variant": 2,
+        "Level": null,
+        "Stats": [],
+        "Price": null,
+        "Affordable": null
+      },
+      {
+        "Index": 1,
+        "Occupancy": 1,
+        "DefinitionId": "pylong",
+        "Variant": 0,
+        "Level": 1,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 1
+          },
+          {
+            "Kind": 5,
+            "Value": 16
+          }
+        ],
+        "Price": null,
+        "Affordable": null
+      },
+      {
+        "Index": 2,
+        "Occupancy": 0,
+        "DefinitionId": null,
+        "Variant": 2,
+        "Level": null,
+        "Stats": [],
+        "Price": null,
+        "Affordable": null
+      },
+      {
+        "Index": 3,
+        "Occupancy": 0,
+        "DefinitionId": null,
+        "Variant": 2,
+        "Level": null,
+        "Stats": [],
+        "Price": null,
+        "Affordable": null
+      }
+    ],
+    "Shop": [
+      {
+        "Index": 0,
+        "Occupancy": 1,
+        "DefinitionId": "zephyrex",
+        "Variant": 0,
+        "Level": null,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 145
+          }
+        ],
+        "Price": 60,
+        "Affordable": false
+      },
+      {
+        "Index": 1,
+        "Occupancy": 1,
+        "DefinitionId": "prismagon",
+        "Variant": 0,
+        "Level": null,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 100
+          }
+        ],
+        "Price": 45,
+        "Affordable": false
+      },
+      {
+        "Index": 2,
+        "Occupancy": 1,
+        "DefinitionId": "brawlmantis",
+        "Variant": 0,
+        "Level": null,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 60
+          }
+        ],
+        "Price": 30,
+        "Affordable": true
+      },
+      {
+        "Index": 3,
+        "Occupancy": 1,
+        "DefinitionId": "ninflora",
+        "Variant": 0,
+        "Level": null,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 50
+          }
+        ],
+        "Price": 32,
+        "Affordable": false
+      },
+      {
+        "Index": 4,
+        "Occupancy": 1,
+        "DefinitionId": "pylong",
+        "Variant": 0,
+        "Level": null,
+        "Stats": [
+          {
+            "Kind": 0,
+            "Value": 1
+          },
+          {
+            "Kind": 5,
+            "Value": 15
+          }
+        ],
+        "Price": 40,
+        "Affordable": false
+      }
+    ],
+    "CapturedAt": "2026-10-06T16:50:43.8974519+00:00",
+    "RegionFilter": 0
+  },
+  "Reviews": [
+    {
+      "Name": "Team[1].Stats[0].Value",
+      "RecognizedValue": "",
+      "AcceptedValue": "69",
+      "WasChanged": true
+    },
+    {
+      "Name": "Team[3].Stats[0].Value",
+      "RecognizedValue": "",
+      "AcceptedValue": "8",
+      "WasChanged": true
+    },
+    {
+      "Name": "Team[3].Stats[1].Value",
+      "RecognizedValue": "",
+      "AcceptedValue": "68",
+      "WasChanged": true
+    },
+    {
+      "Name": "Team[5].Stats[0].Value",
+      "RecognizedValue": "",
+      "AcceptedValue": "60",
+      "WasChanged": true
+    },
+    {
+      "Name": "Shop[0].Variant",
+      "RecognizedValue": "Unknown",
+      "AcceptedValue": "Normal",
+      "WasChanged": true
+    },
+    {
+      "Name": "Shop[0].Stats[0].Value",
+      "RecognizedValue": "",
+      "AcceptedValue": "145",
+      "WasChanged": true
+    },
+    {
+      "Name": "Shop[1].Variant",
+      "RecognizedValue": "Unknown",
+      "AcceptedValue": "Normal",
+      "WasChanged": true
+    },
+    {
+      "Name": "Shop[1].Stats[0].Value",
+      "RecognizedValue": "",
+      "AcceptedValue": "100",
+      "WasChanged": true
+    },
+    {
+      "Name": "Shop[2].Stats[0].Value",
+      "RecognizedValue": "",
+      "AcceptedValue": "60",
+      "WasChanged": true
+    },
+    {
+      "Name": "Shop[3].Variant",
+      "RecognizedValue": "Unknown",
+      "AcceptedValue": "Normal",
+      "WasChanged": true
+    },
+    {
+      "Name": "TrainerId",
+      "RecognizedValue": "smuggler",
+      "AcceptedValue": "smuggler",
+      "WasChanged": false
+    },
+    {
+      "Name": "Day",
+      "RecognizedValue": "10",
+      "AcceptedValue": "10",
+      "WasChanged": false
+    },
+    {
+      "Name": "Lives",
+      "RecognizedValue": "1",
+      "AcceptedValue": "1",
+      "WasChanged": false
+    },
+    {
+      "Name": "Wins",
+      "RecognizedValue": "5",
+      "AcceptedValue": "5",
+      "WasChanged": false
+    },
+    {
+      "Name": "WinTarget",
+      "RecognizedValue": "10",
+      "AcceptedValue": "10",
+      "WasChanged": false
+    },
+    {
+      "Name": "TeamHp",
+      "RecognizedValue": "17300",
+      "AcceptedValue": "17300",
+      "WasChanged": false
+    },
+    {
+      "Name": "Gold",
+      "RecognizedValue": "31",
+      "AcceptedValue": "31",
+      "WasChanged": false
+    },
+    {
+      "Name": "ShopRank",
+      "RecognizedValue": "11",
+      "AcceptedValue": "11",
+      "WasChanged": false
+    },
+    {
+      "Name": "CommonOdds",
+      "RecognizedValue": "10",
+      "AcceptedValue": "10",
+      "WasChanged": false
+    },
+    {
+      "Name": "UncommonOdds",
+      "RecognizedValue": "20",
+      "AcceptedValue": "20",
+      "WasChanged": false
+    },
+    {
+      "Name": "RareOdds",
+      "RecognizedValue": "35",
+      "AcceptedValue": "35",
+      "WasChanged": false
+    },
+    {
+      "Name": "SuperRareOdds",
+      "RecognizedValue": "25",
+      "AcceptedValue": "25",
+      "WasChanged": false
+    },
+    {
+      "Name": "LegendaryOdds",
+      "RecognizedValue": "10",
+      "AcceptedValue": "10",
+      "WasChanged": false
+    },
+    {
+      "Name": "RerollMode",
+      "RecognizedValue": "Free",
+      "AcceptedValue": "Free",
+      "WasChanged": false
+    },
+    {
+      "Name": "RerollCount",
+      "RecognizedValue": "7",
+      "AcceptedValue": "7",
+      "WasChanged": false
+    },
+    {
+      "Name": "ShopLocked",
+      "RecognizedValue": "True",
+      "AcceptedValue": "True",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[0].Occupant",
+      "RecognizedValue": "monster:galvanine",
+      "AcceptedValue": "monster:galvanine",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[0].Variant",
+      "RecognizedValue": "Normal",
+      "AcceptedValue": "Normal",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[0].Level",
+      "RecognizedValue": "1",
+      "AcceptedValue": "1",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[0].Stats[0].Value",
+      "RecognizedValue": "12",
+      "AcceptedValue": "12",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[0].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[0].Stats[1].Value",
+      "RecognizedValue": "6",
+      "AcceptedValue": "6",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[0].Stats[1].Kind",
+      "RecognizedValue": "Shock",
+      "AcceptedValue": "Shock",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[1].Occupant",
+      "RecognizedValue": "monster:humbolt",
+      "AcceptedValue": "monster:humbolt",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[1].Variant",
+      "RecognizedValue": "Normal",
+      "AcceptedValue": "Normal",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[1].Level",
+      "RecognizedValue": "3",
+      "AcceptedValue": "3",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[1].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[1].Stats[1].Value",
+      "RecognizedValue": "7",
+      "AcceptedValue": "7",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[1].Stats[1].Kind",
+      "RecognizedValue": "Shock",
+      "AcceptedValue": "Shock",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[1].Stats[2].Value",
+      "RecognizedValue": "4",
+      "AcceptedValue": "4",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[1].Stats[2].Kind",
+      "RecognizedValue": "Multicast",
+      "AcceptedValue": "Multicast",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[2].Occupant",
+      "RecognizedValue": "monster:pylong",
+      "AcceptedValue": "monster:pylong",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[2].Variant",
+      "RecognizedValue": "Normal",
+      "AcceptedValue": "Normal",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[2].Level",
+      "RecognizedValue": "1",
+      "AcceptedValue": "1",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[2].Stats[0].Value",
+      "RecognizedValue": "1",
+      "AcceptedValue": "1",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[2].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[2].Stats[1].Value",
+      "RecognizedValue": "15",
+      "AcceptedValue": "15",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[2].Stats[1].Kind",
+      "RecognizedValue": "Shock",
+      "AcceptedValue": "Shock",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[3].Occupant",
+      "RecognizedValue": "monster:plunderbird",
+      "AcceptedValue": "monster:plunderbird",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[3].Variant",
+      "RecognizedValue": "Shiny",
+      "AcceptedValue": "Shiny",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[3].Level",
+      "RecognizedValue": "3",
+      "AcceptedValue": "3",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[3].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[3].Stats[1].Kind",
+      "RecognizedValue": "Heal",
+      "AcceptedValue": "Heal",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[3].Stats[2].Value",
+      "RecognizedValue": "5",
+      "AcceptedValue": "5",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[3].Stats[2].Kind",
+      "RecognizedValue": "Multicast",
+      "AcceptedValue": "Multicast",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[4].Occupant",
+      "RecognizedValue": "monster:ironcore",
+      "AcceptedValue": "monster:ironcore",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[4].Variant",
+      "RecognizedValue": "Normal",
+      "AcceptedValue": "Normal",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[4].Level",
+      "RecognizedValue": "2",
+      "AcceptedValue": "2",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[4].Stats[0].Value",
+      "RecognizedValue": "30",
+      "AcceptedValue": "30",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[4].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[5].Occupant",
+      "RecognizedValue": "monster:clawnetic",
+      "AcceptedValue": "monster:clawnetic",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[5].Variant",
+      "RecognizedValue": "Normal",
+      "AcceptedValue": "Normal",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[5].Level",
+      "RecognizedValue": "1",
+      "AcceptedValue": "1",
+      "WasChanged": false
+    },
+    {
+      "Name": "Team[5].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[0].Occupant",
+      "RecognizedValue": "empty",
+      "AcceptedValue": "empty",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[1].Occupant",
+      "RecognizedValue": "monster:pylong",
+      "AcceptedValue": "monster:pylong",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[1].Variant",
+      "RecognizedValue": "Normal",
+      "AcceptedValue": "Normal",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[1].Level",
+      "RecognizedValue": "1",
+      "AcceptedValue": "1",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[1].Stats[0].Value",
+      "RecognizedValue": "1",
+      "AcceptedValue": "1",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[1].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[1].Stats[1].Value",
+      "RecognizedValue": "16",
+      "AcceptedValue": "16",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[1].Stats[1].Kind",
+      "RecognizedValue": "Shock",
+      "AcceptedValue": "Shock",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[2].Occupant",
+      "RecognizedValue": "empty",
+      "AcceptedValue": "empty",
+      "WasChanged": false
+    },
+    {
+      "Name": "Bench[3].Occupant",
+      "RecognizedValue": "empty",
+      "AcceptedValue": "empty",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[0].Occupant",
+      "RecognizedValue": "monster:zephyrex",
+      "AcceptedValue": "monster:zephyrex",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[0].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[0].Price",
+      "RecognizedValue": "60",
+      "AcceptedValue": "60",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[1].Occupant",
+      "RecognizedValue": "monster:prismagon",
+      "AcceptedValue": "monster:prismagon",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[1].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[1].Price",
+      "RecognizedValue": "45",
+      "AcceptedValue": "45",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[2].Occupant",
+      "RecognizedValue": "monster:brawlmantis",
+      "AcceptedValue": "monster:brawlmantis",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[2].Variant",
+      "RecognizedValue": "Normal",
+      "AcceptedValue": "Normal",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[2].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[2].Price",
+      "RecognizedValue": "30",
+      "AcceptedValue": "30",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[3].Occupant",
+      "RecognizedValue": "monster:ninflora",
+      "AcceptedValue": "monster:ninflora",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[3].Stats[0].Value",
+      "RecognizedValue": "50",
+      "AcceptedValue": "50",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[3].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[3].Price",
+      "RecognizedValue": "32",
+      "AcceptedValue": "32",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[4].Occupant",
+      "RecognizedValue": "monster:pylong",
+      "AcceptedValue": "monster:pylong",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[4].Variant",
+      "RecognizedValue": "Normal",
+      "AcceptedValue": "Normal",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[4].Stats[0].Value",
+      "RecognizedValue": "1",
+      "AcceptedValue": "1",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[4].Stats[0].Kind",
+      "RecognizedValue": "Damage",
+      "AcceptedValue": "Damage",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[4].Stats[1].Value",
+      "RecognizedValue": "15",
+      "AcceptedValue": "15",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[4].Stats[1].Kind",
+      "RecognizedValue": "Shock",
+      "AcceptedValue": "Shock",
+      "WasChanged": false
+    },
+    {
+      "Name": "Shop[4].Price",
+      "RecognizedValue": "40",
+      "AcceptedValue": "40",
+      "WasChanged": false
+    },
+    {
+      "Name": "ItemUsesCounterVisible",
+      "RecognizedValue": "False",
+      "AcceptedValue": "False",
+      "WasChanged": false
+    }
+  ]
+}

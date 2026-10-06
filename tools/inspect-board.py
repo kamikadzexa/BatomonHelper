@@ -8,7 +8,7 @@ def mask(im, mode):
         r,g,b=p[:3]
         if mode=='light': return min(r,g,b)>190 and max(r,g,b)-min(r,g,b)<45
         if mode=='level': return (r>130 and g>75 and b<125 and r>g*1.1) or (r>190 and g>180 and b<125) or (r>200 and g<140 and 75<b<180)
-        if mode=='silver': return 110<r<220 and g>110 and b>130 and abs(r-g)<30 and abs(r-b)<65
+        if mode=='silver': return 110<r<220 and g>110 and b>r+6 and b>g+6 and abs(r-g)<30 and abs(r-b)<65
         if mode=='price': return (min(r,g,b)>190 and max(r,g,b)-min(r,g,b)<45) or (r>200 and g<110 and 75<b<180)
         if mode=='gray': return 65<r<155 and abs(r-g)<14 and abs(g-b)<25
         if mode=='green': return g>r*1.3 and g>b*1.3 and g>100

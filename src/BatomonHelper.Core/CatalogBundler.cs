@@ -3,11 +3,12 @@ namespace BatomonHelper.Core;
 /// <summary>Build-time utility for the committed offline wiki snapshot. It is never used by the desktop app.</summary>
 public sealed class CatalogBundler(HttpClient client)
 {
-    public async Task<CatalogSnapshot> BundleAsync(string databasePath, string assetDirectory, CancellationToken cancellationToken = default)
+    public async Task<CatalogSnapshot> BundleAsync(string databasePath, string assetDirectory, CancellationToken cancellationToken = default, CatalogPatch? patch = null)
     {
         var importer = new WikiImporter(new BatomonWikiSource(client));
         var result = await importer.ImportAsync(cancellationToken);
         var snapshot = result.Snapshot ?? throw new InvalidDataException(string.Join(" ", result.Errors));
+        if (patch is not null) snapshot = CatalogPatches.Apply(snapshot, patch);
 
         var staging = Path.Combine(assetDirectory, ".staging-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(staging);

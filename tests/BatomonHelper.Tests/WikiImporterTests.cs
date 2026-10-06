@@ -4,6 +4,32 @@ namespace BatomonHelper.Tests;
 
 public sealed class WikiImporterTests
 {
+    [Theory]
+    [InlineData("opalion", "Rock allies triggered", "1", "Trigger 1 random Rock allies. (Except other Opalion)", "Trigger 1 random Rock allies.", "Trigger 1 random Rock allies.")]
+    [InlineData("dollhime", "Damage per trinket gained", "50/100/150", "On Trinket Gained +50 Damage permanently.", "On Trinket Gained +100 Damage permanently.", "On Trinket Gained +150 Damage permanently.")]
+    [InlineData("guardiant", "Damage per Bug bought", "8/16/24", "After you buy a Bug monster, this gains +8 Damage.", "After you buy a Bug monster, this gains +16 Damage.", "After you buy a Bug monster, this gains +24 Damage.")]
+    [InlineData("lignite", "Burn-to-Damage multiplier", "x20/40/60", "Has additional Damage equal to 20 times this monster's Burn.", "Has additional Damage equal to 40 times this monster's Burn.", "Has additional Damage equal to 60 times this monster's Burn.")]
+    public async Task Imports_normal_reference_values_from_the_wiki_page_payload(string id, string property, string expected, string first, string second, string third)
+    {
+        var payload = System.Text.Json.JsonSerializer.Serialize(new { monster = new {
+            id, cost = 25, levels = new[] { new { level = 1, cooldown = 5.5 } },
+            ability = new { byLevel = new Dictionary<string, string> { ["1"] = first, ["2"] = second, ["3"] = third } },
+            shinyAbility = new { byLevel = new Dictionary<string, string> { ["1"] = "Different shiny value 999" } }
+        } });
+        var pages = new Dictionary<string, string> {
+            ["/"] = "Batomon Showdown 1.3.0 Balance 25 Steam build 99999",
+            ["/batomon"] = $"<a href=\"/batomon/{id}\"><div data-rarity=\"rare\"></div></a>",
+            ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
+            ["/batomon/regions/jinto"] = "", ["/batomon/regions/pantra"] = "",
+            [$"/batomon/{id}"] = $"<nav>Cost 999</nav><main><h1>{id}</h1><script>{payload.Replace("\"", "\\\"")}</script></main>"
+        };
+        var snapshot = (await new WikiImporter(new FakeSource(pages)).ImportAsync(CancellationToken.None)).Snapshot!;
+        Assert.Equal("1.3.0", snapshot.WikiVersion); Assert.Equal("25", snapshot.Balance);
+        var monster = Assert.Single(snapshot.Monsters);
+        Assert.Equal("25", monster.ReferenceValues["Cost"]); Assert.Equal("5.5", monster.ReferenceValues["Cooldown"]);
+        Assert.Equal(expected, monster.ReferenceValues[property]); Assert.Empty(monster.ReferenceNotes);
+    }
+
     [Fact]
     public async Task Imports_a_patch_pinned_catalog()
     {

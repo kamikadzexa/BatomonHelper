@@ -1,0 +1,25 @@
+{
+  "Version": "1.3.0",
+  "RequiredWikiBuild": "25600878",
+  "SourceUrl": "https://store.steampowered.com/news/app/4557380/view/686392527015643351?l=english",
+  "Changes": [
+    { "MonsterId": "opalion", "Property": "Cooldown", "PreviousValue": "9", "Value": "6" },
+    { "MonsterId": "opalion", "Property": "Rock allies triggered", "PreviousValue": "2", "Value": "1" },
+    { "MonsterId": "petrirex", "Property": "Cooldown", "PreviousValue": "7", "Value": "5.5" },
+    { "MonsterId": "steamscuttle", "Property": "Cooldown", "PreviousValue": "3", "Value": "3.5" },
+    { "MonsterId": "kappow", "Property": "Cost", "PreviousValue": "30", "Value": "25" },
+    { "MonsterId": "kappow", "Property": "Cooldown", "PreviousValue": "4.5", "Value": "5.5" },
+    { "MonsterId": "aviarab", "Property": "Cost", "PreviousValue": "20", "Value": "25" },
+    { "MonsterId": "dollhime", "Property": "Damage per trinket gained", "PreviousValue": "40/80/120", "Value": "50/100/150" },
+    { "MonsterId": "mallogre", "Property": "Cooldown", "PreviousValue": "9", "Value": "8" },
+    { "MonsterId": "danuki", "Property": "Cost", "PreviousValue": "50", "Value": "45" },
+    { "MonsterId": "sarudo", "Property": "Cost", "PreviousValue": "35", "Value": "25" },
+    { "MonsterId": "guardiant", "Property": "Damage per Bug bought", "PreviousValue": "7/14/21", "Value": "8/16/24" },
+    { "MonsterId": "noxnimbus", "Property": "Cooldown", "PreviousValue": "4", "Value": "3" },
+    { "MonsterId": "lignite", "Property": "Burn-to-Damage multiplier", "PreviousValue": "x15/30/45", "Value": "x20/40/60" },
+    { "MonsterId": "lignite", "Property": "Cooldown", "PreviousValue": "4", "Value": "5" },
+    { "MonsterId": "stalagrove", "Property": "Cooldown", "PreviousValue": "5.5", "Value": "4.5" },
+    { "MonsterId": "aegistruct", "Property": "Cooldown", "PreviousValue": "7", "Value": "6" },
+    { "MonsterId": "geminiss", "Property": "Cooldown", "PreviousValue": "12", "Value": "10" }
+  ]
+}

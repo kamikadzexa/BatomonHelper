@@ -3,6 +3,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 
 namespace BatomonHelper.Core;
 
@@ -80,7 +81,8 @@ public sealed partial class WikiImporter(IWikiSource source)
             {
                 Trainers = trainers,
                 Items = items,
-                Trinkets = trinkets
+                Trinkets = trinkets,
+                WikiVersion = Regex.Match(StripTags(pages[0]), @"Batomon Showdown\s+(?<version>\d+\.\d+\.\d+)").Groups["version"].Value is { Length: > 0 } version ? version : null
             };
             return new(snapshot, []);
         }
@@ -110,8 +112,61 @@ public sealed partial class WikiImporter(IWikiSource source)
         return new(id, WebUtility.HtmlDecode(name).Trim(), rarity.Value, baseId, activeSets.ToImmutable(), shiny is not null)
         {
             SpriteUrl = sprite, ShinySpriteUrl = shiny,
+            ReferenceValues = ParseMonsterReferenceValues(id, body),
             ShinySpritePath = shiny is null ? null : $"assets/wiki/monsters/{id}-shiny.png"
         };
+    }
+
+    private static ImmutableDictionary<string, string> ParseMonsterReferenceValues(string id, string html)
+    {
+        var text = Regex.Replace(WebUtility.HtmlDecode(html), "<[^>]+>", " ");
+        var values = ImmutableDictionary.CreateBuilder<string, string>();
+        foreach (var property in new[] { "Cost", "Cooldown", "Rock allies triggered", "Damage per trinket gained", "Damage per Bug bought", "Burn-to-Damage multiplier" })
+        {
+            var match = Regex.Match(text, Regex.Escape(property) + @"\s*:?\s*\$?\s*(?<value>x?\d+(?:\.\d+)?(?:/\d+(?:\.\d+)?)*)", RegexOptions.IgnoreCase);
+            if (match.Success) values[property] = match.Groups["value"].Value;
+        }
+        // The current wiki embeds the complete normal/shiny reference model in
+        // its page payload. Read normal levels explicitly; rendered text shows
+        // only level 1 and must not be extrapolated to higher levels.
+        foreach (Match marker in Regex.Matches(html, "\"monster\"\\s*:\\s*(?=\\{)"))
+        {
+            try
+            {
+                var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(html[(marker.Index + marker.Length)..]));
+                using var document = JsonDocument.ParseValue(ref reader);
+                var monster = document.RootElement;
+                if (!monster.TryGetProperty("id", out var monsterId) || monsterId.GetString() != id) continue;
+                if (monster.TryGetProperty("cost", out var cost) && cost.ValueKind == JsonValueKind.Number) values["Cost"] = cost.GetRawText();
+                if (monster.TryGetProperty("levels", out var levels) && levels.ValueKind == JsonValueKind.Array)
+                    foreach (var level in levels.EnumerateArray())
+                        if (level.TryGetProperty("level", out var number) && number.GetInt32() == 1 &&
+                            level.TryGetProperty("cooldown", out var cooldown) && cooldown.ValueKind == JsonValueKind.Number)
+                            values["Cooldown"] = cooldown.GetRawText();
+                if (!monster.TryGetProperty("ability", out var ability) || ability.ValueKind != JsonValueKind.Object ||
+                    !ability.TryGetProperty("byLevel", out var byLevel) || byLevel.ValueKind != JsonValueKind.Object) continue;
+                (string Property, string Pattern, int Count, string Prefix) reference = id switch
+                {
+                    "opalion" => ("Rock allies triggered", @"Trigger\s+(\d+)\s+random Rock allies", 1, ""),
+                    "dollhime" => ("Damage per trinket gained", @"On Trinket Gained\s+\+(\d+)\s+Damage", 3, ""),
+                    "guardiant" => ("Damage per Bug bought", @"buy a Bug monster.*?\+(\d+)\s+Damage", 3, ""),
+                    "lignite" => ("Burn-to-Damage multiplier", @"Damage equal to\s+(\d+)\s+times.*?Burn", 3, "x"),
+                    _ => ("", "", 0, "")
+                };
+                var perLevel = new List<string>();
+                for (var level = 1; level <= reference.Count; level++)
+                {
+                    if (!byLevel.TryGetProperty(level.ToString(), out var description) || description.ValueKind != JsonValueKind.String) break;
+                    var match = Regex.Match(description.GetString()!, reference.Pattern, RegexOptions.IgnoreCase);
+                    if (!match.Success) break;
+                    perLevel.Add(match.Groups[1].Value);
+                }
+                if (reference.Count > 0 && perLevel.Count == reference.Count)
+                    values[reference.Property] = reference.Prefix + string.Join('/', perLevel);
+            }
+            catch (JsonException) { /* Optional reference data can be absent in older page formats. */ }
+        }
+        return values.ToImmutable();
     }
 
     private static Rarity? ParseRarity(string html)

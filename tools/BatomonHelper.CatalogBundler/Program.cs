@@ -1,14 +1,33 @@
 using BatomonHelper.Core;
+using System.Text.Json;
 
 try
 {
     var root = FindRepositoryRoot(Environment.CurrentDirectory, AppContext.BaseDirectory);
     var database = Path.Combine(root, "assets", "wiki", "batomon-wiki.db");
     var sprites = Path.Combine(root, "assets", "wiki");
+    var patch = JsonSerializer.Deserialize<CatalogPatch>(await File.ReadAllTextAsync(Path.Combine(root, "assets", "catalog-patches", "1.3.0.json")))
+        ?? throw new InvalidDataException("Missing catalog patch.");
     using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
     client.DefaultRequestHeaders.UserAgent.ParseAdd("BatomonHelper catalog bundler");
-    var snapshot = await new CatalogBundler(client).BundleAsync(database, sprites);
+    CatalogSnapshot snapshot;
+    if (args.Contains("--apply-patch"))
+    {
+        var existing = await new SnapshotRepository(database, true).GetLatestAsync() ?? throw new InvalidDataException("No bundled wiki snapshot.");
+        snapshot = CatalogPatches.Apply(existing with { WikiVersion = existing.WikiVersion ?? "1.2.0" }, patch);
+        var staged = database + ".patch.tmp";
+        try
+        {
+            var repository = new SnapshotRepository(staged);
+            await repository.InitializeAsync(); await repository.SaveAsync(snapshot);
+            if ((await repository.GetLatestAsync())?.ContentHash != snapshot.ContentHash) throw new InvalidDataException("Patch validation failed.");
+            File.Move(staged, database, true);
+        }
+        finally { if (File.Exists(staged)) File.Delete(staged); }
+    }
+    else snapshot = await new CatalogBundler(client).BundleAsync(database, sprites, patch: patch);
     Console.WriteLine($"Bundled {snapshot.Monsters.Length} creatures for Steam build {snapshot.DeclaredSteamBuild}.");
+    Console.WriteLine($"Wiki {snapshot.WikiVersion ?? "unknown"} / Balance {snapshot.Balance}; reference overrides {snapshot.ReferencePatchVersion ?? "none"}.");
     foreach (var warning in snapshot.Warnings) Console.WriteLine("Warning: " + warning);
 }
 catch (Exception exception)

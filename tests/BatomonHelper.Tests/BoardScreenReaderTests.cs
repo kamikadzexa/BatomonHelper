@@ -10,6 +10,73 @@ namespace BatomonHelper.Tests;
 public sealed class BoardScreenReaderTests(ITestOutputHelper output)
 {
     [Theory]
+    [InlineData(9)]
+    [InlineData(10)]
+    public async Task Smuggler_native_captures_match_visual_annotations(int day)
+    {
+        var catalog = (await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db"), true).GetLatestAsync())!;
+        using var image = new Bitmap(Path.Combine(AppContext.BaseDirectory, "Fixtures", $"smuggler-day{day}.png"));
+        var reader = new WindowsBoardScreenReader();
+        var result = await reader.RecognizeImageAsync(image, catalog);
+        output.WriteLine(string.Join("\n", result.Fields.Select(field => $"{field.Name}: {field.Value} ({field.Confidence:F3}) {field.Diagnostic}")));
+        output.WriteLine(string.Join("\n", result.Fields.Where(field => !field.IsResolved).Select(field =>
+            $"{field.Name} candidates: {string.Join(", ", field.Candidates.Select(candidate => $"{candidate.Value} ({candidate.Confidence:F3})"))}")));
+        AssertAnnotatedSlots(result.Snapshot!, $"smuggler-day{day}");
+        AssertResolvedFields(result, day);
+        Assert.DoesNotContain(result.Fields, field => !field.IsResolved && !field.Name.EndsWith(".Variant"));
+        Assert.Equal(day == 10, result.RequiresReview);
+        var repeat = await reader.RecognizeImageAsync(image, catalog);
+        Assert.Equal(0, repeat.Timings.OcrCalls);
+    }
+    [Theory]
+    [InlineData(9,1280,720,0,0)]
+    [InlineData(10,1600,900,0,0)]
+    [InlineData(9,1920,1080,0,0)]
+    [InlineData(10,2434,1369,0,0)]
+    [InlineData(9,1600,900,.5,0)]
+    [InlineData(10,1600,900,0,.5)]
+    [InlineData(9,1920,1080,.5,.5)]
+    [InlineData(10,2434,1369,.5,.5)]
+    public async Task Fractional_scaling_never_publishes_incorrect_resolved_fields(int day,int width,int height,double phaseX,double phaseY)
+    {
+        var catalog = (await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory,"Fixtures","batomon-wiki.db"),true).GetLatestAsync())!;
+        using var original = new Bitmap(Path.Combine(AppContext.BaseDirectory,"Fixtures",$"smuggler-day{day}.png"));
+        using var scaled = new Bitmap(width,height);
+        using (var graphics = Graphics.FromImage(scaled))
+        { graphics.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;graphics.PixelOffsetMode=System.Drawing.Drawing2D.PixelOffsetMode.Half;
+            graphics.TranslateTransform((float)phaseX,(float)phaseY);graphics.DrawImage(original,new Rectangle(0,0,width,height)); }
+        var result=await new WindowsBoardScreenReader().RecognizeImageAsync(scaled,catalog);
+        Assert.True(result.IsShop); AssertResolvedFields(result,day);
+        Assert.Equal(6,result.Snapshot!.Team.Length);Assert.Equal(4,result.Snapshot.Bench.Length);Assert.Equal(5,result.Snapshot.Shop.Length);
+    }
+
+    private static void AssertResolvedFields(BoardCaptureResult result,int day)
+    {
+        using var document=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"Fixtures",$"smuggler-day{day}.expected.json")));
+        var annotation=document.RootElement;var expected=new Dictionary<string,string>();
+        foreach(var name in new[]{"TrainerId","Day","Lives","Wins","WinTarget","TeamHp","Gold","ShopRank","ShopLocked"})
+            expected[name]=annotation.GetProperty(name).ToString();
+        var odds=annotation.GetProperty("Odds").EnumerateArray().ToArray();
+        for(var i=0;i<5;i++) expected[$"{(Rarity)i}Odds"]=odds[i].ToString();
+        expected["RerollMode"]=day==9?"Paid":"Free";expected["RerollCount"]=annotation.GetProperty(day==9?"RerollCost":"FreeRerolls").ToString();expected["ItemUsesCounterVisible"]="False";
+        foreach(var area in new[]{"Team","Bench","Shop"})
+        {
+            var index=0;
+            foreach(var slot in annotation.GetProperty(area).EnumerateArray())
+            {
+                var prefix=$"{area}[{index++}]";var id=slot.GetProperty("Id");
+                expected[prefix+".Occupant"]=id.ValueKind==JsonValueKind.Null?"empty":"monster:"+id.GetString();
+                expected[prefix+".Variant"]=slot.GetProperty("Variant").GetString()!;
+                foreach(var name in new[]{"Level","Price"}) if(slot.GetProperty(name).ValueKind!=JsonValueKind.Null)expected[prefix+"."+name]=slot.GetProperty(name).ToString();
+                var statIndex=0;
+                foreach(var stat in slot.GetProperty("Stats").EnumerateObject())
+                { expected[$"{prefix}.Stats[{statIndex}].Value"]=stat.Value.ToString();expected[$"{prefix}.Stats[{statIndex++}].Kind"]=stat.Name; }
+            }
+        }
+        foreach(var field in result.Fields.Where(field=>field.IsResolved))
+            Assert.True(expected.TryGetValue(field.Name,out var value) && value==field.Value,$"{field.Name}: expected {value}, resolved {field.Value}");
+    }
+    [Theory]
     [InlineData(1, 10, 0, 300, 30)]
     [InlineData(2, 9, 0, 500, 0)]
     [InlineData(3, 9, 1, 800, 50)]
@@ -139,6 +206,21 @@ public sealed class BoardScreenReaderTests(ITestOutputHelper output)
             crowdedUnchanged.Add(repeat.Timings.RecognitionMilliseconds);
             Assert.Equal(0, repeat.Timings.OcrCalls);
         }
+        using var smugglerNinth = new Bitmap(Path.Combine(AppContext.BaseDirectory, "Fixtures", "smuggler-day9.png"));
+        using var smugglerTenth = new Bitmap(Path.Combine(AppContext.BaseDirectory, "Fixtures", "smuggler-day10.png"));
+        var smuggler = new List<double>(); var smugglerUnchanged = new List<double>();
+        for (var iteration = 0; iteration < 20; iteration++)
+        {
+            var day = iteration % 2 == 0 ? 9 : 10;
+            var image = day == 9 ? smugglerNinth : smugglerTenth;
+            var refresh = await reader.RecognizeImageAsync(image, catalog);
+            AssertResolvedFields(refresh, day);
+            Assert.DoesNotContain(refresh.Fields, field => !field.IsResolved && !field.Name.EndsWith(".Variant"));
+            smuggler.Add(refresh.Timings.RecognitionMilliseconds);
+            var repeat = await reader.RecognizeImageAsync(image, catalog);
+            smugglerUnchanged.Add(repeat.Timings.RecognitionMilliseconds);
+            Assert.Equal(0, repeat.Timings.OcrCalls);
+        }
         using var fallbackImage = new Bitmap(first);
         using (var graphics = Graphics.FromImage(fallbackImage))
         using (var font = new Font("Arial", 38, FontStyle.Italic, GraphicsUnit.Pixel))
@@ -152,9 +234,11 @@ public sealed class BoardScreenReaderTests(ITestOutputHelper output)
         var report = new { ColdMilliseconds = coldTimer.Elapsed.TotalMilliseconds, ColdRecognitionMilliseconds = cold.Timings.RecognitionMilliseconds, ColdOcrCalls = cold.Timings.OcrCalls, ColdOcrMilliseconds = cold.Timings.OcrMilliseconds,
             ChangedP95Milliseconds = P95(changed), UnchangedP95Milliseconds = P95(unchanged), WarmOcrP95Milliseconds = P95(ocrTimes),
             CrowdedChangedP95Milliseconds = P95(crowded), CrowdedUnchangedP95Milliseconds = P95(crowdedUnchanged),
+            SmugglerChangedP95Milliseconds = P95(smuggler), SmugglerUnchangedP95Milliseconds = P95(smugglerUnchanged),
             NumericFallbackRecognitionMilliseconds = fallback.Timings.RecognitionMilliseconds, NumericFallbackOcrCalls = fallback.Timings.OcrCalls,
             NumericFallbackOcrMilliseconds = fallback.Timings.OcrMilliseconds, NumericFallbackRequiresReview = fallback.RequiresReview,
-            ChangedSamples = changed, UnchangedSamples = unchanged, CrowdedChangedSamples = crowded, CrowdedUnchangedSamples = crowdedUnchanged, OcrMilliseconds = ocrTimes };
+            ChangedSamples = changed, UnchangedSamples = unchanged, CrowdedChangedSamples = crowded, CrowdedUnchangedSamples = crowdedUnchanged,
+            SmugglerChangedSamples = smuggler, SmugglerUnchangedSamples = smugglerUnchanged, OcrMilliseconds = ocrTimes };
         var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
         output.WriteLine(json);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "capture-benchmark.json"), json);

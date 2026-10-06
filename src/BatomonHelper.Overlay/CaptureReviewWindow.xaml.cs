@@ -90,6 +90,12 @@ public sealed class CaptureReviewViewModel
             value.StartsWith("item:", StringComparison.Ordinal) ? (_catalog.Items.FirstOrDefault(item => item.Id == value[5..])?.Name ?? value) + " (item)" :
             value == "CooldownSpeed" ? "Cooldown speed" : value);
         if (!field.Name.EndsWith(".Occupant", StringComparison.Ordinal)) return;
+        field.SetValueResolver(value =>
+        {
+            var name = value.StartsWith("monster:", StringComparison.OrdinalIgnoreCase) ? value[8..] : value;
+            var matches = _catalog.Monsters.Where(monster => CreatureNames.Matches(monster, name)).Take(2).ToArray();
+            return matches.Length == 1 ? "monster:" + matches[0].Id : value;
+        });
         var prefix = field.Name[..^9];
         field.AddBadgeCommand = new RelayCommand(() => AddBadge(prefix, field.Region));
         field.PropertyChanged += (_, args) =>
@@ -126,6 +132,7 @@ public sealed class ReviewField : INotifyPropertyChanged
     private string _value;
     private readonly double _confidence;
     private Func<string, string> _display = value => value;
+    private Func<string, string> _resolve = value => value;
     public ReviewField(RecognizedField field, BitmapSource? source = null)
     {
         Name = field.Name; _value = field.Value; _confidence = field.Confidence;
@@ -148,7 +155,8 @@ public sealed class ReviewField : INotifyPropertyChanged
     public void SetChoices(IEnumerable<string> choices)
     { Candidates = Candidates.Concat(choices).Distinct().ToArray(); PropertyChanged?.Invoke(this, new(nameof(CandidateLabels))); }
     public IEnumerable<string> CandidateLabels => Candidates.Select(_display);
-    public string DisplayValue { get => _display(Value); set => Value = Candidates.FirstOrDefault(choice => string.Equals(_display(choice), value, StringComparison.OrdinalIgnoreCase)) ?? value; }
+    public string DisplayValue { get => _display(Value); set => Value = Candidates.FirstOrDefault(choice => string.Equals(_display(choice), value, StringComparison.OrdinalIgnoreCase)) ?? _resolve(value); }
+    public void SetValueResolver(Func<string, string> resolve) => _resolve = resolve;
     public void SetDisplay(Func<string, string> display)
     { _display = display; PropertyChanged?.Invoke(this, new(nameof(DisplayValue))); PropertyChanged?.Invoke(this, new(nameof(CandidateLabels))); }
     public BitmapSource? Crop { get; }
