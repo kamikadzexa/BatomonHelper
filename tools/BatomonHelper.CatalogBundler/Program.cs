@@ -9,6 +9,7 @@ try
     client.DefaultRequestHeaders.UserAgent.ParseAdd("BatomonHelper catalog bundler");
     var snapshot = await new CatalogBundler(client).BundleAsync(database, sprites);
     Console.WriteLine($"Bundled {snapshot.Monsters.Length} creatures for Steam build {snapshot.DeclaredSteamBuild}.");
+    foreach (var warning in snapshot.Warnings) Console.WriteLine("Warning: " + warning);
 }
 catch (Exception exception)
 {

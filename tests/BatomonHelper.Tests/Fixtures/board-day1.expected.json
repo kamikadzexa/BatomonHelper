@@ -1,0 +1,155 @@
+{
+  "Team": [
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    }
+  ],
+  "Bench": [
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    }
+  ],
+  "Shop": [
+    {
+      "Id": "guardiant",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": null,
+      "Stats": {
+        "Damage": 15
+      },
+      "Price": 15
+    },
+    {
+      "Id": "scorchimp",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": null,
+      "Stats": {
+        "Damage": 5,
+        "Burn": 5
+      },
+      "Price": 10
+    },
+    {
+      "Id": "magmite",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": null,
+      "Stats": {
+        "Shield": 40,
+        "Burn": 4
+      },
+      "Price": 15
+    },
+    {
+      "Id": "pebbler",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": null,
+      "Stats": {
+        "Shield": 20
+      },
+      "Price": 15
+    },
+    {
+      "Id": "cake",
+      "Occupancy": "Item",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": 0
+    }
+  ],
+  "Annotation": "Manually checked against visible pixels. Grayscale shiny classifications stay unknown; saved V1 JSON is correction evidence only.",
+  "Run": {
+    "Day": 1,
+    "Lives": 10,
+    "Wins": 0,
+    "WinTarget": 10,
+    "TeamHp": 300,
+    "Gold": 30,
+    "TrainerId": "youngster-m",
+    "RarityPercentages": [
+      100,
+      0,
+      0,
+      0,
+      0
+    ]
+  }
+}

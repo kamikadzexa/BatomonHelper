@@ -4,7 +4,10 @@ using System.Collections.Immutable;
 namespace BatomonHelper.ScreenReader;
 
 public sealed record RecognitionCandidate(string Value, double Confidence);
-public sealed record RecognizedField(string Name, string Value, double Confidence, bool IsResolved, ImmutableArray<RecognitionCandidate> Candidates, string? Diagnostic = null);
+public sealed record RecognizedField(string Name, string Value, double Confidence, bool IsResolved, ImmutableArray<RecognitionCandidate> Candidates, string? Diagnostic = null)
+{
+    public NormalizedRect? Region { get; init; }
+}
 public sealed record CaptureDiagnostic(string Code, string Message, bool IsError);
 /// <summary>Maps the normalized OCR image back to the source client frame.</summary>
 public sealed record CaptureContentBounds(int SourceWidth, int SourceHeight, int X, int Y, int Width, int Height);

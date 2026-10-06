@@ -1,0 +1,171 @@
+{
+  "CapturedAt": "2026-10-06T11:15:56.0015082+00:00",
+  "Accepted": true,
+  "Result": {
+    "Snapshot": {
+      "Trainer": null,
+      "ShopRank": 2,
+      "Gold": 0,
+      "RarityOdds": [
+        {
+          "Rarity": 0,
+          "Probability": 1
+        },
+        {
+          "Rarity": 1,
+          "Probability": 0
+        },
+        {
+          "Rarity": 2,
+          "Probability": 0
+        },
+        {
+          "Rarity": 3,
+          "Probability": 0
+        },
+        {
+          "Rarity": 4,
+          "Probability": 0
+        }
+      ],
+      "ItemAvailable": false,
+      "ItemOffer": null,
+      "CapturedAt": "2026-10-06T11:15:55.9901174+00:00",
+      "ActiveSet": "starter",
+      "RegionFilter": 0
+    },
+    "Frame": null,
+    "Fields": [
+      {
+        "Name": "ShopRank",
+        "Value": "",
+        "Confidence": 0,
+        "IsResolved": false,
+        "Candidates": [
+          {
+            "Value": "Rank?",
+            "Confidence": 0.55
+          },
+          {
+            "Value": "Ranke",
+            "Confidence": 0.55
+          }
+        ],
+        "Diagnostic": "Numeric OCR needs correction."
+      },
+      {
+        "Name": "Gold",
+        "Value": "0",
+        "Confidence": 0.72,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "$0",
+            "Confidence": 0.55
+          }
+        ],
+        "Diagnostic": null
+      },
+      {
+        "Name": "CommonOdds",
+        "Value": "100",
+        "Confidence": 0.65,
+        "IsResolved": false,
+        "Candidates": [],
+        "Diagnostic": "Rarity ribbon could not be read completely; rank-table odds are shown as an editable fallback."
+      },
+      {
+        "Name": "UncommonOdds",
+        "Value": "0",
+        "Confidence": 0.65,
+        "IsResolved": false,
+        "Candidates": [],
+        "Diagnostic": "Rarity ribbon could not be read completely; rank-table odds are shown as an editable fallback."
+      },
+      {
+        "Name": "RareOdds",
+        "Value": "0",
+        "Confidence": 0.65,
+        "IsResolved": false,
+        "Candidates": [],
+        "Diagnostic": "Rarity ribbon could not be read completely; rank-table odds are shown as an editable fallback."
+      },
+      {
+        "Name": "SuperRareOdds",
+        "Value": "0",
+        "Confidence": 0.65,
+        "IsResolved": false,
+        "Candidates": [],
+        "Diagnostic": "Rarity ribbon could not be read completely; rank-table odds are shown as an editable fallback."
+      },
+      {
+        "Name": "LegendaryOdds",
+        "Value": "0",
+        "Confidence": 0.65,
+        "IsResolved": false,
+        "Candidates": [],
+        "Diagnostic": "Rarity ribbon could not be read completely; rank-table odds are shown as an editable fallback."
+      },
+      {
+        "Name": "ItemAvailable",
+        "Value": "False",
+        "Confidence": 0.85,
+        "IsResolved": false,
+        "Candidates": [],
+        "Diagnostic": "Item slot text could not be read; confirm whether the fifth slot is an item."
+      }
+    ],
+    "Diagnostics": [],
+    "IsShop": true
+  },
+  "Reviews": [
+    {
+      "Name": "ShopRank",
+      "RecognizedValue": "",
+      "AcceptedValue": "2",
+      "WasChanged": true
+    },
+    {
+      "Name": "Gold",
+      "RecognizedValue": "0",
+      "AcceptedValue": "0",
+      "WasChanged": false
+    },
+    {
+      "Name": "CommonOdds",
+      "RecognizedValue": "100",
+      "AcceptedValue": "100",
+      "WasChanged": false
+    },
+    {
+      "Name": "UncommonOdds",
+      "RecognizedValue": "0",
+      "AcceptedValue": "0",
+      "WasChanged": false
+    },
+    {
+      "Name": "RareOdds",
+      "RecognizedValue": "0",
+      "AcceptedValue": "0",
+      "WasChanged": false
+    },
+    {
+      "Name": "SuperRareOdds",
+      "RecognizedValue": "0",
+      "AcceptedValue": "0",
+      "WasChanged": false
+    },
+    {
+      "Name": "LegendaryOdds",
+      "RecognizedValue": "0",
+      "AcceptedValue": "0",
+      "WasChanged": false
+    },
+    {
+      "Name": "ItemAvailable",
+      "RecognizedValue": "False",
+      "AcceptedValue": "False",
+      "WasChanged": false
+    }
+  ]
+}

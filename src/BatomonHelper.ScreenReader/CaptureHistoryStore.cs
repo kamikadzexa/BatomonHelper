@@ -14,14 +14,47 @@ public sealed record CaptureHistoryEntry(
     ShopCaptureResult Result,
     ImmutableArray<CaptureFieldReview> Reviews = default);
 
+public sealed record BoardCaptureHistoryEntry(int Version, DateTimeOffset CapturedAt, bool Accepted,
+    BoardCaptureResult Result, BoardSnapshot? AcceptedSnapshot, ImmutableArray<CaptureFieldReview> Reviews);
+
 public sealed class CaptureHistoryStore(string directory, int capacity = 20)
 {
     private readonly string _directory = directory;
     private readonly int _capacity = Math.Max(1, capacity);
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private readonly SemaphoreSlim _writeGate = new(1);
+
+    public async Task SaveBoardAsync(BoardCaptureResult result, bool accepted, BoardSnapshot? acceptedSnapshot = null,
+        IEnumerable<RecognizedField>? acceptedFields = null, CancellationToken cancellationToken = default)
+    {
+        if (accepted && acceptedSnapshot is null) throw new ArgumentException("An accepted V2 record requires the accepted board.", nameof(acceptedSnapshot));
+        await _writeGate.WaitAsync(cancellationToken);
+        try
+        {
+            Directory.CreateDirectory(_directory);
+            result = result.MaterializeFrame();
+            var id = $"{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}";
+            var reviews = acceptedFields?.Select(entry =>
+            {
+                var proposed = result.Fields.FirstOrDefault(source => source.Name == entry.Name)?.Value ?? "";
+                return new CaptureFieldReview(entry.Name, proposed, entry.Value, proposed != entry.Value);
+            }).ToImmutableArray() ?? [];
+            var record = new BoardCaptureHistoryEntry(2, DateTimeOffset.UtcNow, accepted,
+                result with { Frame = null, FrameEncoder = null }, acceptedSnapshot, reviews);
+            var path = Path.Combine(_directory, id + ".json");
+            await File.WriteAllTextAsync(path + ".tmp", JsonSerializer.Serialize(record, JsonOptions), cancellationToken);
+            if (result.Frame is not null) await File.WriteAllBytesAsync(Path.Combine(_directory, id + ".png"), result.Frame.Png, cancellationToken);
+            File.Move(path + ".tmp", path, true);
+            Prune();
+        }
+        finally { _writeGate.Release(); }
+    }
 
     public async Task SaveAsync(ShopCaptureResult result, bool accepted, ShopOddsSnapshot? acceptedSnapshot = null, IEnumerable<RecognizedField>? acceptedFields = null, CancellationToken cancellationToken = default)
     {
+        await _writeGate.WaitAsync(cancellationToken);
+        try
+        {
         Directory.CreateDirectory(_directory);
         var stamp = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmssfff");
         var id = $"{stamp}-{Guid.NewGuid():N}";
@@ -47,6 +80,8 @@ public sealed class CaptureHistoryStore(string directory, int capacity = 20)
             File.Move(tempImage, imagePath, true);
         }
         Prune();
+        }
+        finally { _writeGate.Release(); }
     }
 
     private void Prune()

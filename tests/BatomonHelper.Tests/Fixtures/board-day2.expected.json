@@ -1,0 +1,171 @@
+{
+  "Team": [
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": "infernade",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": 1,
+      "Stats": {
+        "Burn": 20
+      },
+      "Price": null
+    },
+    {
+      "Id": "scorchimp",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": 1,
+      "Stats": {
+        "Damage": 5,
+        "Burn": 5
+      },
+      "Price": null
+    },
+    {
+      "Id": "magmite",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": 1,
+      "Stats": {
+        "Damage": 5,
+        "Shield": 40,
+        "Burn": 4
+      },
+      "Price": null
+    },
+    {
+      "Id": "scorchimp",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": 1,
+      "Stats": {
+        "Damage": 10,
+        "Burn": 5
+      },
+      "Price": null
+    }
+  ],
+  "Bench": [
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": "joltail",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": 1,
+      "Stats": {
+        "Damage": 1,
+        "Shock": 4
+      },
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    }
+  ],
+  "Shop": [
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": "guardiant",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": null,
+      "Stats": {
+        "Damage": 15
+      },
+      "Price": 15
+    },
+    {
+      "Id": "frizzly",
+      "Occupancy": "Creature",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {
+        "Damage": 1,
+        "Shock": 8
+      },
+      "Price": 25
+    },
+    {
+      "Id": "joltail",
+      "Occupancy": "Creature",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {
+        "Damage": 1,
+        "Shock": 4
+      },
+      "Price": 15
+    },
+    {
+      "Id": "joltail",
+      "Occupancy": "Creature",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {
+        "Damage": 1,
+        "Shock": 4
+      },
+      "Price": 15
+    }
+  ],
+  "Annotation": "Manually checked against visible pixels. Grayscale shiny classifications stay unknown; saved V1 JSON is correction evidence only.",
+  "Run": {
+    "Day": 2,
+    "Lives": 9,
+    "Wins": 0,
+    "WinTarget": 10,
+    "TeamHp": 500,
+    "Gold": 0,
+    "TrainerId": "youngster-m",
+    "RarityPercentages": [
+      90,
+      10,
+      0,
+      0,
+      0
+    ]
+  }
+}

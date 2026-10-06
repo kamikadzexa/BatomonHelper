@@ -1,0 +1,171 @@
+{
+  "CapturedAt": "2026-10-06T11:14:22.3422967+00:00",
+  "Accepted": true,
+  "Result": {
+    "Snapshot": {
+      "Trainer": null,
+      "ShopRank": 1,
+      "Gold": 30,
+      "RarityOdds": [
+        {
+          "Rarity": 0,
+          "Probability": 1
+        },
+        {
+          "Rarity": 1,
+          "Probability": 0
+        },
+        {
+          "Rarity": 2,
+          "Probability": 0
+        },
+        {
+          "Rarity": 3,
+          "Probability": 0
+        },
+        {
+          "Rarity": 4,
+          "Probability": 0
+        }
+      ],
+      "ItemAvailable": true,
+      "ItemOffer": null,
+      "CapturedAt": "2026-10-06T11:14:22.2218853+00:00",
+      "ActiveSet": "starter",
+      "RegionFilter": 0
+    },
+    "Frame": null,
+    "Fields": [
+      {
+        "Name": "ShopRank",
+        "Value": "1",
+        "Confidence": 0.72,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "Rankl 01",
+            "Confidence": 0.55
+          },
+          {
+            "Value": "Rankl",
+            "Confidence": 0.55
+          }
+        ],
+        "Diagnostic": null
+      },
+      {
+        "Name": "Gold",
+        "Value": "30",
+        "Confidence": 0.72,
+        "IsResolved": true,
+        "Candidates": [
+          {
+            "Value": "$30",
+            "Confidence": 0.55
+          }
+        ],
+        "Diagnostic": null
+      },
+      {
+        "Name": "CommonOdds",
+        "Value": "100",
+        "Confidence": 0.82,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null
+      },
+      {
+        "Name": "UncommonOdds",
+        "Value": "0",
+        "Confidence": 0.82,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null
+      },
+      {
+        "Name": "RareOdds",
+        "Value": "0",
+        "Confidence": 0.82,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null
+      },
+      {
+        "Name": "SuperRareOdds",
+        "Value": "0",
+        "Confidence": 0.82,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null
+      },
+      {
+        "Name": "LegendaryOdds",
+        "Value": "0",
+        "Confidence": 0.82,
+        "IsResolved": true,
+        "Candidates": [],
+        "Diagnostic": null
+      },
+      {
+        "Name": "ItemAvailable",
+        "Value": "True",
+        "Confidence": 0.85,
+        "IsResolved": false,
+        "Candidates": [],
+        "Diagnostic": "Item slot text could not be read; confirm whether the fifth slot is an item."
+      }
+    ],
+    "Diagnostics": [],
+    "IsShop": true
+  },
+  "Reviews": [
+    {
+      "Name": "ShopRank",
+      "RecognizedValue": "1",
+      "AcceptedValue": "1",
+      "WasChanged": false
+    },
+    {
+      "Name": "Gold",
+      "RecognizedValue": "30",
+      "AcceptedValue": "30",
+      "WasChanged": false
+    },
+    {
+      "Name": "CommonOdds",
+      "RecognizedValue": "100",
+      "AcceptedValue": "100",
+      "WasChanged": false
+    },
+    {
+      "Name": "UncommonOdds",
+      "RecognizedValue": "0",
+      "AcceptedValue": "0",
+      "WasChanged": false
+    },
+    {
+      "Name": "RareOdds",
+      "RecognizedValue": "0",
+      "AcceptedValue": "0",
+      "WasChanged": false
+    },
+    {
+      "Name": "SuperRareOdds",
+      "RecognizedValue": "0",
+      "AcceptedValue": "0",
+      "WasChanged": false
+    },
+    {
+      "Name": "LegendaryOdds",
+      "RecognizedValue": "0",
+      "AcceptedValue": "0",
+      "WasChanged": false
+    },
+    {
+      "Name": "ItemAvailable",
+      "RecognizedValue": "True",
+      "AcceptedValue": "True",
+      "WasChanged": false
+    }
+  ]
+}

@@ -14,7 +14,7 @@ public readonly record struct NormalizedRect(double X, double Y, double Width, d
     }
 }
 
-/// <summary>Only the stable visual regions needed for a next-shop odds snapshot.</summary>
+/// <summary>Shared shopping-screen geometry and verification of genuine black bars.</summary>
 public static class ShopLayout
 {
     public const int MinimumCaptureWidth = 640;
@@ -87,15 +87,17 @@ public static class ShopLayout
 
     private static bool IsMostlyBlack(Bitmap bitmap, Rectangle region)
     {
-        if (region.Width <= 0) return true;
+        if (region.Width <= 0 || region.Height <= 0) return true;
+        using var crop = bitmap.Clone(region, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        var pixels = PixelImage.FromBitmap(crop);
         var samples = 0;
         var black = 0;
-        for (var y = region.Top; y < region.Bottom; y += Math.Max(1, region.Height / 20))
-        for (var x = region.Left; x < region.Right; x += Math.Max(1, region.Width / 20))
+        for (var y = 0; y < pixels.Height; y += Math.Max(1, pixels.Height / 20))
+        for (var x = 0; x < pixels.Width; x += Math.Max(1, pixels.Width / 20))
         {
-            var pixel = bitmap.GetPixel(x, y);
+            var offset = (y * pixels.Width + x) * 4;
             samples++;
-            if (pixel.R < 18 && pixel.G < 18 && pixel.B < 18) black++;
+            if (pixels.Bytes[offset] < 18 && pixels.Bytes[offset + 1] < 18 && pixels.Bytes[offset + 2] < 18) black++;
         }
         return samples > 0 && black >= samples * .96;
     }

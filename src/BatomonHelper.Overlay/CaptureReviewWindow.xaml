@@ -1,7 +1,7 @@
 <Window x:Class="BatomonHelper.Overlay.CaptureReviewWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Confirm shop details" Icon="pack://application:,,,/Assets/batomon-helper.ico" Width="1180" Height="780" MinWidth="900" MinHeight="620"
+        Title="Confirm shop details" Icon="pack://application:,,,/BatomonHelper.Overlay;component/Assets/batomon-helper.ico" Width="1180" Height="780" MinWidth="900" MinHeight="620"
         WindowStartupLocation="CenterOwner" Background="#10202E" Foreground="#F4F8FF">
   <Window.Resources>
     <Style x:Key="ReviewValue" TargetType="TextBox">
@@ -22,7 +22,7 @@
       <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonBorder" Property="Background" Value="#42627F" /></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="ButtonBorder" Property="Background" Value="#223447" /></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
     </Style>
   </Window.Resources>
-  <Grid Margin="18">
+  <Grid Margin="18" Background="#10202E">
     <Grid.ColumnDefinitions><ColumnDefinition Width="3*"/><ColumnDefinition Width="2*"/></Grid.ColumnDefinitions>
     <Border Background="#162638" BorderBrush="#34516A" BorderThickness="1" CornerRadius="8" Padding="6" Margin="0,0,16,0">
       <Image Source="{Binding Image}" Stretch="Uniform" />
@@ -30,8 +30,8 @@
     <Grid Grid.Column="1">
       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
       <StackPanel>
-        <TextBlock FontSize="25" FontWeight="Bold" Text="Confirm shop details" />
-        <TextBlock Margin="0,5,0,0" TextWrapping="Wrap" Foreground="#AAB7CA" FontSize="14" Text="Check the values below, make any changes you need, then save this shop." />
+        <TextBlock FontSize="25" FontWeight="Bold" Text="Confirm captured values" />
+        <TextBlock Margin="0,5,0,0" TextWrapping="Wrap" Foreground="#AAB7CA" FontSize="14" Text="Uncertain values appear first. Correct them using the image and candidates. Your previous board stays active until this capture is valid." />
       </StackPanel>
       <ScrollViewer Grid.Row="1" Margin="0,18,0,14" VerticalScrollBarVisibility="Auto">
         <ItemsControl ItemsSource="{Binding Fields}">
@@ -39,19 +39,22 @@
             <Border Margin="0,0,0,10" Padding="14,11" Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="6">
               <StackPanel>
                 <TextBlock Foreground="#B7C7D9" FontSize="13" FontWeight="SemiBold" Text="{Binding DisplayName}" />
-                <TextBox Style="{StaticResource ReviewValue}" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                <Image Source="{Binding Crop}" MaxHeight="85" Stretch="Uniform" HorizontalAlignment="Left" Margin="0,6" />
+                <ComboBox IsEditable="True" ItemsSource="{Binding CandidateLabels}" Text="{Binding DisplayValue, UpdateSourceTrigger=PropertyChanged}" FontSize="20" Padding="5" Foreground="#10202E" />
+                <TextBlock Text="{Binding Diagnostic}" TextWrapping="Wrap" Foreground="#FFCE79" Margin="0,5,0,0" />
+                <Button Style="{StaticResource ReviewButton}" Content="Add visible badge" Command="{Binding AddBadgeCommand}" Visibility="{Binding AddBadgeVisibility}" Margin="0,8,0,0" />
               </StackPanel>
             </Border>
           </DataTemplate></ItemsControl.ItemTemplate>
         </ItemsControl>
       </ScrollViewer>
-      <DockPanel Grid.Row="2">
-        <TextBlock VerticalAlignment="Center" Foreground="#AAB7CA" Text="Your shop details will be saved after you confirm." />
-        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+      <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+        <TextBlock VerticalAlignment="Center" Foreground="#AAB7CA" TextWrapping="Wrap" Text="Your board will be saved after you confirm." />
+        <StackPanel Grid.Column="1" Orientation="Horizontal">
           <Button Style="{StaticResource ReviewButton}" Content="Back" IsCancel="True" />
-          <Button Style="{StaticResource ReviewButton}" Background="#2C755F" BorderBrush="#78E2B8" Content="Save shop" IsDefault="True" Click="Accept_Click" />
+          <Button Style="{StaticResource ReviewButton}" Background="#2C755F" BorderBrush="#78E2B8" Content="Accept capture" IsDefault="True" Click="Accept_Click" />
         </StackPanel>
-      </DockPanel>
+      </Grid>
     </Grid>
   </Grid>
 </Window>

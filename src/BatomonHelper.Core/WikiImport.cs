@@ -101,7 +101,17 @@ public sealed partial class WikiImporter(IWikiSource source)
         var baseMatch = BaseSpeciesRegex().Match(html);
         if (!baseMatch.Success) baseMatch = EvolvesFromRegex().Match(html);
         var baseId = baseMatch.Success ? baseMatch.Groups["id"].Value : null;
-        return new(id, WebUtility.HtmlDecode(name).Trim(), rarity.Value, baseId, activeSets.ToImmutable(), !html.Contains("no shiny", StringComparison.OrdinalIgnoreCase));
+        var sprite = FindSpriteUrl(html, "monster", name);
+        var decoded = html.Replace("\\\"", "\"", StringComparison.Ordinal).Replace("\\/", "/", StringComparison.Ordinal);
+        var main = decoded.IndexOf("<main", StringComparison.OrdinalIgnoreCase);
+        var body = main >= 0 ? decoded[main..] : decoded;
+        var shinyAsset = Regex.Match(body, "/game/\\d+/monster/[a-z0-9_-]+_shiny\\.png", RegexOptions.IgnoreCase);
+        var shiny = shinyAsset.Success ? "https://batomon.com" + shinyAsset.Value : null;
+        return new(id, WebUtility.HtmlDecode(name).Trim(), rarity.Value, baseId, activeSets.ToImmutable(), shiny is not null)
+        {
+            SpriteUrl = sprite, ShinySpriteUrl = shiny,
+            ShinySpritePath = shiny is null ? null : $"assets/wiki/monsters/{id}-shiny.png"
+        };
     }
 
     private static Rarity? ParseRarity(string html)
@@ -154,7 +164,23 @@ public sealed partial class WikiImporter(IWikiSource source)
         catch (KeyNotFoundException) { return string.Empty; }
     }
 
-    private static TrainerDefinition ParseTrainer(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Trainer ability"));
+    private static TrainerDefinition ParseTrainer(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Trainer ability"))
+    { SpritePath = $"assets/wiki/trainers/{id}.png", SpriteUrl = FindSpriteUrl(html, "trainer", ParseReferenceName(id, html)) };
+
+    internal static string? FindSpriteUrl(string html, string kind, string name)
+    {
+        foreach (Match image in Regex.Matches(html, "<img\\b[^>]*>", RegexOptions.IgnoreCase))
+        {
+            var tag = image.Value;
+            if (!tag.Contains(WebUtility.HtmlEncode(name) + " sprite", StringComparison.OrdinalIgnoreCase) && !tag.Contains(name + " sprite", StringComparison.OrdinalIgnoreCase)) continue;
+            var src = Regex.Match(tag, "src=\"(?<url>/game/[^\"]+/" + kind + "/[^\"]+\\.png)\"");
+            if (src.Success) return "https://batomon.com" + WebUtility.HtmlDecode(src.Groups["url"].Value);
+        }
+        var start = html.IndexOf("<main", StringComparison.OrdinalIgnoreCase);
+        var body = start >= 0 ? html[start..] : html;
+        var match = Regex.Match(body, "/game/\\d+/" + kind + "/[a-z0-9_-]+\\.png", RegexOptions.IgnoreCase);
+        return match.Success ? "https://batomon.com" + match.Value : null;
+    }
     private static ItemDefinition ParseItem(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Item effect"), ParsePrice(html), null, ParseRarity(html) ?? Rarity.Common);
     private static TrinketDefinition ParseTrinket(string id, string html) => new(id, ParseReferenceName(id, html), ParseRarity(html) ?? Rarity.Common, ParseReferenceEffect(html, "Trinket effect"), html.Contains("Unique", StringComparison.OrdinalIgnoreCase));
     private static string ParseReferenceName(string id, string html)

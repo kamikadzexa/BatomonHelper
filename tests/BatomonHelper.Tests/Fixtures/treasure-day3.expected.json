@@ -1,0 +1,160 @@
+{
+  "TrainerId": "treasure-hunter",
+  "Day": 3,
+  "Lives": 10,
+  "Wins": 2,
+  "WinTarget": 10,
+  "TeamHp": 800,
+  "Gold": 42,
+  "ShopRank": 3,
+  "Odds": [
+    75,
+    25,
+    0,
+    0,
+    0
+  ],
+  "ShopLocked": false,
+  "RerollCost": 3,
+  "FreeRerolls": null,
+  "ItemUsesRemaining": 1,
+  "ItemUsesMaximum": 1,
+  "Team": [
+    {
+      "Id": "panbud",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": 2,
+      "Stats": {
+        "Damage": 67
+      },
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": "stingarde",
+      "Occupancy": "Creature",
+      "Variant": "Shiny",
+      "Level": 2,
+      "Stats": {
+        "Damage": 317
+      },
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    }
+  ],
+  "Bench": [
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    },
+    {
+      "Id": null,
+      "Occupancy": "Empty",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": null
+    }
+  ],
+  "Shop": [
+    {
+      "Id": "panbud",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": null,
+      "Stats": {
+        "Damage": 25
+      },
+      "Price": 10
+    },
+    {
+      "Id": "guardiant",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": null,
+      "Stats": {
+        "Damage": 15
+      },
+      "Price": 12
+    },
+    {
+      "Id": "shogapede",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": null,
+      "Stats": {
+        "Poison": 6
+      },
+      "Price": 22
+    },
+    {
+      "Id": "panbud",
+      "Occupancy": "Creature",
+      "Variant": "Normal",
+      "Level": null,
+      "Stats": {
+        "Damage": 25
+      },
+      "Price": 10
+    },
+    {
+      "Id": "basic-bait",
+      "Occupancy": "Item",
+      "Variant": "Unknown",
+      "Level": null,
+      "Stats": {},
+      "Price": 0
+    }
+  ]
+}

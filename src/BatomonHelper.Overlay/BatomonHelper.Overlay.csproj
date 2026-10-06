@@ -13,6 +13,7 @@
     <ProjectReference Include="..\BatomonHelper.ScreenReader\BatomonHelper.ScreenReader.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\assets\recognition\**\*" Link="assets\recognition\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\assets\wiki\**\*">
       <Link>assets\wiki\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

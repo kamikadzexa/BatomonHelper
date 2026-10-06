@@ -49,7 +49,7 @@ public partial class MainWindow : Window
             NativeOverlay.RegisterHotKey(_source!.Handle, HotkeyId, 0, 0x77); // F8
             NativeOverlay.RegisterHotKey(_source.Handle, CaptureHotkeyId, 0, 0x78); // F9
         };
-        Closed += (_, _) => { if (_source is not null) { NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId); } };
+        Closed += (_, _) => { if (DataContext is OverlayViewModel viewModel) viewModel.StopCaptures(); if (_source is not null) { NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId); } };
     }
 
     private IntPtr WndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)

@@ -14,9 +14,16 @@ public sealed record MonsterDefinition(
     string? SpritePath = null)
 {
     public ImmutableHashSet<string> Regions { get; init; } = [];
+    public string? ShinySpritePath { get; init; }
+    public string? SpriteUrl { get; init; }
+    public string? ShinySpriteUrl { get; init; }
 }
 
-public sealed record TrainerDefinition(string Id, string Name, string? RuleText = null);
+public sealed record TrainerDefinition(string Id, string Name, string? RuleText = null)
+{
+    public string? SpritePath { get; init; }
+    public string? SpriteUrl { get; init; }
+}
 
 public sealed record ItemDefinition(string Id, string Name, string? RuleText = null, int? Price = null, string? SpritePath = null, Rarity Rarity = Rarity.Common);
 public sealed record TrinketDefinition(string Id, string Name, Rarity Rarity, string? RuleText = null, bool IsUnique = false, string? SpritePath = null);

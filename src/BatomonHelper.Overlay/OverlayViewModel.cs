@@ -7,10 +7,19 @@ using System.Windows.Input;
 
 namespace BatomonHelper.Overlay;
 
+public sealed record BoardCardRow(string Name, string? SpritePath, string Level, string Variant, string Stats, string Price);
+
 public sealed class OverlayViewModel : INotifyPropertyChanged
 {
     private readonly SnapshotRepository _repository;
-    private readonly IShopScreenReader _screenReader = new WindowsShopScreenReader();
+    private readonly IBoardScreenReader _screenReader = new WindowsBoardScreenReader();
+    private readonly CaptureRefreshQueue _captureQueue;
+    private readonly BoardCaptureState _boardState = new();
+    private readonly CancellationTokenSource _captureCancellation = new();
+    private Task _historyTail = Task.CompletedTask;
+    private string? _lastHistorySignature;
+    private string _boardSummary = "Press F9 in the shopping screen to capture your board.";
+    private string? _trainerSpritePath;
     private readonly CaptureHistoryStore _history;
     private readonly IOddsCalculator _oddsCalculator = new OddsCalculator();
     private CatalogSnapshot _catalog = CatalogSnapshot.Empty;
@@ -40,6 +49,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         Directory.CreateDirectory(appData);
         _history = new CaptureHistoryStore(Path.Combine(appData, "capture-history"));
         _repository = new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "assets", "wiki", "batomon-wiki.db"), readOnly: true);
+        _captureQueue = new(_ => CaptureBoardOnceAsync(), _captureCancellation.Token);
         CaptureShopCommand = new AsyncCommand(CaptureShopAsync);
         DecreaseRankCommand = new RelayCommand(() => ChangeRank(-1));
         IncreaseRankCommand = new RelayCommand(() => ChangeRank(1));
@@ -52,6 +62,11 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     public ObservableCollection<ItemBrowserRow> ItemRows { get; } = [];
     public ObservableCollection<TrinketBrowserRow> TrinketRows { get; } = [];
     public ObservableCollection<ShopRarityOddsRow> ShopOddsRows { get; } = [];
+    public ObservableCollection<BoardCardRow> TeamRows { get; } = [];
+    public ObservableCollection<BoardCardRow> BenchRows { get; } = [];
+    public ObservableCollection<BoardCardRow> OfferRows { get; } = [];
+    public string BoardSummary { get => _boardSummary; private set => Set(ref _boardSummary, value); }
+    public string? TrainerSpritePath { get => _trainerSpritePath; private set => Set(ref _trainerSpritePath, value); }
     public IReadOnlyList<RegionFilterOption> RegionFilters { get; } = [new(MonsterRegionFilter.All, "All regions"), new(MonsterRegionFilter.Jinto, "Jinto region"), new(MonsterRegionFilter.Pantra, "Pantra region")];
     public IReadOnlyList<RarityFilterOption> RarityFilters { get; } = [new(null, "All rarities"), new(Rarity.Common, "Common"), new(Rarity.Uncommon, "Uncommon"), new(Rarity.Rare, "Rare"), new(Rarity.SuperRare, "Super Rare"), new(Rarity.Legendary, "Legendary"), new(Rarity.Mythical, "Mythical")];
     public ICommand CaptureShopCommand { get; }
@@ -101,10 +116,16 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         }
     }
 
-    public async Task CaptureShopAsync()
+    public Task CaptureShopAsync() => _captureQueue.RequestAsync();
+
+    public void StopCaptures() => _captureCancellation.Cancel();
+
+    private async Task CaptureBoardOnceAsync()
     {
         var window = Application.Current.MainWindow;
         var restoreOpacity = window is not null && window.Visibility == Visibility.Visible ? window.Opacity : 1d;
+        void RestoreFrameVisibility() { if (window is not null) _ = window.Dispatcher.InvokeAsync(() => window.Opacity = restoreOpacity); }
+        _screenReader.FrameCaptured += RestoreFrameVisibility;
         try
         {
             if (_catalog == CatalogSnapshot.Empty)
@@ -112,54 +133,87 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
                 Status = "The bundled catalog is unavailable; shop capture cannot start.";
                 return;
             }
-            if (window is not null && window.Visibility == Visibility.Visible) { window.Opacity = 0; await Task.Delay(90); }
-            Status = "Capturing the focused Batomon shop…";
-            var result = await _screenReader.CaptureAsync(_catalog);
+            if (window is not null && window.Visibility == Visibility.Visible)
+            { window.Opacity = 0; await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render); await Task.Delay(20, _captureCancellation.Token); }
+            Status = "Reading the Batomon board…";
+            var result = await _screenReader.CaptureAsync(_catalog, _captureCancellation.Token);
             if (window is not null) window.Opacity = restoreOpacity;
             if (result.Snapshot is null)
             {
-                await SaveHistoryAsync(result, false);
+                QueueBoardHistory(result, false);
                 Warning = string.Join(" ", result.Diagnostics.Select(diagnostic => diagnostic.Message));
                 Status = "Shop capture was not accepted; the previous state is unchanged.";
                 return;
             }
             result = result with { Snapshot = result.Snapshot with { RegionFilter = SelectedRegionFilter.Value } };
-            var review = new CaptureReviewWindow(result, _catalog) { Owner = window };
-            if (review.ShowDialog() != true || review.AcceptedSnapshot is null)
+            var board = result.Snapshot;
+            IEnumerable<RecognizedField>? acceptedFields = null;
+            if (result.RequiresReview || !BoardSnapshotValidator.Validate(board, _catalog).IsValid)
             {
-                await SaveHistoryAsync(result, false);
-                Status = "Shop capture was cancelled; the previous state is unchanged.";
-                return;
+                result = await Task.Run(result.MaterializeFrame);
+                var review = new CaptureReviewWindow(result, _catalog) { Owner = window };
+                if (review.ShowDialog() != true || review.AcceptedBoard is null)
+                { QueueBoardHistory(result, false); Status = "Board correction cancelled; the previous board remains active."; return; }
+                board = review.AcceptedBoard; acceptedFields = review.AcceptedFields;
             }
-            var snapshot = review.AcceptedSnapshot;
-            var validation = ShopOddsSnapshotValidator.Validate(snapshot, _catalog);
-            if (!validation.IsValid)
-            {
-                await SaveHistoryAsync(result, false);
-                Warning = string.Join(" ", validation.Errors);
-                Status = "Correct the highlighted capture values and try again; the previous state is unchanged.";
-                return;
-            }
-            await SaveHistoryAsync(result, true, snapshot, review.AcceptedFields);
+            var snapshot = board.ToShopOddsSnapshot(_catalog);
+            var odds = CalculateOdds(snapshot);
+            _boardState.Publish(result, _catalog, acceptedFields is null ? null : board);
             _capturedSnapshot = snapshot;
             _itemAvailable = snapshot.ItemAvailable;
             OnPropertyChanged(nameof(ItemAvailable));
-            Render(CalculateOdds(snapshot), snapshot);
-            Warning = string.Empty;
-            Status = $"Shop captured at {snapshot.CapturedAt:HH:mm:ss}. Press F9 after your next shop change.";
+            Render(odds, snapshot);
+            RenderBoard(board);
+            QueueBoardHistory(result, true, board, acceptedFields);
+            Warning = string.Join(" ", result.Diagnostics.Select(diagnostic => diagnostic.Message));
+            Status = $"Board updated at {board.CapturedAt:HH:mm:ss} · {result.Timings.RecognitionMilliseconds:F0} ms. F9 refreshes it.";
         }
+        catch (OperationCanceledException) { Status = "Board capture cancelled."; }
         catch (Exception exception)
         {
             Warning = exception.Message;
             Status = "Shop capture failed; the previous state is unchanged.";
         }
-        finally { if (window is not null) window.Opacity = restoreOpacity; }
+        finally { _screenReader.FrameCaptured -= RestoreFrameVisibility; if (window is not null) window.Opacity = restoreOpacity; }
     }
 
-    private async Task SaveHistoryAsync(ShopCaptureResult result, bool accepted, ShopOddsSnapshot? acceptedSnapshot = null, IEnumerable<RecognizedField>? acceptedFields = null)
+    private void RenderBoard(BoardSnapshot board)
     {
-        try { await _history.SaveAsync(result, accepted, acceptedSnapshot, acceptedFields); }
-        catch (Exception exception) { Warning = $"Capture history could not be saved: {exception.Message}"; }
+        var trainer = _catalog.Trainers.First(entry => entry.Id == board.TrainerId);
+        TrainerSpritePath = trainer.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, trainer.SpritePath.Replace('/', Path.DirectorySeparatorChar));
+        BoardSummary = $"{trainer.Name} · Day {board.Day} · Lives {board.Lives} · Wins {board.Wins}/{board.WinTarget} · HP {board.TeamHp} · ${board.Gold} · Rank {board.ShopRank}\n" +
+            (board.FreeRerolls is null ? $"Reroll ${board.RerollCost}" : $"Free rerolls {board.FreeRerolls}") +
+            (board.ItemUsesCounterVisible ? $" · Item uses {board.ItemUsesRemaining}/{board.ItemUsesMaximum}" : " · Item counter absent") +
+            (board.ShopLocked == true ? " · Shop locked" : " · Shop unlocked");
+        Fill(TeamRows, board.Team); Fill(BenchRows, board.Bench); Fill(OfferRows, board.Shop);
+        void Fill(ObservableCollection<BoardCardRow> rows, IEnumerable<BoardSlot> slots)
+        {
+            rows.Clear();
+            foreach (var slot in slots)
+            {
+                var creature = _catalog.Monsters.FirstOrDefault(entry => entry.Id == slot.DefinitionId);
+                var item = _catalog.Items.FirstOrDefault(entry => entry.Id == slot.DefinitionId);
+                var name = creature?.Name ?? item?.Name ?? "Empty";
+                var path = slot.Variant == ShinyState.Shiny ? creature?.ShinySpritePath : creature?.SpritePath ?? item?.SpritePath;
+                var sprite = path is null ? null : Path.Combine(AppContext.BaseDirectory, path.Replace('/', Path.DirectorySeparatorChar));
+                rows.Add(new($"{slot.Index + 1}. {name}", sprite, slot.Level is null ? "" : $"Lv. {slot.Level}", creature is null ? "" : slot.Variant.ToString(),
+                    slot.Stats.IsDefault ? "" : string.Join(" · ", slot.Stats.Select(stat => $"{stat.Kind} {stat.Value}")),
+                    slot.Price is null ? "" : $"${slot.Price}" + (slot.Affordable == false ? " · unavailable" : "")));
+            }
+        }
+    }
+
+    private void QueueBoardHistory(BoardCaptureResult result, bool accepted, BoardSnapshot? board = null, IEnumerable<RecognizedField>? fields = null)
+    {
+        var signature = accepted ? string.Join('|', (fields ?? result.Fields).Select(entry => entry.Name + "=" + entry.Value)) : null;
+        if (accepted && signature == _lastHistorySignature) return;
+        if (accepted) _lastHistorySignature = signature;
+        var previous = _historyTail;
+        _historyTail = Task.Run(async () =>
+        {
+            try { await previous; await _history.SaveBoardAsync(result, accepted, board, fields); }
+            catch (Exception exception) { await Application.Current.Dispatcher.InvokeAsync(() => Warning = $"Capture history could not be saved: {exception.Message}"); }
+        });
     }
 
     private void Render(OddsResult odds, ShopOddsSnapshot snapshot)
