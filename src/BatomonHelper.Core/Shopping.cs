@@ -11,6 +11,8 @@ public sealed record MonsterRules(ImmutableArray<string> Types, ImmutableArray<s
     ImmutableDictionary<int, string> Abilities, ImmutableDictionary<int, string> ShinyAbilities,
     string? Evolution, string MergeGroup, string SourceUrl, DateTimeOffset RetrievedAt)
 {
+    public string? AbilityTrigger { get; init; }
+    public string? ShinyAbilityTrigger { get; init; }
     public ImmutableArray<string> UnverifiedPatchFields { get; init; } = [];
 }
 
@@ -48,10 +50,12 @@ public sealed record ShoppingObservation
     public bool Resolved { get; init; }
     public bool Foreground { get; init; }
     public MonsterRegionFilter? RunRegion { get; init; }
+    public ShoppingAdviceContext? AdviceContext { get; init; }
     public DateTimeOffset ObservedAt { get; init; } = DateTimeOffset.UtcNow;
     public string Revision => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
     { Board = Board is null ? null : Board with { CapturedAt = default, RegionFilter = MonsterRegionFilter.All },
-        Panel, Inventory, InventoryResolved, Details, Choices, InteractionTargets, OfferLevels, EnabledTargets, TargetsResolved, PendingDefinitionId, PanelText, Geometry, RunRegion }))));
+        Panel, Inventory, InventoryResolved, Details, Choices, InteractionTargets, OfferLevels, EnabledTargets, TargetsResolved, PendingDefinitionId, PanelText, Geometry, RunRegion,
+        AdviceContext = AdviceContext?.Revision }))));
 }
 
 public sealed record GameAction(string Id, ActionKind Kind, string Label, SlotAddress? Source = null,
@@ -66,11 +70,16 @@ public sealed record ShoppingDecision(string Revision, GameAction Action, string
     ImmutableArray<string> References, double InferenceMilliseconds = 0)
 {
     public string NextStep { get; init; } = "";
+    public ShoppingAdviceMove? SecondMove { get; init; }
 }
+public sealed record ShoppingAdviceMove(GameAction Action, string Reason, ImmutableArray<string> References);
 public sealed record VerifiedAction(GameAction Action, string BeforeRevision, string AfterRevision, DateTimeOffset At);
 public sealed record PlannerRequest(ShoppingObservation Observation, CatalogSnapshot Catalog, StrategyKnowledge Knowledge,
     ImmutableArray<GameAction> Candidates, OddsResult? Odds, bool OddsEstimated, string? Objective,
-    ImmutableArray<VerifiedAction> RecentActions);
+    ImmutableArray<VerifiedAction> RecentActions)
+{
+    public ShoppingAdviceContext? AdviceContext { get; init; }
+}
 public interface ILegalActionGenerator
 {
     ImmutableArray<GameAction> Generate(ShoppingObservation observation, CatalogSnapshot catalog);
@@ -118,7 +127,7 @@ public sealed class LegalActionGenerator : ILegalActionGenerator
                 foreach (var empty in slots.Where(s => s.Slot.Occupancy == SlotOccupancy.Empty))
                     Add(ActionKind.BuyCreature, $"Buy {Name(offer.DefinitionId)} into {Describe(empty.Address)}",
                         new(SlotArea.Shop, offer.Index), empty.Address, offer.Price!.Value,
-                        expected: "Offer disappears, gold changes by the captured price, and the purchased creature occupies the target.");
+                        expected: "The captured price is paid and the offer disappears; placement may resolve purchase or merge effects. Recapture any changed panel.");
             // Item purchases may open another panel; a follow-up requires newly observed facts.
             if (offer.Occupancy == SlotOccupancy.Item && b.ItemUsesRemaining > 0 &&
                 catalog.Items.Any(i => i.Id == offer.DefinitionId && !string.IsNullOrWhiteSpace(i.RuleText)))
@@ -142,7 +151,7 @@ public sealed class LegalActionGenerator : ILegalActionGenerator
                     if (MergeGroup(source.Slot) != MergeGroup(destination.Slot))
                     {
                         if (string.CompareOrdinal(Describe(source.Address), Describe(destination.Address)) < 0)
-                            Add(ActionKind.Swap, $"Swap {Describe(source.Address)} and {Describe(destination.Address)}", source.Address, destination.Address,
+                            Add(ActionKind.Swap, $"Swap {Name(source.Slot.DefinitionId)} ({Describe(source.Address)}) and {Name(destination.Slot.DefinitionId)} ({Describe(destination.Address)})", source.Address, destination.Address,
                                 expected: "The two distinct creatures exchange slots without changing gold.");
                     }
                     else if (source.Slot.Level == destination.Slot.Level && source.Slot.Level is 1 or 2 &&

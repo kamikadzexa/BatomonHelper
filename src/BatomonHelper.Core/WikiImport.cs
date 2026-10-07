@@ -112,8 +112,8 @@ public sealed partial class WikiImporter(IWikiSource source)
         return new(id, WebUtility.HtmlDecode(name).Trim(), rarity.Value, baseId, activeSets.ToImmutable(), shiny is not null)
         {
             SpriteUrl = sprite, ShinySpriteUrl = shiny,
-            ReferenceValues = ParseMonsterReferenceValues(id, body),
-            Rules = WikiPayload.MonsterRules(id, body),
+            ReferenceValues = ParseMonsterReferenceValues(id, html),
+            Rules = WikiPayload.MonsterRules(id, html),
             ShinySpritePath = shiny is null ? null : $"assets/wiki/monsters/{id}-shiny.png"
         };
     }
@@ -130,13 +130,10 @@ public sealed partial class WikiImporter(IWikiSource source)
         // The current wiki embeds the complete normal/shiny reference model in
         // its page payload. Read normal levels explicitly; rendered text shows
         // only level 1 and must not be extrapolated to higher levels.
-        foreach (Match marker in Regex.Matches(html, "\"monster\"\\s*:\\s*(?=\\{)"))
+        foreach (var monster in WikiPayload.FindObject(html, "monster", id) is { } model ? new[] { model } : [])
         {
             try
             {
-                var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(html[(marker.Index + marker.Length)..]));
-                using var document = JsonDocument.ParseValue(ref reader);
-                var monster = document.RootElement;
                 if (!monster.TryGetProperty("id", out var monsterId) || monsterId.GetString() != id) continue;
                 if (monster.TryGetProperty("cost", out var cost) && cost.ValueKind == JsonValueKind.Number) values["Cost"] = cost.GetRawText();
                 if (monster.TryGetProperty("levels", out var levels) && levels.ValueKind == JsonValueKind.Array)

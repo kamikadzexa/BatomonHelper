@@ -1,0 +1,895 @@
+{
+  "measuredAt": "2026-10-07T08:59:39.406425+00:00",
+  "settings": {
+    "Endpoint": "http://127.0.0.1:11434",
+    "Model": "qwen3.5:9b-q4_K_M",
+    "ContextTokens": 16384,
+    "TimeoutSeconds": 90,
+    "Thinking": false
+  },
+  "gameRunning": false,
+  "measurements": [
+    {
+      "fixture": "scenario:shock-non-electric",
+      "evaluationCriteria": [
+        "Recognizes that non-Electric direct attackers benefit from enemy Shock.",
+        "Explains Velocect\u0027s repeated direct hits without requiring Electric typing."
+      ],
+      "elapsedMilliseconds": 7345.338,
+      "decision": {
+        "Revision": "4C6B305C58150866F949419CA2E071EF54E99BAAAC2F5B2961E44F922BF94E3A",
+        "Action": {
+          "Id": "BuyCreature:Shop:0:Team:5:",
+          "Kind": 0,
+          "Label": "Buy Velocect into Team 6",
+          "Source": {
+            "Area": 2,
+            "Index": 0
+          },
+          "Target": {
+            "Area": 0,
+            "Index": 5
+          },
+          "Cost": 15,
+          "Locked": null,
+          "ExpectedResult": "The captured price is paid and the offer disappears; placement may resolve purchase or merge effects. Recapture any changed panel.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Buying Velocect into Team 6 fills the last empty slot and adds Multicast 2, enabling frequent casts that trigger Shock for the Musician trainer bonus.",
+        "Objective": "Fill all team slots with synergistic attackers to maximize cast frequency and Shock damage before locking or rerolling.",
+        "References": [
+          "mechanics/multicast",
+          "mechanics/shock"
+        ],
+        "InferenceMilliseconds": 7290.5496,
+        "NextStep": "If gold remains after purchase, consider buying Pebbler (Buy Pebbler into Team 5) to add Shield; otherwise lock the shop (Lock shop) if you want to preserve current offers for a future run.",
+        "SecondMove": null
+      },
+      "candidateCount": 41,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1539,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 296,
+        "probabilities": 4665,
+        "probabilityNote": 272,
+        "trainer": 245,
+        "creatures": 2692,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 785,
+        "pairEvidence": 1078,
+        "buildEvidence": 1129,
+        "partnerCreatures": 1391,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 992,
+        "actionColumns": 79,
+        "legalActions": 837,
+        "allowedFirstMoves": 27,
+        "allowedSecondMoves": 54,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 432,
+        "activeBoard": 255,
+        "actionInterpretation": 909,
+        "positioning": 277
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 40482,
+          "PromptTokens": 11369,
+          "ElapsedMilliseconds": 5323.849
+        },
+        {
+          "ContextCharacters": 41886,
+          "PromptTokens": 11893,
+          "ElapsedMilliseconds": 7288.6475
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:58:38.759, 8377, 12288, 0",
+        "2026/10/07 11:58:39.317, 8377, 12288, 2",
+        "2026/10/07 11:58:39.877, 8377, 12288, 100",
+        "2026/10/07 11:58:40.437, 8367, 12288, 100",
+        "2026/10/07 11:58:40.996, 8365, 12288, 100",
+        "2026/10/07 11:58:41.557, 8365, 12288, 100",
+        "2026/10/07 11:58:42.116, 8365, 12288, 88",
+        "2026/10/07 11:58:42.677, 8364, 12288, 90",
+        "2026/10/07 11:58:43.237, 8364, 12288, 90",
+        "2026/10/07 11:58:43.796, 8364, 12288, 82",
+        "2026/10/07 11:58:44.354, 8364, 12288, 80",
+        "2026/10/07 11:58:44.912, 8363, 12288, 90",
+        "2026/10/07 11:58:45.473, 8362, 12288, 89"
+      ]
+    },
+    {
+      "fixture": "scenario:multicast-self-knockout",
+      "evaluationCriteria": [
+        "Queued multicast repeats stop on self-knockout.",
+        "Black Feather has a random target; does not promise a selected recipient."
+      ],
+      "elapsedMilliseconds": 7043.2203,
+      "decision": {
+        "Revision": "E10310AA0F0A78D674689F7146ECF6DB27796D8EB927EB36E3A7C8B31AFD7802",
+        "Action": {
+          "Id": "BuyCreature:Shop:1:Team:3:",
+          "Kind": 0,
+          "Label": "Buy Humbolt into Team 4",
+          "Source": {
+            "Area": 2,
+            "Index": 1
+          },
+          "Target": {
+            "Area": 0,
+            "Index": 3
+          },
+          "Cost": 25,
+          "Locked": null,
+          "ExpectedResult": "The captured price is paid and the offer disappears; placement may resolve purchase or merge effects. Recapture any changed panel.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Humbolt adds high Damage and Shock to the team, directly benefiting from Musician\u0027s \u002B150% Shock bonus on Electric types.",
+        "Objective": "Fill empty team slots with strong attackers before spending gold on items or rerolls.",
+        "References": [
+          "comps/cv2.2-78a1b27749891e9a",
+          "pairs/galvanade\u002Bvelocect"
+        ],
+        "InferenceMilliseconds": 7041.9939,
+        "NextStep": "If Humbolt is bought, check if a second creature slot opens; otherwise, save gold for the next shop roll. Stop spending when the team has three active casters and no affordable upgrades remain.",
+        "SecondMove": null
+      },
+      "candidateCount": 35,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1474,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 295,
+        "probabilities": 4764,
+        "probabilityNote": 272,
+        "trainer": 245,
+        "creatures": 2042,
+        "items": 170,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 787,
+        "pairEvidence": 1078,
+        "buildEvidence": 1129,
+        "partnerCreatures": 1391,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 992,
+        "actionColumns": 79,
+        "legalActions": 529,
+        "allowedFirstMoves": 27,
+        "allowedSecondMoves": 53,
+        "sequenceRangeNote": 179,
+        "actionRules": 766,
+        "decisionChecklist": 431,
+        "activeBoard": 254,
+        "actionInterpretation": 909,
+        "positioning": 277
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 39859,
+          "PromptTokens": 11136,
+          "ElapsedMilliseconds": 4960.3141
+        },
+        {
+          "ContextCharacters": 41282,
+          "PromptTokens": 11673,
+          "ElapsedMilliseconds": 7040.0237
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:58:46.063, 8355, 12288, 51",
+        "2026/10/07 11:58:46.623, 8354, 12288, 100",
+        "2026/10/07 11:58:47.183, 8354, 12288, 100",
+        "2026/10/07 11:58:47.744, 8351, 12288, 100",
+        "2026/10/07 11:58:48.306, 8351, 12288, 100",
+        "2026/10/07 11:58:48.865, 8351, 12288, 100",
+        "2026/10/07 11:58:49.425, 8351, 12288, 89",
+        "2026/10/07 11:58:49.983, 8351, 12288, 91",
+        "2026/10/07 11:58:50.543, 8351, 12288, 89",
+        "2026/10/07 11:58:51.103, 8351, 12288, 46",
+        "2026/10/07 11:58:51.661, 8351, 12288, 91",
+        "2026/10/07 11:58:52.221, 8351, 12288, 89",
+        "2026/10/07 11:58:52.781, 8350, 12288, 89"
+      ]
+    },
+    {
+      "fixture": "scenario:trigger-positioning",
+      "evaluationCriteria": [
+        "Cicadence requires a Bug ally above.",
+        "Triggering retains cooldown progress and uses the target\u0027s current multicast."
+      ],
+      "elapsedMilliseconds": 6777.12,
+      "decision": {
+        "Revision": "9CA8E7329218E1AA9D8DAE014E738DBCE7B746104F2161457CA195FD3B667872",
+        "Action": {
+          "Id": "Finish:::::",
+          "Kind": 11,
+          "Label": "Finish shopping and start the battle manually",
+          "Source": null,
+          "Target": null,
+          "Cost": 0,
+          "Locked": null,
+          "ExpectedResult": "The current team enters battle when you start it.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "The team is already at maximum strength with all six slots filled by active casters; moving Cicadence to Team 6 wastes a slot without increasing damage output since bench creatures do not contribute to battle stats.",
+        "Objective": "Stop spending gold and start the battle immediately as no further upgrades improve current team viability.",
+        "References": [
+          "mechanics/team-hp",
+          "mechanics/damage"
+        ],
+        "InferenceMilliseconds": 6775.7881,
+        "NextStep": "Finish shopping and begin the battle. If the outcome is unfavorable, reassess team composition for future runs rather than attempting speculative swaps or purchases.",
+        "SecondMove": null
+      },
+      "candidateCount": 43,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1494,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 296,
+        "probabilities": 4665,
+        "probabilityNote": 272,
+        "trainer": 245,
+        "creatures": 3256,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 755,
+        "pairEvidence": 1076,
+        "buildEvidence": 1133,
+        "partnerCreatures": 1391,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 964,
+        "actionColumns": 79,
+        "legalActions": 1868,
+        "allowedFirstMoves": 61,
+        "allowedSecondMoves": 859,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 431,
+        "activeBoard": 290,
+        "actionInterpretation": 909,
+        "positioning": 459
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 43031,
+          "PromptTokens": 12497,
+          "ElapsedMilliseconds": 4888.0706
+        },
+        {
+          "ContextCharacters": 44567,
+          "PromptTokens": 13023,
+          "ElapsedMilliseconds": 6774.6623
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:58:53.107, 8350, 12288, 91",
+        "2026/10/07 11:58:53.666, 8350, 12288, 100",
+        "2026/10/07 11:58:54.227, 8350, 12288, 100",
+        "2026/10/07 11:58:54.788, 8350, 12288, 100",
+        "2026/10/07 11:58:55.346, 8383, 12288, 100",
+        "2026/10/07 11:58:55.903, 8389, 12288, 100",
+        "2026/10/07 11:58:56.462, 8385, 12288, 90",
+        "2026/10/07 11:58:57.021, 8377, 12288, 69",
+        "2026/10/07 11:58:57.581, 8377, 12288, 75",
+        "2026/10/07 11:58:58.152, 8377, 12288, 49",
+        "2026/10/07 11:58:58.712, 8377, 12288, 87",
+        "2026/10/07 11:58:59.270, 8377, 12288, 88",
+        "2026/10/07 11:58:59.830, 8376, 12288, 88"
+      ]
+    },
+    {
+      "fixture": "scenario:adjacency-and-charge",
+      "evaluationCriteria": [
+        "Deploys or positions the charge recipient behind Dracana using the 3x2 board.",
+        "Bench creatures do not receive active combat charge."
+      ],
+      "elapsedMilliseconds": 7570.5014,
+      "decision": {
+        "Revision": "F22521DBA3FB827E99EB3B184D31389B1EB55BAEDA79A221BB9C1F853DE8C0B0",
+        "Action": {
+          "Id": "Reroll:::::",
+          "Kind": 9,
+          "Label": "Reroll shop (free)",
+          "Source": null,
+          "Target": null,
+          "Cost": 0,
+          "Locked": null,
+          "ExpectedResult": "Gold or free-reroll count decreases; a new shop is observed.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Rerolling the shop is free and necessary to replace the low-value Gildshell with a stronger Rare or higher-tier creature, as the current team lacks sufficient damage output.",
+        "Objective": "Maximize immediate team damage by acquiring a high-stat Rare creature while preserving gold for future upgrades.",
+        "References": [],
+        "InferenceMilliseconds": 7569.6819,
+        "NextStep": "After rerolling, inspect the new shop offers; if a Rare creature (e.g., dracana, cordycant) appears, buy it into an empty team slot. If no Rare is available but Common/Uncommon options are present, consider buying one to fill a slot or lock the shop if you suspect a specific high-value offer might appear later. Stop spending gold once the team has three viable casters with complementary stats.",
+        "SecondMove": null
+      },
+      "candidateCount": 39,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1445,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 296,
+        "probabilities": 4665,
+        "probabilityNote": 272,
+        "trainer": 245,
+        "creatures": 2885,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 930,
+        "pairEvidence": 1069,
+        "buildEvidence": 1022,
+        "partnerCreatures": 1576,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 924,
+        "actionColumns": 79,
+        "legalActions": 1763,
+        "allowedFirstMoves": 67,
+        "allowedSecondMoves": 749,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 431,
+        "activeBoard": 249,
+        "actionInterpretation": 909,
+        "positioning": 493
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 42597,
+          "PromptTokens": 12459,
+          "ElapsedMilliseconds": 5367.1615
+        },
+        {
+          "ContextCharacters": 43538,
+          "PromptTokens": 12881,
+          "ElapsedMilliseconds": 7568.5566
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:58:59.891, 8376, 12288, 88",
+        "2026/10/07 11:59:00.452, 8376, 12288, 24",
+        "2026/10/07 11:59:01.013, 8376, 12288, 100",
+        "2026/10/07 11:59:01.574, 8374, 12288, 100",
+        "2026/10/07 11:59:02.133, 8389, 12288, 100",
+        "2026/10/07 11:59:02.692, 8389, 12288, 100",
+        "2026/10/07 11:59:03.256, 8389, 12288, 99",
+        "2026/10/07 11:59:03.818, 8387, 12288, 90",
+        "2026/10/07 11:59:04.376, 8388, 12288, 89",
+        "2026/10/07 11:59:04.937, 8387, 12288, 88",
+        "2026/10/07 11:59:05.497, 8387, 12288, 58",
+        "2026/10/07 11:59:06.057, 8387, 12288, 89",
+        "2026/10/07 11:59:06.614, 8387, 12288, 88",
+        "2026/10/07 11:59:07.173, 8389, 12288, 89"
+      ]
+    },
+    {
+      "fixture": "scenario:shiny-variant",
+      "evaluationCriteria": [
+        "Uses the shiny level rules for the visible shiny offer.",
+        "Does not substitute normal multicast or invent an evolution."
+      ],
+      "elapsedMilliseconds": 6009.0137,
+      "decision": {
+        "Revision": "187ACB544113F838DDF8A1B19E332E72786897EF450E71E2C9626AE88E8319F7",
+        "Action": {
+          "Id": "BuyCreature:Shop:0:Team:2:",
+          "Kind": 0,
+          "Label": "Buy Velocect into Team 3",
+          "Source": {
+            "Area": 2,
+            "Index": 0
+          },
+          "Target": {
+            "Area": 0,
+            "Index": 2
+          },
+          "Cost": 15,
+          "Locked": null,
+          "ExpectedResult": "The captured price is paid and the offer disappears; placement may resolve purchase or merge effects. Recapture any changed panel.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Buy Velocect into Team 3 to fill an empty slot with a Multicast 4 attacker that benefits from the Musician trainer\u0027s Shock bonus.",
+        "Objective": "Maximize team combat power by filling available slots with affordable attackers before considering bench upgrades or rerolls.",
+        "References": [],
+        "InferenceMilliseconds": 6008.3519,
+        "NextStep": "If gold remains after purchase, evaluate buying another Common creature for Team 4 or 5; stop spending if the team is full or remaining gold is insufficient for meaningful upgrades.",
+        "SecondMove": null
+      },
+      "candidateCount": 28,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1426,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 296,
+        "probabilities": 4665,
+        "probabilityNote": 272,
+        "trainer": 245,
+        "creatures": 1551,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 785,
+        "pairEvidence": 1078,
+        "buildEvidence": 1129,
+        "partnerCreatures": 1391,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 992,
+        "actionColumns": 79,
+        "legalActions": 540,
+        "allowedFirstMoves": 27,
+        "allowedSecondMoves": 47,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 431,
+        "activeBoard": 235,
+        "actionInterpretation": 909,
+        "positioning": 277
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 38903,
+          "PromptTokens": 10838,
+          "ElapsedMilliseconds": 4344.8656
+        },
+        {
+          "ContextCharacters": 40305,
+          "PromptTokens": 11312,
+          "ElapsedMilliseconds": 6007.4794
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:59:07.468, 8389, 12288, 89",
+        "2026/10/07 11:59:08.032, 8385, 12288, 0",
+        "2026/10/07 11:59:08.591, 8385, 12288, 100",
+        "2026/10/07 11:59:09.149, 8383, 12288, 100",
+        "2026/10/07 11:59:09.708, 8383, 12288, 100",
+        "2026/10/07 11:59:10.270, 8383, 12288, 96",
+        "2026/10/07 11:59:10.847, 8382, 12288, 68",
+        "2026/10/07 11:59:11.405, 8382, 12288, 69",
+        "2026/10/07 11:59:11.979, 8386, 12288, 64",
+        "2026/10/07 11:59:12.540, 8386, 12288, 85",
+        "2026/10/07 11:59:13.105, 8386, 12288, 89"
+      ]
+    },
+    {
+      "fixture": "scenario:unavailable-build-partner",
+      "evaluationCriteria": [
+        "Checks missing build partners against the selected regional pool.",
+        "Never invents a positive shop chance for a species absent from that pool."
+      ],
+      "elapsedMilliseconds": 6457.653,
+      "decision": {
+        "Revision": "915FC9D97C37963A2146BF232438E642D4FA0936A61BC41FEA658DBC14C2BF75",
+        "Action": {
+          "Id": "Finish:::::",
+          "Kind": 11,
+          "Label": "Finish shopping and start the battle manually",
+          "Source": null,
+          "Target": null,
+          "Cost": 0,
+          "Locked": null,
+          "ExpectedResult": "The current team enters battle when you start it.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "The team is ready with a shielded front line and shock synergy; buying more creatures or rerolling wastes gold on uncertain outcomes.",
+        "Objective": "Start the battle immediately to test the current composition\u0027s survival and win potential.",
+        "References": [],
+        "InferenceMilliseconds": 6457.1362,
+        "NextStep": "If the battle ends in a loss, reassess whether Cherubble needs merging for higher shield or if Electranade requires leveling for more shock; stop spending gold until a clear upgrade path is identified.",
+        "SecondMove": null
+      },
+      "candidateCount": 41,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1533,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 296,
+        "probabilities": 4665,
+        "probabilityNote": 272,
+        "trainer": 245,
+        "creatures": 2667,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 811,
+        "pairEvidence": 1075,
+        "buildEvidence": 1129,
+        "partnerCreatures": 1381,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 992,
+        "actionColumns": 79,
+        "legalActions": 2380,
+        "allowedFirstMoves": 47,
+        "allowedSecondMoves": 866,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 432,
+        "activeBoard": 256,
+        "actionInterpretation": 909,
+        "positioning": 521
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 43084,
+          "PromptTokens": 12626,
+          "ElapsedMilliseconds": 4846.2002
+        },
+        {
+          "ContextCharacters": 44041,
+          "PromptTokens": 12983,
+          "ElapsedMilliseconds": 6456.2281
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:59:13.478, 8386, 12288, 89",
+        "2026/10/07 11:59:14.038, 8385, 12288, 0",
+        "2026/10/07 11:59:14.597, 8385, 12288, 100",
+        "2026/10/07 11:59:15.158, 8385, 12288, 100",
+        "2026/10/07 11:59:15.720, 8385, 12288, 100",
+        "2026/10/07 11:59:16.277, 8384, 12288, 100",
+        "2026/10/07 11:59:16.834, 8382, 12288, 100",
+        "2026/10/07 11:59:17.393, 8382, 12288, 70",
+        "2026/10/07 11:59:17.955, 8379, 12288, 89",
+        "2026/10/07 11:59:18.515, 8379, 12288, 83",
+        "2026/10/07 11:59:19.072, 8378, 12288, 90",
+        "2026/10/07 11:59:19.634, 8378, 12288, 89"
+      ]
+    },
+    {
+      "fixture": "scenario:low-lives",
+      "evaluationCriteria": [
+        "Favors feasible immediate battle strength over a distant late-game core.",
+        "Avoids saving or speculative rerolls while useful affordable deployments are visible."
+      ],
+      "elapsedMilliseconds": 6265.5003,
+      "decision": {
+        "Revision": "0A8BD9FD062148D7F8ECBD82462D519904F23221A2AE13B546B585016C2109EB",
+        "Action": {
+          "Id": "BuyCreature:Shop:0:Team:2:",
+          "Kind": 0,
+          "Label": "Buy Velocect into Team 3",
+          "Source": {
+            "Area": 2,
+            "Index": 0
+          },
+          "Target": {
+            "Area": 0,
+            "Index": 2
+          },
+          "Cost": 15,
+          "Locked": null,
+          "ExpectedResult": "The captured price is paid and the offer disappears; placement may resolve purchase or merge effects. Recapture any changed panel.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Buy Velocect into Team 3 to fill an empty slot and add Damage/Multicast, enabling immediate casting while preserving gold for future upgrades.",
+        "Objective": "Fill the third team slot with a caster that deals damage and triggers Multicast to maximize Shock synergy from the Musician trainer.",
+        "References": [],
+        "InferenceMilliseconds": 6265.0018,
+        "NextStep": "If gold remains after purchase, consider buying Humbolt or Gildshell for bench storage; stop spending if the team is full or gold is low.",
+        "SecondMove": null
+      },
+      "candidateCount": 44,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1620,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 296,
+        "probabilities": 4665,
+        "probabilityNote": 272,
+        "trainer": 245,
+        "creatures": 2601,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 758,
+        "pairEvidence": 1076,
+        "buildEvidence": 1129,
+        "partnerCreatures": 1391,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 992,
+        "actionColumns": 79,
+        "legalActions": 1348,
+        "allowedFirstMoves": 27,
+        "allowedSecondMoves": 54,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 432,
+        "activeBoard": 231,
+        "actionInterpretation": 909,
+        "positioning": 277
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 40930,
+          "PromptTokens": 11561,
+          "ElapsedMilliseconds": 4595.6774
+        },
+        {
+          "ContextCharacters": 42334,
+          "PromptTokens": 12042,
+          "ElapsedMilliseconds": 6263.8528
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:59:19.929, 8369, 12288, 89",
+        "2026/10/07 11:59:20.487, 8369, 12288, 0",
+        "2026/10/07 11:59:21.046, 8370, 12288, 100",
+        "2026/10/07 11:59:21.607, 8364, 12288, 100",
+        "2026/10/07 11:59:22.170, 8364, 12288, 100",
+        "2026/10/07 11:59:22.726, 8364, 12288, 100",
+        "2026/10/07 11:59:23.289, 8364, 12288, 89",
+        "2026/10/07 11:59:23.847, 8364, 12288, 90",
+        "2026/10/07 11:59:24.407, 8364, 12288, 89",
+        "2026/10/07 11:59:24.966, 8364, 12288, 51",
+        "2026/10/07 11:59:25.539, 8364, 12288, 90",
+        "2026/10/07 11:59:26.110, 8365, 12288, 87"
+      ]
+    },
+    {
+      "fixture": "scenario:maxed-species",
+      "evaluationCriteria": [
+        "Does not chase Velocect through future normal shop rolls when maxed.",
+        "Keeps captured offers distinct from future pool estimates."
+      ],
+      "elapsedMilliseconds": 6993.0195,
+      "decision": {
+        "Revision": "55A380D934731F95975503C88167406193BE3B0F5279577D691A53755DDD4D2F",
+        "Action": {
+          "Id": "BuyCreature:Shop:1:Team:3:",
+          "Kind": 0,
+          "Label": "Buy Gildshell into Team 4",
+          "Source": {
+            "Area": 2,
+            "Index": 1
+          },
+          "Target": {
+            "Area": 0,
+            "Index": 3
+          },
+          "Cost": 20,
+          "Locked": null,
+          "ExpectedResult": "The captured price is paid and the offer disappears; placement may resolve purchase or merge effects. Recapture any changed panel.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Gildshell is the only affordable creature in the shop, filling an empty team slot to increase active casters and provide permanent sell value.",
+        "Objective": "Secure a low-cost team member to maximize active slots before exhausting gold on inferior options or rerolls.",
+        "References": [
+          "gildshell",
+          "galvanade",
+          "velocect"
+        ],
+        "InferenceMilliseconds": 6991.6958,
+        "NextStep": "If Gildshell is purchased, check if a free reroll (Reroll shop (free)) yields better offers; otherwise, finish shopping once the team is full or gold is depleted.",
+        "SecondMove": null
+      },
+      "candidateCount": 41,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1556,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 306,
+        "probabilities": 4728,
+        "probabilityNote": 272,
+        "trainer": 245,
+        "creatures": 2601,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 755,
+        "pairEvidence": 1078,
+        "buildEvidence": 1129,
+        "partnerCreatures": 1391,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 992,
+        "actionColumns": 79,
+        "legalActions": 844,
+        "allowedFirstMoves": 27,
+        "allowedSecondMoves": 54,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 432,
+        "activeBoard": 254,
+        "actionInterpretation": 909,
+        "positioning": 277
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 40457,
+          "PromptTokens": 11327,
+          "ElapsedMilliseconds": 5099.8535
+        },
+        {
+          "ContextCharacters": 41887,
+          "PromptTokens": 11854,
+          "ElapsedMilliseconds": 6990.5129
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:59:26.203, 8365, 12288, 87",
+        "2026/10/07 11:59:26.762, 8365, 12288, 100",
+        "2026/10/07 11:59:27.321, 8365, 12288, 100",
+        "2026/10/07 11:59:27.879, 8365, 12288, 100",
+        "2026/10/07 11:59:28.441, 8365, 12288, 100",
+        "2026/10/07 11:59:29.002, 8366, 12288, 100",
+        "2026/10/07 11:59:29.562, 8366, 12288, 90",
+        "2026/10/07 11:59:30.121, 8365, 12288, 89",
+        "2026/10/07 11:59:30.679, 8365, 12288, 90",
+        "2026/10/07 11:59:31.239, 8395, 12288, 89",
+        "2026/10/07 11:59:31.795, 8395, 12288, 86",
+        "2026/10/07 11:59:32.354, 8397, 12288, 90",
+        "2026/10/07 11:59:32.915, 8399, 12288, 89"
+      ]
+    },
+    {
+      "fixture": "scenario:burn-scaling",
+      "evaluationCriteria": [
+        "Explains a printed Burn interaction rather than inventing synergy from shared typing.",
+        "Treats reference patch fields and permanent/battle-only scaling according to supplied evidence."
+      ],
+      "elapsedMilliseconds": 6272.6914,
+      "decision": {
+        "Revision": "83B6DDEBAA9550FB0A9E44178FC95445A282CAB9433AD85B2B77291A4CA6FBD4",
+        "Action": {
+          "Id": "Move:Team:0:Team:4:",
+          "Kind": 3,
+          "Label": "Move Scorchimp to Team 5",
+          "Source": {
+            "Area": 0,
+            "Index": 0
+          },
+          "Target": {
+            "Area": 0,
+            "Index": 4
+          },
+          "Cost": 0,
+          "Locked": null,
+          "ExpectedResult": "The source creature occupies the target and its source becomes empty.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Move Scorchimp to Team 5 to activate its On Cast ability, providing Damage and Burn while shielding the ally behind it.",
+        "Objective": "Fill empty team slots with active casters to maximize immediate damage output and survivability.",
+        "References": [],
+        "InferenceMilliseconds": 6272.0428,
+        "NextStep": "If gold allows, purchase Magmite for bench storage or consider rerolling if no other useful creatures appear; stop spending when the team is full and ready for battle.",
+        "SecondMove": null
+      },
+      "candidateCount": 41,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1528,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 296,
+        "probabilities": 4665,
+        "probabilityNote": 272,
+        "trainer": 276,
+        "creatures": 2925,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 806,
+        "pairEvidence": 700,
+        "buildEvidence": 1095,
+        "partnerCreatures": 1525,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 922,
+        "actionColumns": 79,
+        "legalActions": 1738,
+        "allowedFirstMoves": 54,
+        "allowedSecondMoves": 510,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 432,
+        "activeBoard": 250,
+        "actionInterpretation": 909,
+        "positioning": 485
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 41995,
+          "PromptTokens": 12059,
+          "ElapsedMilliseconds": 4686.3392
+        },
+        {
+          "ContextCharacters": 43543,
+          "PromptTokens": 12574,
+          "ElapsedMilliseconds": 6271.2085
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:59:33.193, 8399, 12288, 90",
+        "2026/10/07 11:59:33.754, 8399, 12288, 100",
+        "2026/10/07 11:59:34.314, 8398, 12288, 100",
+        "2026/10/07 11:59:34.876, 8395, 12288, 100",
+        "2026/10/07 11:59:35.437, 8387, 12288, 100",
+        "2026/10/07 11:59:35.997, 8387, 12288, 100",
+        "2026/10/07 11:59:36.556, 8385, 12288, 90",
+        "2026/10/07 11:59:37.114, 8385, 12288, 90",
+        "2026/10/07 11:59:37.675, 8381, 12288, 89",
+        "2026/10/07 11:59:38.235, 8381, 12288, 93",
+        "2026/10/07 11:59:38.794, 8381, 12288, 90",
+        "2026/10/07 11:59:39.356, 8379, 12288, 89"
+      ]
+    }
+  ]
+}

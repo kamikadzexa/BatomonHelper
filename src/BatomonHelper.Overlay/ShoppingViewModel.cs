@@ -1,11 +1,14 @@
 using BatomonHelper.Core;
 using BatomonHelper.ScreenReader;
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
 using System.Windows.Input;
 
 namespace BatomonHelper.Overlay;
+
+public sealed record AdviceMoveRow(string Label, string Reason);
 
 public sealed partial class OverlayViewModel
 {
@@ -14,13 +17,19 @@ public sealed partial class OverlayViewModel
     private bool _shoppingCaptureInProgress;
     private readonly HttpClient _shoppingHttp = new() { Timeout = Timeout.InfiniteTimeSpan };
     private string _shoppingStatus = "Loading local advice…";
-    private string _decisionText = "Capture with F9, then press F10 for one suggested move.";
+    private string _decisionText = "Capture with F9, then press F10 for a short plan.";
     private string _decisionReason = "";
     private string _decisionObjective = "";
     private string _decisionExpected = "";
     private string _decisionNextStep = "";
     private string _adviceCaptureLabel = "No accepted shop capture yet.";
     private string? _hotkeyConflict;
+    public ObservableCollection<AdviceMoveRow> AdviceMoves { get; } = [];
+    public ObservableCollection<string> AdviceEvidenceLinks { get; } = [];
+    private string _decisionEvidence = "";
+    private string _decisionAssumptions = "";
+    public string DecisionEvidence { get => _decisionEvidence; private set => Set(ref _decisionEvidence, value); }
+    public string DecisionAssumptions { get => _decisionAssumptions; private set => Set(ref _decisionAssumptions, value); }
     public ShoppingSettings ShoppingConfiguration { get; private set; } = new();
     public ICommand SuggestShoppingCommand { get; private set; } = null!;
     public ICommand ShoppingSettingsCommand { get; private set; } = null!;
@@ -58,7 +67,8 @@ public sealed partial class OverlayViewModel
         if (_shoppingCaptureInProgress) { ShoppingStatus = "Wait for the F9 capture to finish, then press F10."; return; }
         if (_latestShoppingCapture is not { } observation)
         { ShoppingStatus = "Capture and accept the shop with F9 first."; return; }
-        if (_shopping is not null) await _shopping.SuggestAsync(observation);
+        if (_shopping is not null) await _shopping.SuggestAsync(observation with
+        { AdviceContext = _adviceContext, RunRegion = _adviceContext?.Snapshot.RegionFilter });
     }
     private void AcceptShoppingCapture(BoardSnapshot board, BoardCaptureResult result)
     {
@@ -84,15 +94,36 @@ public sealed partial class OverlayViewModel
     {
         // Planning resumes on the UI context; cancellation/new capture clears old text immediately.
         ShoppingStatus = state.Message;
+        AdviceMoves.Clear();
+        AdviceEvidenceLinks.Clear();
+        if (state.Decision is { } decision)
+        {
+            AdviceMoves.Add(new("1. " + DescribeMove(decision.Action), decision.Reason));
+            if (decision.SecondMove is { } second) AdviceMoves.Add(new("2. " + DescribeMove(second.Action), second.Reason));
+        }
         DecisionText = state.Decision is { } d ? d.Action.Label +
             (d.Action.Source is { Area: SlotArea.Shop } source ? $" · shop slot {source.Index + 1}" : "") +
             (d.Action.Cost > 0 && d.Action.Kind is ActionKind.BuyCreature or ActionKind.BuyItem or ActionKind.ChooseReward or ActionKind.ChooseEvent ? $" · ${d.Action.Cost}" : "")
-            : "Capture with F9, then press F10 for one suggested move.";
+            : "Capture with F9, then press F10 for a short plan.";
         DecisionReason = state.Decision?.Reason ?? "";
-        DecisionObjective = state.Decision is null ? "" : "Goal: " + state.Decision.Objective;
+        DecisionObjective = state.Decision is null ? "" : "Strategy goal: " + state.Decision.Objective;
         DecisionExpected = state.Decision is null ? "" : "Expected result: " + state.Decision.Action.ExpectedResult;
-        DecisionNextStep = state.Decision is null ? "" : "Then: " + state.Decision.NextStep;
+        if (state.Decision?.SecondMove is { } next) DecisionExpected += "\nSecond move: " + next.Action.ExpectedResult;
+        DecisionNextStep = state.Decision is null ? "" : "Likely next: " + state.Decision.NextStep;
+        DecisionAssumptions = state.Decision is null ? "" : string.Join("\n", _adviceContext?.Assumptions ?? []);
+        DecisionEvidence = state.Decision is null ? "" : string.Join("\n", state.Decision.References
+            .Concat(state.Decision.SecondMove?.References ?? []).Distinct().Select(EvidenceUrl));
+        if (state.Decision is not null)
+            foreach (var url in state.Decision.References.Concat(state.Decision.SecondMove?.References ?? []).Distinct().Select(EvidenceUrl).Distinct())
+                AdviceEvidenceLinks.Add(url);
     }
+    private static string DescribeMove(GameAction action) => action.Label +
+        (action.Source is { Area: SlotArea.Shop } source ? $" · shop slot {source.Index + 1}" : "") +
+        (action.Cost > 0 ? $" · ${action.Cost}" : "");
+    private string EvidenceUrl(string id) => "https://batomon.com/" +
+        (id.StartsWith("pairs/") ? "meta/pairs" : id.StartsWith("comps/") ? "comps" :
+         _catalog.Monsters.Any(m => m.Id == id) ? "batomon/" + id : _catalog.Items.Any(i => i.Id == id) ? "items/" + id :
+         _catalog.Trinkets.Any(t => t.Id == id) ? "trinkets/" + id : _catalog.Trainers.Any(t => t.Id == id) ? "trainers/" + id : id);
     private async Task EditShoppingSettingsAsync()
     {
         CancelShoppingAdvice("Model settings opened.");

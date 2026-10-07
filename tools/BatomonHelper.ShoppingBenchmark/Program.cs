@@ -10,6 +10,12 @@ var root = Environment.CurrentDirectory;
 var catalog = (await new SnapshotRepository(Path.Combine(root, "assets/wiki/batomon-wiki.db"), true).GetLatestAsync())!;
 var knowledge = JsonSerializer.Deserialize<StrategyKnowledge>(await File.ReadAllTextAsync(Path.Combine(root, "assets/wiki/strategy-knowledge.json")))!;
 var fixtures = args.Skip(1).ToList();
+var evaluateStrategy = fixtures.Remove("--strategy-eval");
+var scenarios = evaluateStrategy ? StrategyScenarios.Create(catalog).ToDictionary(s => "scenario:" + s.Name) : new Dictionary<string, StrategyScenario>();
+fixtures.AddRange(scenarios.Keys);
+var regionIndex = fixtures.IndexOf("--region");
+var region = regionIndex < 0 ? MonsterRegionFilter.All : Enum.Parse<MonsterRegionFilter>(fixtures[regionIndex + 1], true);
+if (regionIndex >= 0) fixtures.RemoveRange(regionIndex, 2);
 var settingsIndex = fixtures.IndexOf("--settings");
 var settings = settingsIndex < 0 ? new ShoppingSettings() : ShoppingSettings.Load(fixtures[settingsIndex + 1]);
 if (settingsIndex >= 0) fixtures.RemoveRange(settingsIndex, 2);
@@ -22,7 +28,8 @@ foreach (var path in fixtures)
     var timer = Stopwatch.StartNew();
     BoardSnapshot board;
     ImmutableArray<RecognizedField> fields = [];
-    if (Path.GetExtension(path).Equals(".json",StringComparison.OrdinalIgnoreCase))
+    if (scenarios.TryGetValue(path, out var scenario)) board = scenario.Board;
+    else if (Path.GetExtension(path).Equals(".json",StringComparison.OrdinalIgnoreCase))
     {
         var history = JsonSerializer.Deserialize<BoardCaptureHistoryEntry>(await File.ReadAllTextAsync(path));
         if (history?.Accepted != true || history.AcceptedSnapshot is null) throw new InvalidDataException("Replay requires accepted V2 capture history.");
@@ -36,11 +43,13 @@ foreach (var path in fixtures)
         { measurements.Add(new { fixture = path, error = "Recognition requires review", result.Fields }); continue; }
         board = result.Snapshot;
     }
+    var context = ShoppingAdviceContext.Create(catalog, board.ToShopOddsSnapshot(catalog) with { RegionFilter = region }, board, [], []);
     var o = new ShoppingObservation { Board = board with { RegionFilter = MonsterRegionFilter.All }, Panel = ShoppingPanel.Shop, Resolved = true,
+        AdviceContext = context, RunRegion = region,
         ObservedAt = board.CapturedAt, Recognition = fields.Select(f => new RecognitionFact(f.Name,f.Confidence,true,f.Diagnostic)).ToImmutableArray(),
         OfferLevels = board.Shop.Where(s => s.Occupancy == SlotOccupancy.Creature).Select(s => new ObservedOfferLevel(s.Index,s.Level ?? 1,true,s.Level is null ? "Accepted shop capture without LV header: ordinary level 1 offer." : "Captured LV header")).ToImmutableArray() };
     var actions = new LegalActionGenerator().Generate(o, catalog);
-    var odds = new OddsCalculator().Calculate(catalog, board.ToShopOddsSnapshot(catalog));
+    var odds = context.Odds;
     var samples = new List<string>();
     using var sampling = new CancellationTokenSource();
     var sampler = Task.Run(async () =>
@@ -59,8 +68,8 @@ foreach (var path in fixtures)
     });
     try
     {
-        var decision = await planner.ProposeAsync(new(o, catalog, knowledge, actions, odds, true, null, []));
-        measurements.Add(new { fixture = path, elapsedMilliseconds = timer.Elapsed.TotalMilliseconds, decision, candidateCount = actions.Length, contextSections = planner.ContextSectionCharacters, telemetry = planner.Telemetry.ToArray(), gpuSamples = samples });
+        var decision = await planner.ProposeAsync(new(o, catalog, knowledge, actions, odds, true, null, []) { AdviceContext = context });
+        measurements.Add(new { fixture = path, evaluationCriteria = scenario?.Criteria, elapsedMilliseconds = timer.Elapsed.TotalMilliseconds, decision, candidateCount = actions.Length, contextSections = planner.ContextSectionCharacters, telemetry = planner.Telemetry.ToArray(), gpuSamples = samples });
         Console.WriteLine($"{Path.GetFileName(path)}: {decision.Action.Label} ({decision.InferenceMilliseconds:F0} ms)");
     }
     catch (Exception e) { measurements.Add(new { fixture = path, error = e.Message, elapsedMilliseconds = timer.Elapsed.TotalMilliseconds, candidateCount = actions.Length, contextSections = planner.ContextSectionCharacters, telemetry = planner.Telemetry.ToArray(), gpuSamples = samples }); Console.WriteLine(e.Message); }

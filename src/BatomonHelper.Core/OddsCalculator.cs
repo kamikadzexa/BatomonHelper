@@ -54,7 +54,7 @@ public sealed class OddsCalculator : IOddsCalculator
                 ? visibleOdds.GetValueOrDefault(item.Rarity) / sameRarity.Length
                 : 0m;
             itemOdds.Add(new(item.Id, item.Name, item.Rarity, perRoll, perRoll,
-                "Uses the captured {DisplayRarity(item.Rarity)} ribbon odds, split across {sameRarity.Length} item(s)."));
+                $"Uses the displayed {DisplayRarity(item.Rarity)} ribbon odds, split across {sameRarity.Length} item(s)."));
         }
 
         var ownedUniqueIds = options.OwnedUniqueTrinketIds ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);

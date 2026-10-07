@@ -1,0 +1,366 @@
+{
+  "measuredAt": "2026-10-07T08:58:33.5778402+00:00",
+  "settings": {
+    "Endpoint": "http://127.0.0.1:11434",
+    "Model": "qwen3.5:9b-q4_K_M",
+    "ContextTokens": 16384,
+    "TimeoutSeconds": 90,
+    "Thinking": false
+  },
+  "gameRunning": false,
+  "measurements": [
+    {
+      "fixture": "tests/BatomonHelper.Tests/Fixtures/board-day1.png",
+      "evaluationCriteria": null,
+      "elapsedMilliseconds": 11176.6346,
+      "decision": {
+        "Revision": "D4CF7E61419D2F0DCB75E0A1F2DE1FFE0468812E8BE107B911EE602BC548C3A2",
+        "Action": {
+          "Id": "BuyCreature:Shop:2:Team:0:",
+          "Kind": 0,
+          "Label": "Buy Magmite into Team 1",
+          "Source": {
+            "Area": 2,
+            "Index": 2
+          },
+          "Target": {
+            "Area": 0,
+            "Index": 0
+          },
+          "Cost": 15,
+          "Locked": null,
+          "ExpectedResult": "The captured price is paid and the offer disappears; placement may resolve purchase or merge effects. Recapture any changed panel.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Buy Magmite into Team slot 1 for its high Shield and Burn stats to protect the empty team HP.",
+        "Objective": "Fill the empty battle team with affordable defensive creatures to survive early damage while managing limited gold.",
+        "References": [],
+        "InferenceMilliseconds": 9133.7108,
+        "NextStep": "If gold remains after purchase, consider buying a second creature like Guardiant or Scorchimp; otherwise lock the shop if no other useful offers appear.",
+        "SecondMove": null
+      },
+      "candidateCount": 44,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1832,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 291,
+        "probabilities": 5373,
+        "probabilityNote": 272,
+        "trainer": 207,
+        "creatures": 2293,
+        "items": 139,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 893,
+        "pairEvidence": 351,
+        "buildEvidence": 1025,
+        "partnerCreatures": 1369,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 896,
+        "actionColumns": 79,
+        "legalActions": 1201,
+        "allowedFirstMoves": 53,
+        "allowedSecondMoves": 2,
+        "sequenceRangeNote": 179,
+        "actionRules": 561,
+        "decisionChecklist": 454,
+        "activeBoard": 196,
+        "actionInterpretation": 909,
+        "positioning": 277
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 40568,
+          "PromptTokens": 11453,
+          "ElapsedMilliseconds": 7594.1821
+        },
+        {
+          "ContextCharacters": 41976,
+          "PromptTokens": 11916,
+          "ElapsedMilliseconds": 9131.7759
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:58:05.695, 1365, 12288, 1",
+        "2026/10/07 11:58:06.276, 1365, 12288, 0",
+        "2026/10/07 11:58:06.835, 1577, 12288, 9",
+        "2026/10/07 11:58:07.398, 1574, 12288, 0",
+        "2026/10/07 11:58:07.979, 6388, 12288, 0",
+        "2026/10/07 11:58:08.559, 8074, 12288, 23",
+        "2026/10/07 11:58:09.132, 8350, 12288, 21",
+        "2026/10/07 11:58:09.695, 8350, 12288, 100",
+        "2026/10/07 11:58:10.261, 8350, 12288, 100",
+        "2026/10/07 11:58:10.826, 8349, 12288, 100",
+        "2026/10/07 11:58:11.392, 8349, 12288, 100",
+        "2026/10/07 11:58:11.967, 8349, 12288, 99",
+        "2026/10/07 11:58:12.525, 8349, 12288, 87",
+        "2026/10/07 11:58:13.086, 8349, 12288, 87",
+        "2026/10/07 11:58:13.645, 8349, 12288, 93",
+        "2026/10/07 11:58:14.202, 8349, 12288, 90",
+        "2026/10/07 11:58:14.774, 8362, 12288, 87"
+      ]
+    },
+    {
+      "fixture": "tests/BatomonHelper.Tests/Fixtures/board-day3.png",
+      "evaluationCriteria": null,
+      "elapsedMilliseconds": 8529.8929,
+      "decision": {
+        "Revision": "5A5219E0D18CF98141BA9C500C47CAEDEDF61D37D2ED0C1DBB9B3293F8B187ED",
+        "Action": {
+          "Id": "Move:Bench:2:Team:0:",
+          "Kind": 3,
+          "Label": "Move Joltail to Team 1",
+          "Source": {
+            "Area": 1,
+            "Index": 2
+          },
+          "Target": {
+            "Area": 0,
+            "Index": 0
+          },
+          "Cost": 0,
+          "Locked": null,
+          "ExpectedResult": "The source creature occupies the target and its source becomes empty.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Move Joltail to Team 1 to activate its On Battle Start Shock, which triggers immediately upon entry and adds direct damage value.",
+        "Objective": "Deploy the bench creature with immediate impact rather than spending gold on a new purchase or rerolling.",
+        "References": [],
+        "InferenceMilliseconds": 6500.6296,
+        "NextStep": "If the team survives the opening burst, consider buying Mosslug for healing if HP drops below 50% during battle; otherwise finish shopping to start the match.",
+        "SecondMove": null
+      },
+      "candidateCount": 52,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 1798,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 291,
+        "probabilities": 5412,
+        "probabilityNote": 272,
+        "trainer": 207,
+        "creatures": 3818,
+        "items": 139,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 923,
+        "pairEvidence": 1060,
+        "buildEvidence": 1025,
+        "partnerCreatures": 1369,
+        "supportingItems": 2,
+        "supportingTrinkets": 2,
+        "supportingTrainers": 896,
+        "actionColumns": 79,
+        "legalActions": 1588,
+        "allowedFirstMoves": 40,
+        "allowedSecondMoves": 372,
+        "sequenceRangeNote": 179,
+        "actionRules": 766,
+        "decisionChecklist": 432,
+        "activeBoard": 252,
+        "actionInterpretation": 909,
+        "positioning": 277
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 43820,
+          "PromptTokens": 12706,
+          "ElapsedMilliseconds": 4887.8012
+        },
+        {
+          "ContextCharacters": 45160,
+          "PromptTokens": 13167,
+          "ElapsedMilliseconds": 6499.2119
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:58:16.864, 8362, 12288, 0",
+        "2026/10/07 11:58:17.425, 8362, 12288, 9",
+        "2026/10/07 11:58:17.988, 8362, 12288, 100",
+        "2026/10/07 11:58:18.546, 8362, 12288, 100",
+        "2026/10/07 11:58:19.104, 8362, 12288, 100",
+        "2026/10/07 11:58:19.667, 8362, 12288, 100",
+        "2026/10/07 11:58:20.228, 8364, 12288, 100",
+        "2026/10/07 11:58:20.789, 8364, 12288, 64",
+        "2026/10/07 11:58:21.352, 8364, 12288, 69",
+        "2026/10/07 11:58:21.926, 8362, 12288, 88",
+        "2026/10/07 11:58:22.486, 8362, 12288, 85",
+        "2026/10/07 11:58:23.048, 8363, 12288, 89"
+      ]
+    },
+    {
+      "fixture": "tests/BatomonHelper.Tests/Fixtures/treasure-day9.v2.json",
+      "evaluationCriteria": null,
+      "elapsedMilliseconds": 5138.5528,
+      "decision": {
+        "Revision": "4BD54B0721B0B885A2A8582DA64E01C042788B37777840C6214473112237A98C",
+        "Action": {
+          "Id": "Finish:::::",
+          "Kind": 11,
+          "Label": "Finish shopping and start the battle manually",
+          "Source": null,
+          "Target": null,
+          "Cost": 0,
+          "Locked": null,
+          "ExpectedResult": "The current team enters battle when you start it.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "The team is full and the bench has no immediate synergy; buying more creatures risks overflow or wasting gold on low-impact units like Ironcore.",
+        "Objective": "Start the battle to test the current composition\u0027s survival and damage output before spending remaining gold.",
+        "References": [],
+        "InferenceMilliseconds": 5110.1609,
+        "NextStep": "If the battle ends quickly, lock the shop to preserve offers for a future reroll if needed; otherwise, finish shopping immediately.",
+        "SecondMove": null
+      },
+      "candidateCount": 51,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 2156,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 334,
+        "probabilities": 5424,
+        "probabilityNote": 272,
+        "trainer": 261,
+        "creatures": 6258,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 925,
+        "actionColumns": 79,
+        "legalActions": 4072,
+        "allowedFirstMoves": 40,
+        "allowedSecondMoves": 1782,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 450,
+        "activeBoard": 311,
+        "actionInterpretation": 909,
+        "positioning": 1356
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 47037,
+          "PromptTokens": 14157,
+          "ElapsedMilliseconds": 5107.832
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:58:23.391, 8362, 12288, 88",
+        "2026/10/07 11:58:23.953, 8362, 12288, 26",
+        "2026/10/07 11:58:24.527, 8373, 12288, 100",
+        "2026/10/07 11:58:25.083, 8363, 12288, 100",
+        "2026/10/07 11:58:25.643, 8363, 12288, 100",
+        "2026/10/07 11:58:26.203, 8363, 12288, 100",
+        "2026/10/07 11:58:26.762, 8363, 12288, 100",
+        "2026/10/07 11:58:27.318, 8363, 12288, 87",
+        "2026/10/07 11:58:27.875, 8362, 12288, 90",
+        "2026/10/07 11:58:28.436, 8362, 12288, 89"
+      ]
+    },
+    {
+      "fixture": "tests/BatomonHelper.Tests/Fixtures/smuggler-day10.v2.json",
+      "evaluationCriteria": null,
+      "elapsedMilliseconds": 5123.766,
+      "decision": {
+        "Revision": "E85EF18C91B3C7C83884081DD852605DDD1AAF0ADD93B7F7BE877F66E49428F0",
+        "Action": {
+          "Id": "Move:Team:1:Bench:0:",
+          "Kind": 3,
+          "Label": "Move Humbolt to Bench 1",
+          "Source": {
+            "Area": 0,
+            "Index": 1
+          },
+          "Target": {
+            "Area": 1,
+            "Index": 0
+          },
+          "Cost": 0,
+          "Locked": null,
+          "ExpectedResult": "The source creature occupies the target and its source becomes empty.",
+          "Prerequisites": [
+            "Accepted shopping capture",
+            "Required action facts are known"
+          ]
+        },
+        "Reason": "Moving Humbolt to Bench 1 frees Team 2 for a purchase while keeping the team at full strength; this costs $0 and preserves gold.",
+        "Objective": "Spend remaining gold on a useful creature or reroll if no immediate upgrade is available, then finish shopping.",
+        "References": [],
+        "InferenceMilliseconds": 5121.4463,
+        "NextStep": "If you buy Brawlmantis (cost $30) into Team 2, it adds \u002B50 Damage at Level 1; otherwise, use free rerolls to seek higher rarity. Stop spending when gold drops below $10 or the team has a balanced damage output.",
+        "SecondMove": null
+      },
+      "candidateCount": 47,
+      "contextSections": {
+        "boardSlotColumns": 109,
+        "state": 2199,
+        "stateLegend": 371,
+        "goal": 147,
+        "previousObjective": 4,
+        "poolScenario": 316,
+        "probabilities": 5433,
+        "probabilityNote": 272,
+        "trainer": 232,
+        "creatures": 6060,
+        "items": 2,
+        "trinkets": 2,
+        "mechanics": 19718,
+        "knowledgeVersion": 147,
+        "strategyRules": 667,
+        "partnerAvailability": 927,
+        "actionColumns": 79,
+        "legalActions": 2876,
+        "allowedFirstMoves": 47,
+        "allowedSecondMoves": 1667,
+        "sequenceRangeNote": 179,
+        "actionRules": 631,
+        "decisionChecklist": 450,
+        "activeBoard": 311,
+        "actionInterpretation": 909,
+        "positioning": 831
+      },
+      "telemetry": [
+        {
+          "ContextCharacters": 45017,
+          "PromptTokens": 13450,
+          "ElapsedMilliseconds": 5118.3885
+        }
+      ],
+      "gpuSamples": [
+        "2026/10/07 11:58:28.513, 8362, 12288, 89",
+        "2026/10/07 11:58:29.073, 8362, 12288, 100",
+        "2026/10/07 11:58:29.632, 8363, 12288, 100",
+        "2026/10/07 11:58:30.191, 8365, 12288, 100",
+        "2026/10/07 11:58:30.752, 8365, 12288, 100",
+        "2026/10/07 11:58:31.310, 8365, 12288, 100",
+        "2026/10/07 11:58:31.871, 8364, 12288, 99",
+        "2026/10/07 11:58:32.430, 8364, 12288, 84",
+        "2026/10/07 11:58:32.990, 8364, 12288, 88",
+        "2026/10/07 11:58:33.552, 8364, 12288, 85"
+      ]
+    }
+  ]
+}

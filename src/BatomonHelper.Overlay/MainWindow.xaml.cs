@@ -90,6 +90,12 @@ public partial class MainWindow : Window
     }
 
     private void DragWindow(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); }
+    private void EvidenceRequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+    {
+        if (e.Uri.Scheme == "https" && e.Uri.Host == "batomon.com")
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+        e.Handled = true;
+    }
 
     private void ToggleExpanded(object sender, RoutedEventArgs e)
     {

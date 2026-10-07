@@ -53,17 +53,19 @@ public sealed class ShoppingAdviceSession(ILegalActionGenerator legal, IShopping
             var candidates = legal.Generate(observation, catalog);
             if (candidates.IsEmpty) throw new InvalidOperationException("The capture needs more information before a legal move can be suggested.");
             if (_previousBoard is { } previous && (previous.TrainerId != board.TrainerId || board.Day < previous.Day)) _objective = null;
-            var projection = (board with { RegionFilter = observation.RunRegion ?? MonsterRegionFilter.All }).ToShopOddsSnapshot(catalog);
-            var odds = new OddsCalculator().Calculate(catalog, projection, new OddsCalculationOptions(
-                board.Team.Concat(board.Bench).Where(s => s.Level >= 3).Select(s => s.DefinitionId!).ToHashSet(),
-                observation.Inventory.Where(i => i.IsTrinket && i.Resolved && i.Quantity > 0).Select(i => i.DefinitionId).ToHashSet()));
+            var context = observation.AdviceContext ?? ShoppingAdviceContext.Create(catalog,
+                (board with { RegionFilter = observation.RunRegion ?? MonsterRegionFilter.All }).ToShopOddsSnapshot(catalog), board, [],
+                observation.Inventory.Where(i => i.IsTrinket && i.Resolved && i.Quantity > 0).Select(i => i.DefinitionId));
             Set(new(ShoppingStatus.Planning, $"Considering the capture from {board.CapturedAt.ToLocalTime():HH:mm:ss}…"));
-            var decision = await planner.ProposeAsync(new(observation, catalog, knowledge, candidates, odds,
-                observation.RunRegion is null || !observation.InventoryResolved, _objective, []), token);
+            var decision = await planner.ProposeAsync(new(observation, catalog, knowledge, candidates, context.Odds,
+                true, _objective, []) { AdviceContext = context }, token);
             token.ThrowIfCancellationRequested();
             if (decision.Revision != observation.Revision || !candidates.Any(a => a.SameMove(decision.Action)))
                 throw new InvalidDataException("The model suggested an action outside this capture's legal moves.");
             if (string.IsNullOrWhiteSpace(decision.NextStep)) throw new InvalidDataException("The model did not explain the expected next step.");
+            if (decision.SecondMove is { } second && (string.IsNullOrWhiteSpace(second.Reason) ||
+                !ShoppingSequenceValidator.CanFollow(observation, catalog, decision.Action, second.Action)))
+                throw new InvalidDataException("The second move is not valid after the first move.");
             await journal.AppendAsync(new("advice", DateTimeOffset.UtcNow, observation.Revision, observation, decision), token);
             token.ThrowIfCancellationRequested();
             _objective = decision.Objective; _previousBoard = board;
