@@ -9,7 +9,7 @@ public sealed class ConsumableTrainerTests
         var rules=RuleCompiler.Fixture();var env=new GameEnvironment(rules);env.Reset(7,"fixture");
         env.State.Units[0]=new(){SpeciesId="striker",Instance=20,Copies=2};
         env.State.Units[1]=new(){SpeciesId="striker",Instance=21,Copies=2};
-        env.Step(new(Move.Merge,1,0));Assert.Equal(2,env.State.Units[0]!.Level);Assert.Equal(2,env.State.Units[0]!.Copies);
+        env.Step(new(Move.Move,0,1));Assert.Equal(3,env.State.Units[0]!.Level);Assert.Equal(1,env.State.Units[0]!.Copies);
         var purchase=env.GetLegalActions().First(x=>x.Kind==Move.Buy);env.Step(purchase);
         Assert.Equal(3,env.State.Units[0]!.Level);Assert.Equal(1,env.State.Units[0]!.Copies);
     }
@@ -64,8 +64,8 @@ public sealed class ConsumableTrainerTests
     public void Twins_clone_merge_result_with_zero_resale_and_chemist_growth_is_persistent()
     {
         var rules=Rules("twins","chemist");var env=new GameEnvironment(rules);env.Reset(4,"twins");env.State.ExtraTrainers=["chemist"];
-        env.State.Units[0]=new(){SpeciesId="unit-0",Instance=10,Level=2};env.State.Units[1]=new(){SpeciesId="unit-0",Instance=11,Level=2};
-        env.Step(new(Move.Merge,1,0));var copy=env.State.Units.OfType<Unit>().Single(x=>x.Instance!=10);
+        env.State.Units[0]=new(){SpeciesId="unit-0",Instance=11,Level=2};env.State.Units[1]=new(){SpeciesId="unit-0",Instance=10,Level=2};
+        env.Step(new(Move.Move,0,1));var copy=env.State.Units.OfType<Unit>().Single(x=>x.Instance!=10);
         Assert.Equal(3,copy.Level);Assert.Equal(0,env.SellValue(copy));Assert.Equal(1,env.State.Counters["chemist-levels"]);
         Assert.Equal(env.State.Units[0]!.Bonuses,copy.Bonuses);Assert.NotEqual(env.State.Units[0]!.Instance,copy.Instance);
     }

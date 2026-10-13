@@ -116,6 +116,17 @@ public sealed class ProgressionEncounterTests
     }
 
     [Fact]
+    public void Shockify_ray_can_target_an_existing_electric_creature_and_only_adds_shock()
+    {
+        var env = Ready(); env.State.Units[0]!.AddedTypes = ["electric"];
+        env.OpenEncounter("events/genius-inventor");
+        var action = Assert.Single(env.GetLegalActions(), x => x.Choice == 1 && x.Target == 0);
+        env.Step(action);
+        Assert.Equal(["electric"], env.State.Units[0]!.AddedTypes);
+        Assert.Equal(5, env.State.Units[0]!.Bonuses[(int)Stat.Shock]);
+    }
+
+    [Fact]
     public void Normal_events_use_supplied_days_and_tiers_and_hide_incoming_shop()
     {
         var rules = Fixture(); var env = Ready();

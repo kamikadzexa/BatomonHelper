@@ -32,7 +32,8 @@ public sealed class LevelTimerAmplifierTests
         for(var level=1;level<=5;level++)
         {
             env.State.Units[0]=new(){SpeciesId=unit.Id,Instance=50,Level=level};env.State.Units[1]=new(){SpeciesId=unit.Id,Instance=51,Level=level};
-            Assert.Contains(new SimAction(Move.Merge,1,0),env.GetLegalActions());env.Step(new(Move.Merge,1,0));
+            Assert.DoesNotContain(env.GetLegalActions(),x=>x.Kind==Move.Merge);
+            env.Step(new(Move.Move,0,1));
             Assert.Equal(level+1,env.State.Units[0]!.Level);Assert.Equal(1,env.State.Units[0]!.Copies);
         }
         Assert.Equal(6,LevelRules.Resolve(unit,6,false).Stats[0]);Assert.NotEmpty(new PolicyEncoding(rules).Observation(env.GetObservation()));

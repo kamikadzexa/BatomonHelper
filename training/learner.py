@@ -672,7 +672,7 @@ def encoding_metadata(rules,version=ENCODING):
                 trainer_flags=dict(offset=286+len(rules['Trinkets']),order=[x['Id'] for x in rules['Trainers']]),
                 type_bits=sorted({t for s in rules['Species'] for t in s['Types']}),
                 definition_ids='One-based catalog order; zero denotes absent.',
-                actions=dict(move_one_hot=['Buy','BuyItem','Sell','Move','Merge','Reroll','Lock','Choose','Finish'],
+                actions=dict(move_one_hot=['Buy','BuyItem','Sell','Move','(automatic merge)','Reroll','Lock','Choose','Finish'],
                              fields={9:'(source+1)/11',10:'(target+1)/11',11:'(choice+1)/10',12:'offer_price/100',
                                      13:'offered_species_id',14:'offered_level/4',15:'offered_shiny',16:'offered_item_id',
                                      17:'chosen_trinket_id',18:'chosen_trainer_id',19:'first_choice_effect_operation',

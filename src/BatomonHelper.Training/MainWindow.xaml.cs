@@ -13,7 +13,8 @@ using System.Windows.Threading;
 
 namespace BatomonHelper.Training;
 
-public sealed record HistoryCard(string Name,string Level,string Types,string Stats,string? Sprite);
+public sealed record HistoryCard(string Name,string Level,string Types,string Stats,string? Sprite,
+    int Slot=-1,bool IsOccupied=false,string Zone="");
 public sealed record GenerationResult(int Generation,int Runs,double SuccessRate,double AverageWins);
 public sealed record TrainerResult(string Trainer,int Runs,double SuccessRate,double AverageWins);
 public sealed record RankingResult(int Rank,string Label,int Update,int Generation,int Runs,double SuccessRate,double Lower95,double Upper95,double AverageWins,double AverageDeployed,double UnusedBench,double LimitedTurns,string? Archive,bool Complete,bool Baseline);

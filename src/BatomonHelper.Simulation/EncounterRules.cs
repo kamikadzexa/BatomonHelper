@@ -23,7 +23,7 @@ public static class EncounterRules
             "events/fossil-discovery" => new(id,"Fossil Discovery",2,[C("Take it to a lab and revive it",Unit("talonite")),C("Keep it",Trinket("winged-fossil")),C("Sell it",Gold(40))],url,3),
             "events/genius-inventor" => new(id,"Genius Inventor",3,[
                 new("Test the Recombobulator",null,[new Effect(Trigger.Bought,Operation.Recombine,Target.All,Amount:1,Permanent:true)],AtShopStart:true),
-                new("Test the Shockify Ray",null,[new Effect(Trigger.Bought,Operation.AddType,Target.Selected,Permanent:true,Type:"electric"),new Effect(Trigger.Bought,Operation.Add,Target.Selected,Stat.Shock,5,true)],new(ExcludedType:"electric")),
+                new("Test the Shockify Ray",null,[new Effect(Trigger.Bought,Operation.AddType,Target.Selected,Permanent:true,Type:"electric"),new Effect(Trigger.Bought,Operation.Add,Target.Selected,Stat.Shock,5,true)],new()),
                 C("Test the Gold-o-matic",Trinket("gold-o-matic"))],url,5),
             "events/meteor-crash" => new(id,"Meteor Crash",2,[new("Touch the glowing gem",null,[new Effect(Trigger.Bought,Operation.LevelUp,Target.Selected,Permanent:true)],new(MaximumLevel:1)),C("Mine the meteor",Trinket("meteorite")),C("Take some meteor debris and sell it",Gold(40))],url),
             "events/pond-fairy" => new(id,"Pond Fairy",2,[C("Wish for fame",new Effect(Trigger.Bought,Operation.ShopRank,Target.All,Amount:2)),C("Wish for wealth",Trinket("gold-bar")),C("Capture the fairy",Unit("wishwash"))],url),

@@ -96,8 +96,9 @@ public sealed class TransformationQueueTests
     public void Merges_keep_the_highest_progress_and_earliest_acquisition_day()
     {
         var env=new GameEnvironment(RuleCompiler.Fixture());env.Reset(123,"fixture");
-        env.State.Units[0]=new(){SpeciesId="striker",Instance=50,Counters=new(){["born-day"]=1,["progress"]=20}};
-        env.State.Units[1]=new(){SpeciesId="striker",Instance=51,Counters=new(){["born-day"]=4,["progress"]=10}};
-        env.Step(new(Move.Merge,0,1));Assert.Equal(1,env.State.Units[1]!.Counters["born-day"]);Assert.Equal(20,env.State.Units[1]!.Counters["progress"]);
+        env.State.Units[0]=new(){SpeciesId="striker",Instance=51,Counters=new(){["born-day"]=4,["progress"]=10}};
+        env.State.Units[1]=new(){SpeciesId="striker",Instance=50,Counters=new(){["born-day"]=1,["progress"]=20}};
+        env.State.Units[2]=new(){SpeciesId="striker",Instance=52,Counters=new(){["born-day"]=3,["progress"]=15}};
+        env.Step(new(Move.Move,0,1));Assert.Equal(1,env.State.Units[0]!.Counters["born-day"]);Assert.Equal(20,env.State.Units[0]!.Counters["progress"]);
     }
 }

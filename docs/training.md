@@ -66,7 +66,7 @@ Progress updates every second with the current snapshot, episode quota, elapsed 
 
 ## Play your sessions
 
-Use **Play Session** in Training Lab to select a trainer/seed, buy and use shop offers, move/swap, merge, sell, lock, reroll, resolve every required choice and battle. The legal-action panel remains visible beside the board. Sessions autosave after each action; Save, Resume and Inspect battles are available explicitly.
+Use **Play Session** in Training Lab to select a trainer/seed, buy and use shop offers, move/swap, sell, lock, reroll, resolve every required choice and battle. Merging is automatic once the required matching creatures are on the team or bench; it is not a player action. The legal-action panel remains visible beside the board. Sessions autosave after each action; Save, Resume and Inspect battles are available explicitly.
 
 Sessions live in `work/user-sessions`, separately from automatic training-history pruning. **Add to opponent pool**, **Remove from pool** and **Enable / disable** control inclusion. Losing and unfinished sessions can contribute completed battle days. Imports replay every action against the exact rules and reject mismatched/tampered state, preserve original board stats/counters/inventory/trainer, deduplicate exact boards and cap each session at 32 boards per day. The pool is loaded at the next training/evaluation launch. Your actions are recorded for replay and inspection; they are used **only to supply opponents**, with no imitation learning or screen capture.
 

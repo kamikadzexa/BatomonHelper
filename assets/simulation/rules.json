@@ -102395,7 +102395,7 @@
           "TargetRule": {
             "MinimumLevel": null,
             "MaximumLevel": null,
-            "ExcludedType": "electric",
+            "ExcludedType": null,
             "NonShiny": false
           },
           "AtShopStart": false

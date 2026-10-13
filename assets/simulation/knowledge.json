@@ -57,7 +57,7 @@
       "Id": "events/genius-inventor",
       "Title": "Genius Inventor",
       "SourceUrl": "https://batomon.com/events/genius-inventor",
-      "Text": "Event reference\nGenius Inventor\nYou encounter a genius inventor. He asks if you want to test any of his new inventions.\nTier 3 After 5 games\nBack to Event\nEncounter options\nYou encounter a genius inventor. He asks if you want to test any of his new inventions.\nAvailable after 5 completed games.\nTest the Recombobulator\nRandomly transform your monsters 1 rarity higher (max Mythical rarity)\nResolves at the start of the next shop.\nTest the Shockify Ray\nGive a monster Electric typing and \u002B5 Shock\nTarget: a monster without Electric typing\nTest the Gold-o-matic\nGain Gold-o-matic"
+      "Text": "Event reference\nGenius Inventor\nYou encounter a genius inventor. He asks if you want to test any of his new inventions.\nTier 3 After 5 games\nBack to Event\nEncounter options\nYou encounter a genius inventor. He asks if you want to test any of his new inventions.\nAvailable after 5 completed games.\nTest the Recombobulator\nRandomly transform your monsters 1 rarity higher (max Mythical rarity)\nResolves at the start of the next shop.\nTest the Shockify Ray\nGive a monster Electric typing and \u002B5 Shock\nTarget: any monster; an Electric monster only gains the \u002B5 Shock\nTest the Gold-o-matic\nGain Gold-o-matic"
     },
     {
       "Id": "events/meteor-crash",

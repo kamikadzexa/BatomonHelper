@@ -136,7 +136,8 @@ public sealed class PurchaseAbilityTests
         var env = Ready(Fixture("Give the next Flying monster you buy +2 Multicast. Lost if sold."));
         Offer(env, "actor", 0, 100); env.Step(new(Move.Buy, 0, 0));
         env.State.Units[1] = new() { SpeciesId = "actor", Instance = 101 };
-        env.Step(new(Move.Merge, 0, 1)); Assert.Equal(101, Assert.Single(env.State.PendingPurchaseBuffs).SourceInstance);
+        env.State.Units[2] = new() { SpeciesId = "actor", Instance = 102 };
+        env.Step(new(Move.Move, 0, 1)); Assert.Equal(101, Assert.Single(env.State.PendingPurchaseBuffs).SourceInstance);
         Offer(env, "flying", 2, 102); env.Step(new(Move.Buy, 2, 2)); Assert.Equal(2, env.State.Units[2]!.Bonuses[7]);
     }
 

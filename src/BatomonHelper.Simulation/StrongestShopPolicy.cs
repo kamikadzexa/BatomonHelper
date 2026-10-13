@@ -21,7 +21,6 @@ public sealed class StrongestShopPolicy(RulesManifest rules)
         if(s.Phase==Phase.Overflow){var weakest=legal.Where(x=>x.Kind==Move.Sell).MinBy(x=>Strength(x.Source==10?s.Overflow!:s.Units[x.Source]!))!;
             return legal.FirstOrDefault(x=>x.Kind==Move.Move&&x.Source==10&&x.Target<6)??weakest;}
         if(_decisions>=60)return new(Move.Finish);
-        if(legal.FirstOrDefault(x=>x.Kind==Move.Merge) is {} merge)return merge;
         if(legal.FirstOrDefault(x=>x.Kind==Move.Move&&x.Source>=6&&x.Source<10&&x.Target<6&&s.Units[x.Target] is null) is {} deploy)return deploy;
         var offers=legal.Where(x=>x.Kind==Move.Buy).GroupBy(x=>x.Source).Select(x=>x.First()).ToArray();
         var weakestSlot=Enumerable.Range(0,6).Where(i=>s.Units[i] is not null).OrderBy(i=>Strength(s.Units[i]!)).FirstOrDefault(-1);

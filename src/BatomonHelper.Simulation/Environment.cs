@@ -60,8 +60,6 @@ public sealed partial class GameEnvironment(RulesManifest rules)
                 var target=State.Units[j];
                 // Occupied swaps are symmetric; publish exactly one action for each result.
                 if(target is null || i<j)actions.Add(new(Move.Move,i,j));
-                if(target is not null && _species[source.SpeciesId].MergeGroup==_species[target.SpeciesId].MergeGroup &&
-                    source.Level==target.Level && CanMerge(source)) actions.Add(new(Move.Merge,i,j));
             }
         }
         if(State.Phase==Phase.Overflow)
@@ -134,9 +132,8 @@ public sealed partial class GameEnvironment(RulesManifest rules)
                 break;
             case Move.Move:
                 if(action.Source==10) { State.Units[action.Target]=State.Overflow; State.Overflow=null; DrainPendingUnits(); MergeAutomatic(); }
-                else (State.Units[action.Source],State.Units[action.Target])=(State.Units[action.Target],State.Units[action.Source]);
+                else { (State.Units[action.Source],State.Units[action.Target])=(State.Units[action.Target],State.Units[action.Source]); MergeAutomatic(); }
                 break;
-            case Move.Merge: MergeInto(action.Source,action.Target); break;
             case Move.Reroll:
                 if(State.FreeRerolls>0) State.FreeRerolls--; else State.Gold-=3;
                 State.CarryShop|=State.Locked; State.Locked=false; RollShop(); break;
