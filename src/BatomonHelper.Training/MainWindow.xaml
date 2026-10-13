@@ -1,0 +1,73 @@
+<Window x:Class="BatomonHelper.Training.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Pantra Training Lab" Width="1320" Height="920" MinWidth="1080" MinHeight="680">
+ <Window.Resources>
+  <DataTemplate x:Key="Card"><Border Background="#203246" BorderBrush="#3D5A70" BorderThickness="1" CornerRadius="6" Margin="4" Padding="9">
+   <Grid MinHeight="116"><Grid.ColumnDefinitions><ColumnDefinition Width="60"/><ColumnDefinition/></Grid.ColumnDefinitions>
+    <Image Source="{Binding Sprite}" Width="52" Height="52" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Uniform"/>
+    <StackPanel Grid.Column="1"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Level}" Foreground="#FFCE79" Margin="0,3"/>
+     <TextBlock Text="{Binding Types}" Foreground="#8DDABF" FontSize="11" TextWrapping="Wrap"/><TextBlock Text="{Binding Stats}" FontSize="11" TextWrapping="Wrap" Margin="0,3"/>
+    </StackPanel>
+   </Grid>
+  </Border></DataTemplate>
+ </Window.Resources>
+ <Grid Margin="18" Background="#101D2A"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+  <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <StackPanel><TextBlock Text="Pantra Training Lab" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="Standalone simulation · population self-play · normal runs" Foreground="#A7BBD0" Margin="0,4,0,12"/></StackPanel>
+   <TextBlock Grid.Column="1" Text="{Binding RulesLabel}" Foreground="#A7BBD0" VerticalAlignment="Center"/>
+  </Grid>
+  <Border Grid.Row="1" Background="#27384A" CornerRadius="6" Padding="12" Margin="0,0,0,12"><TextBlock Text="{Binding Status}" TextWrapping="Wrap" Foreground="#FFCE79"/></Border>
+  <TabControl x:Name="Tabs" Grid.Row="2" Background="#101D2A" BorderBrush="#3D5A70">
+   <TabItem Header="Training"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="16">
+    <WrapPanel>
+     <StackPanel Width="160"><TextBlock Text="Device"/><ComboBox x:Name="Device" SelectedIndex="0"><ComboBoxItem Content="auto"/><ComboBoxItem Content="cpu"/><ComboBoxItem Content="cuda"/></ComboBox></StackPanel>
+     <StackPanel Width="120"><TextBlock Text="Workers"/><TextBox x:Name="Workers" Text="12"/></StackPanel>
+     <StackPanel Width="150"><TextBlock Text="Environments"/><TextBox x:Name="Environments" Text="256"/></StackPanel>
+     <StackPanel Width="150"><TextBlock Text="Seed"/><TextBox x:Name="Seed" Text="42"/></StackPanel>
+     <StackPanel Width="160"><TextBlock Text="Minutes (0 = until stopped)"/><TextBox x:Name="Minutes" Text="0"/></StackPanel>
+    </WrapPanel>
+    <TextBlock Text="Output directory"/><TextBox x:Name="Output" Text="{Binding OutputDirectory, Mode=OneWay}"/>
+    <WrapPanel Margin="0,10,0,12"><Button Content="Start" Click="Start"/><Button Content="Pause" Click="Pause"/><Button Content="Resume" Click="Resume"/><Button Content="Stop and save" Click="Stop"/><Button Content="Evaluate" Click="Evaluate"/><Button Content="Export" Click="Export"/></WrapPanel>
+    <Border Background="#203246" CornerRadius="6" Padding="18"><StackPanel><TextBlock Text="{Binding Progress}" FontSize="18" TextWrapping="Wrap"/><TextBlock Text="{Binding Checkpoint}" Foreground="#A7BBD0" Margin="0,10" TextWrapping="Wrap"/>
+     <Polyline Points="{Binding Curve}" Stroke="#8DDABF" StrokeThickness="2" Height="110" Stretch="Fill" Margin="0,10"/><TextBlock Text="Ten-win success rate over completed updates" Foreground="#A7BBD0"/>
+    </StackPanel></Border>
+    <TextBlock Text="Trainer results" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
+    <DataGrid ItemsSource="{Binding TrainerResults}" AutoGenerateColumns="True" MaxHeight="250"/>
+    <Expander Header="Rules coverage" Foreground="#EAF0F6" Margin="0,18"><DataGrid ItemsSource="{Binding Issues}" AutoGenerateColumns="True" Height="280"/></Expander>
+    <Expander Header="Rule provenance and labelled guesses" Foreground="#EAF0F6" Margin="0,10"><StackPanel>
+     <DataGrid ItemsSource="{Binding Evidence}" AutoGenerateColumns="True" Height="260"/>
+     <TextBlock Text="Base team HP — supplied values and estimates" Margin="0,12,0,4"/><DataGrid ItemsSource="{Binding HpEvidence}" AutoGenerateColumns="True" Height="180"/>
+     <TextBlock Text="Daily base income — supplied values and estimates" Margin="0,12,0,4"/><DataGrid ItemsSource="{Binding IncomeEvidence}" AutoGenerateColumns="True" Height="180"/>
+    </StackPanel></Expander>
+    <Expander Header="Diagnostic tools" Foreground="#EAF0F6" Margin="0,12"><StackPanel><CheckBox x:Name="Diagnostic" Foreground="#FFCE79" Content="Use the synthetic diagnostic fixture — this does not train a Batomon policy" Margin="0,8"/>
+     <TextBlock Text="Guessed mechanics are allowed and labelled separately. Missing executable handlers still block game training. Diagnostic runs exercise the learner, checkpoints and history viewer." Foreground="#A7BBD0" TextWrapping="Wrap"/>
+    </StackPanel></Expander>
+   </StackPanel></ScrollViewer></TabItem>
+   <TabItem Header="History"><Grid Margin="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+    <WrapPanel>
+     <StackPanel Width="150"><TextBlock Text="View"/><ComboBox x:Name="HistoryView" SelectedIndex="0"><ComboBoxItem Content="Recent runs"/><ComboBoxItem Content="Best runs"/></ComboBox></StackPanel>
+     <StackPanel Width="85"><TextBlock Text="Generation"/><TextBox x:Name="GenerationFilter"/></StackPanel>
+     <StackPanel Width="85"><TextBlock Text="Policy"/><TextBox x:Name="PolicyFilter"/></StackPanel>
+     <StackPanel Width="170"><TextBlock Text="Trainer ID"/><TextBox x:Name="TrainerFilter"/></StackPanel>
+     <StackPanel Width="125"><TextBlock Text="Outcome"/><ComboBox x:Name="OutcomeFilter" SelectedIndex="0"><ComboBoxItem Content="All"/><ComboBoxItem Content="Success"/><ComboBoxItem Content="Failure"/></ComboBox></StackPanel>
+     <StackPanel Width="145"><TextBlock Text="Source"/><ComboBox x:Name="SourceFilter" SelectedIndex="0"><ComboBoxItem Content="All"/><ComboBoxItem Content="Training"/><ComboBoxItem Content="Evaluation"/></ComboBox></StackPanel>
+     <Button Content="Refresh" Click="RefreshHistory" VerticalAlignment="Center"/>
+    </WrapPanel>
+    <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="490"/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
+     <DataGrid x:Name="RunList" ItemsSource="{Binding Runs}" SelectionChanged="SelectRun" AutoGenerateColumns="False" HeadersVisibility="Column">
+      <DataGrid.Columns><DataGridTextColumn Header="Gen" Binding="{Binding Generation}" Width="40"/><DataGridTextColumn Header="Policy" Binding="{Binding Policy}" Width="45"/><DataGridTextColumn Header="Trainer" Binding="{Binding Trainer}" Width="155"/><DataGridTextColumn Header="Wins" Binding="{Binding Wins}" Width="45"/><DataGridTextColumn Header="Lives" Binding="{Binding Lives}" Width="45"/><DataGridTextColumn Header="Days" Binding="{Binding Days}" Width="40"/><DataGridTextColumn Header="Outcome" Binding="{Binding Outcome}" Width="65"/><DataGridCheckBoxColumn Header="Eval" Binding="{Binding Evaluation}" Width="40"/></DataGrid.Columns>
+     </DataGrid>
+     <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto"><StackPanel>
+      <TextBlock Text="{Binding SelectedRunLabel}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="4,0,0,10"/>
+      <WrapPanel><Button Content="Previous day" Click="PreviousDay"/><Button Content="Next day" Click="NextDay"/><Button Content="Pin / unpin" Click="TogglePin"/><CheckBox x:Name="ShowOpponent" Content="Opponent board" Foreground="#EAF0F6" Checked="ChangeBoard" Unchecked="ChangeBoard" VerticalAlignment="Center"/></WrapPanel>
+      <TextBlock Text="{Binding DayLabel}" Foreground="#FFCE79" TextWrapping="Wrap" Margin="4,12"/>
+      <TextBlock Text="TEAM" FontWeight="SemiBold" Margin="4,6"/>
+      <ItemsControl ItemsSource="{Binding Team}" ItemTemplate="{StaticResource Card}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+      <TextBlock Text="BENCH" FontWeight="SemiBold" Margin="4,12,4,6"/>
+      <ItemsControl ItemsSource="{Binding Bench}" ItemTemplate="{StaticResource Card}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+      <TextBlock Text="{Binding Inventory}" TextWrapping="Wrap" Margin="4,12" Foreground="#A7BBD0"/>
+      <TextBlock Text="{Binding Decisions}" TextWrapping="Wrap" Margin="4,8"/>
+     </StackPanel></ScrollViewer>
+    </Grid>
+   </Grid></TabItem>
+  </TabControl>
+ </Grid>
+</Window>

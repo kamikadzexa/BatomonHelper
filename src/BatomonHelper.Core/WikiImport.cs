@@ -235,7 +235,7 @@ public sealed partial class WikiImporter(IWikiSource source)
         return match.Success ? "https://batomon.com" + match.Value : null;
     }
     private static ItemDefinition ParseItem(string id, string html) => new(id, ParseReferenceName(id, html), ParseReferenceEffect(html, "Item effect"), ParsePrice(html), null, ParseRarity(html) ?? Rarity.Common);
-    private static TrinketDefinition ParseTrinket(string id, string html) => new(id, ParseReferenceName(id, html), ParseRarity(html) ?? Rarity.Common, ParseReferenceEffect(html, "Trinket effect"), html.Contains("Unique", StringComparison.OrdinalIgnoreCase));
+    private static TrinketDefinition ParseTrinket(string id, string html) => new(id, ParseReferenceName(id, html), ParseRarity(html) ?? Rarity.Common, ParseReferenceEffect(html, "Trinket effect"), Regex.IsMatch(html, @">\s*Unique\s*</span>", RegexOptions.IgnoreCase));
     private static string ParseReferenceName(string id, string html)
     {
         var name = StripTags(WebUtility.HtmlDecode(TitleRegex().Match(html).Groups["name"].Value)).Trim();
@@ -243,8 +243,9 @@ public sealed partial class WikiImporter(IWikiSource source)
     }
     private static string? ParseReferenceEffect(string html, string heading)
     {
-        var match = ReferenceEffectRegex().Match(html);
-        if (!match.Success || !match.Groups["heading"].Value.Contains(heading, StringComparison.OrdinalIgnoreCase)) return null;
+        var match = ReferenceEffectRegex().Matches(html).FirstOrDefault(candidate =>
+            candidate.Groups["heading"].Value.Contains(heading, StringComparison.OrdinalIgnoreCase) || candidate.Groups["heading"].Value.Equals("Effect", StringComparison.OrdinalIgnoreCase));
+        if (match is null) return null;
         var text = StripTags(WebUtility.HtmlDecode(match.Groups["effect"].Value)).Trim();
         return string.IsNullOrWhiteSpace(text) ? null : text;
     }

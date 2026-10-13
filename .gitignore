@@ -7,3 +7,6 @@ Installer/staging/
 Installer/dependencies/*.exe
 *.user
 *.suo
+training/.venv/
+training/__pycache__/
+work/

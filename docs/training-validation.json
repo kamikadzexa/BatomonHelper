@@ -1,0 +1,2627 @@
+{
+  "scope": "Normal Pantra simulation with 31 explicitly authorized groups of guessed mechanics. Measurements concern the simulator and frozen legal archives, not captured game opponents.",
+  "game_training_ready": true,
+  "full_fidelity_ready": false,
+  "target_build": "25738032",
+  "balance": "25",
+  "rules_hash": "F89988BBFA12ACEA18E7C5A8A1759698817BEE1C4CECEC4E5D40D0AF113F1B8C",
+  "simulation_revision": 8,
+  "encoding": 3,
+  "unresolved_entries": 0,
+  "guessed_rule_groups": 31,
+  "dotnet_tests_passed": 420,
+  "python_tests_passed": 7,
+  "hardware": "NVIDIA GeForce RTX 3080 Ti, 12 GiB; 16 logical CPU cores",
+  "coverage": {
+    "creatures": 148,
+    "creature_variants": 1164,
+    "items": 40,
+    "trinkets": 93,
+    "trainers": 23
+  },
+  "seeds": [
+    {
+      "seed": 42,
+      "initial": {
+        "opponents": {
+          "current:generation-1": {
+            "battles": 83,
+            "wins": 39
+          },
+          "baseline:generation--1": {
+            "battles": 129,
+            "wins": 59
+          },
+          "current:generation-0": {
+            "battles": 72,
+            "wins": 43
+          },
+          "current:generation-4": {
+            "battles": 113,
+            "wins": 43
+          },
+          "current:generation-9": {
+            "battles": 160,
+            "wins": 45
+          },
+          "current:generation-2": {
+            "battles": 107,
+            "wins": 41
+          },
+          "current:generation-3": {
+            "battles": 120,
+            "wins": 25
+          },
+          "current:generation-7": {
+            "battles": 106,
+            "wins": 31
+          },
+          "current:generation-5": {
+            "battles": 99,
+            "wins": 39
+          },
+          "current:generation-8": {
+            "battles": 98,
+            "wins": 26
+          },
+          "current:generation-6": {
+            "battles": 88,
+            "wins": 32
+          }
+        },
+        "trainers": {
+          "black-belt": {
+            "runs": 5,
+            "successes": 0,
+            "wins": 7
+          },
+          "bug-catcher": {
+            "runs": 6,
+            "successes": 0,
+            "wins": 17
+          },
+          "burglar": {
+            "runs": 7,
+            "successes": 0,
+            "wins": 17
+          },
+          "pyromaniac": {
+            "runs": 8,
+            "successes": 1,
+            "wins": 33
+          },
+          "chemist": {
+            "runs": 8,
+            "successes": 0,
+            "wins": 36
+          },
+          "egg-breeder": {
+            "runs": 8,
+            "successes": 2,
+            "wins": 36
+          },
+          "gamer": {
+            "runs": 8,
+            "successes": 0,
+            "wins": 19
+          },
+          "gentleman": {
+            "runs": 8,
+            "successes": 0,
+            "wins": 30
+          },
+          "youngster-f": {
+            "runs": 8,
+            "successes": 1,
+            "wins": 39
+          },
+          "mad-scientist": {
+            "runs": 7,
+            "successes": 0,
+            "wins": 21
+          },
+          "masked-man": {
+            "runs": 6,
+            "successes": 0,
+            "wins": 21
+          },
+          "monster-ranger": {
+            "runs": 5,
+            "successes": 0,
+            "wins": 17
+          },
+          "musician": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 19
+          },
+          "painter": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 11
+          },
+          "redhead": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 12
+          },
+          "lady": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 6
+          },
+          "scavenger": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 10
+          },
+          "shopkeeper": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 7
+          },
+          "smuggler": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 15
+          },
+          "swim-coach": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 16
+          },
+          "treasure-hunter": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 12
+          },
+          "twins": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 13
+          },
+          "youngster-m": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 9
+          }
+        },
+        "status": "Evaluated",
+        "update": 0,
+        "initial_policy": true,
+        "rules_hash": "F89988BBFA12ACEA18E7C5A8A1759698817BEE1C4CECEC4E5D40D0AF113F1B8C",
+        "runs": 128,
+        "success_rate": 0.0390625,
+        "average_wins": 3.3046875,
+        "confidence_interval_95": [
+          0.0167983630559502,
+          0.08818822691261814
+        ],
+        "policies": [
+          {
+            "policy": 0,
+            "runs": 32,
+            "success_rate": 0.03125,
+            "average_wins": 2.75
+          },
+          {
+            "policy": 1,
+            "runs": 32,
+            "success_rate": 0.03125,
+            "average_wins": 4.46875
+          },
+          {
+            "policy": 2,
+            "runs": 32,
+            "success_rate": 0.09375,
+            "average_wins": 3.53125
+          },
+          {
+            "policy": 3,
+            "runs": 32,
+            "success_rate": 0.0,
+            "average_wins": 2.46875
+          }
+        ],
+        "completed": true,
+        "decisions": 85836,
+        "seconds": 324.3130000000019,
+        "diagnostic_fixture": false
+      },
+      "trained": {
+        "opponents": {
+          "baseline:generation--1": {
+            "battles": 145,
+            "wins": 80
+          },
+          "current:generation-4": {
+            "battles": 135,
+            "wins": 84
+          },
+          "current:generation-0": {
+            "battles": 68,
+            "wins": 53
+          },
+          "current:generation-6": {
+            "battles": 90,
+            "wins": 42
+          },
+          "current:generation-8": {
+            "battles": 150,
+            "wins": 77
+          },
+          "current:generation-7": {
+            "battles": 130,
+            "wins": 64
+          },
+          "current:generation-3": {
+            "battles": 142,
+            "wins": 71
+          },
+          "current:generation-9": {
+            "battles": 191,
+            "wins": 105
+          },
+          "current:generation-2": {
+            "battles": 155,
+            "wins": 81
+          },
+          "current:generation-1": {
+            "battles": 107,
+            "wins": 66
+          },
+          "current:generation-5": {
+            "battles": 100,
+            "wins": 57
+          }
+        },
+        "trainers": {
+          "bug-catcher": {
+            "runs": 6,
+            "successes": 2,
+            "wins": 39
+          },
+          "black-belt": {
+            "runs": 5,
+            "successes": 0,
+            "wins": 19
+          },
+          "burglar": {
+            "runs": 7,
+            "successes": 2,
+            "wins": 36
+          },
+          "pyromaniac": {
+            "runs": 8,
+            "successes": 3,
+            "wins": 57
+          },
+          "chemist": {
+            "runs": 8,
+            "successes": 4,
+            "wins": 59
+          },
+          "egg-breeder": {
+            "runs": 8,
+            "successes": 1,
+            "wins": 48
+          },
+          "gamer": {
+            "runs": 8,
+            "successes": 1,
+            "wins": 38
+          },
+          "gentleman": {
+            "runs": 8,
+            "successes": 2,
+            "wins": 58
+          },
+          "youngster-f": {
+            "runs": 8,
+            "successes": 3,
+            "wins": 52
+          },
+          "mad-scientist": {
+            "runs": 7,
+            "successes": 4,
+            "wins": 58
+          },
+          "masked-man": {
+            "runs": 6,
+            "successes": 0,
+            "wins": 42
+          },
+          "monster-ranger": {
+            "runs": 5,
+            "successes": 1,
+            "wins": 22
+          },
+          "musician": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 20
+          },
+          "painter": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 19
+          },
+          "redhead": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 16
+          },
+          "lady": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 32
+          },
+          "scavenger": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 17
+          },
+          "shopkeeper": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 27
+          },
+          "smuggler": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 29
+          },
+          "swim-coach": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 21
+          },
+          "treasure-hunter": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 23
+          },
+          "twins": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 29
+          },
+          "youngster-m": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 19
+          }
+        },
+        "status": "Evaluated",
+        "update": 100,
+        "initial_policy": false,
+        "rules_hash": "F89988BBFA12ACEA18E7C5A8A1759698817BEE1C4CECEC4E5D40D0AF113F1B8C",
+        "runs": 128,
+        "success_rate": 0.28125,
+        "average_wins": 6.09375,
+        "confidence_interval_95": [
+          0.2106120712149715,
+          0.36463580199045076
+        ],
+        "policies": [
+          {
+            "policy": 0,
+            "runs": 32,
+            "success_rate": 0.1875,
+            "average_wins": 5.46875
+          },
+          {
+            "policy": 1,
+            "runs": 32,
+            "success_rate": 0.625,
+            "average_wins": 8.46875
+          },
+          {
+            "policy": 2,
+            "runs": 32,
+            "success_rate": 0.0,
+            "average_wins": 3.1875
+          },
+          {
+            "policy": 3,
+            "runs": 32,
+            "success_rate": 0.3125,
+            "average_wins": 7.25
+          }
+        ],
+        "completed": true,
+        "decisions": 78820,
+        "seconds": 278.8130000000019,
+        "diagnostic_fixture": false
+      },
+      "training": {
+        "status": "Training",
+        "update": 100,
+        "generation": 10,
+        "device": "cuda",
+        "device_seconds": {
+          "cpu": 0.011238339998817537,
+          "cuda": 0.004572120000375435
+        },
+        "decisions": 204800,
+        "decisions_per_second": 1423.7646339089833,
+        "loss": 0.19783516466850415,
+        "checkpoint": null,
+        "actual_workers": 4,
+        "worker_milliseconds": {
+          "1": 94.9148,
+          "2": 45.996,
+          "4": 21.175,
+          "8": 27.1331,
+          "12": 23.6124
+        },
+        "success_rate": 0.2857142857142857,
+        "average_wins": 6.684523809523809,
+        "diagnostic_fixture": false,
+        "runs": 504,
+        "successes": 144,
+        "total_wins": 3369,
+        "trainers": {
+          "black-belt": {
+            "runs": 19,
+            "successes": 7,
+            "wins": 112
+          },
+          "burglar": {
+            "runs": 21,
+            "successes": 5,
+            "wins": 128
+          },
+          "shopkeeper": {
+            "runs": 21,
+            "successes": 6,
+            "wins": 134
+          },
+          "pyromaniac": {
+            "runs": 21,
+            "successes": 10,
+            "wins": 139
+          },
+          "chemist": {
+            "runs": 21,
+            "successes": 3,
+            "wins": 132
+          },
+          "youngster-f": {
+            "runs": 25,
+            "successes": 6,
+            "wins": 166
+          },
+          "musician": {
+            "runs": 25,
+            "successes": 7,
+            "wins": 142
+          },
+          "youngster-m": {
+            "runs": 19,
+            "successes": 5,
+            "wins": 115
+          },
+          "bug-catcher": {
+            "runs": 19,
+            "successes": 5,
+            "wins": 137
+          },
+          "scavenger": {
+            "runs": 23,
+            "successes": 3,
+            "wins": 149
+          },
+          "egg-breeder": {
+            "runs": 23,
+            "successes": 3,
+            "wins": 140
+          },
+          "mad-scientist": {
+            "runs": 26,
+            "successes": 5,
+            "wins": 185
+          },
+          "gentleman": {
+            "runs": 26,
+            "successes": 9,
+            "wins": 192
+          },
+          "treasure-hunter": {
+            "runs": 19,
+            "successes": 6,
+            "wins": 140
+          },
+          "gamer": {
+            "runs": 24,
+            "successes": 8,
+            "wins": 164
+          },
+          "lady": {
+            "runs": 22,
+            "successes": 7,
+            "wins": 145
+          },
+          "twins": {
+            "runs": 18,
+            "successes": 5,
+            "wins": 126
+          },
+          "masked-man": {
+            "runs": 24,
+            "successes": 9,
+            "wins": 169
+          },
+          "monster-ranger": {
+            "runs": 24,
+            "successes": 6,
+            "wins": 164
+          },
+          "redhead": {
+            "runs": 24,
+            "successes": 11,
+            "wins": 175
+          },
+          "swim-coach": {
+            "runs": 18,
+            "successes": 4,
+            "wins": 121
+          },
+          "painter": {
+            "runs": 24,
+            "successes": 7,
+            "wins": 152
+          },
+          "smuggler": {
+            "runs": 18,
+            "successes": 7,
+            "wins": 142
+          }
+        },
+        "generations": {
+          "0": {
+            "runs": 23,
+            "successes": 1,
+            "wins": 78
+          },
+          "1": {
+            "runs": 35,
+            "successes": 11,
+            "wins": 243
+          },
+          "2": {
+            "runs": 56,
+            "successes": 19,
+            "wins": 418
+          },
+          "3": {
+            "runs": 51,
+            "successes": 19,
+            "wins": 383
+          },
+          "4": {
+            "runs": 62,
+            "successes": 15,
+            "wins": 397
+          },
+          "5": {
+            "runs": 43,
+            "successes": 11,
+            "wins": 281
+          },
+          "6": {
+            "runs": 41,
+            "successes": 12,
+            "wins": 269
+          },
+          "7": {
+            "runs": 55,
+            "successes": 13,
+            "wins": 372
+          },
+          "8": {
+            "runs": 66,
+            "successes": 15,
+            "wins": 408
+          },
+          "9": {
+            "runs": 72,
+            "successes": 28,
+            "wins": 520
+          }
+        }
+      },
+      "improvement_percentage_points": 24.21875
+    },
+    {
+      "seed": 43,
+      "initial": {
+        "opponents": {
+          "current:generation-9": {
+            "battles": 130,
+            "wins": 49
+          },
+          "baseline:generation--1": {
+            "battles": 122,
+            "wins": 53
+          },
+          "current:generation-7": {
+            "battles": 167,
+            "wins": 93
+          },
+          "current:generation-4": {
+            "battles": 174,
+            "wins": 105
+          },
+          "current:generation-8": {
+            "battles": 137,
+            "wins": 61
+          },
+          "current:generation-6": {
+            "battles": 139,
+            "wins": 65
+          },
+          "current:generation-2": {
+            "battles": 117,
+            "wins": 67
+          },
+          "current:generation-5": {
+            "battles": 137,
+            "wins": 82
+          },
+          "current:generation-0": {
+            "battles": 74,
+            "wins": 41
+          },
+          "current:generation-3": {
+            "battles": 109,
+            "wins": 67
+          },
+          "current:generation-1": {
+            "battles": 89,
+            "wins": 39
+          }
+        },
+        "trainers": {
+          "black-belt": {
+            "runs": 5,
+            "successes": 0,
+            "wins": 17
+          },
+          "pyromaniac": {
+            "runs": 8,
+            "successes": 2,
+            "wins": 55
+          },
+          "bug-catcher": {
+            "runs": 6,
+            "successes": 0,
+            "wins": 34
+          },
+          "burglar": {
+            "runs": 7,
+            "successes": 1,
+            "wins": 38
+          },
+          "chemist": {
+            "runs": 8,
+            "successes": 1,
+            "wins": 45
+          },
+          "egg-breeder": {
+            "runs": 8,
+            "successes": 2,
+            "wins": 50
+          },
+          "gamer": {
+            "runs": 8,
+            "successes": 3,
+            "wins": 57
+          },
+          "gentleman": {
+            "runs": 8,
+            "successes": 1,
+            "wins": 36
+          },
+          "youngster-f": {
+            "runs": 8,
+            "successes": 1,
+            "wins": 39
+          },
+          "mad-scientist": {
+            "runs": 7,
+            "successes": 2,
+            "wins": 36
+          },
+          "masked-man": {
+            "runs": 6,
+            "successes": 1,
+            "wins": 38
+          },
+          "monster-ranger": {
+            "runs": 5,
+            "successes": 0,
+            "wins": 23
+          },
+          "musician": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 19
+          },
+          "painter": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 17
+          },
+          "redhead": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 30
+          },
+          "lady": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 25
+          },
+          "scavenger": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 20
+          },
+          "shopkeeper": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 25
+          },
+          "smuggler": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 33
+          },
+          "swim-coach": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 26
+          },
+          "treasure-hunter": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 22
+          },
+          "twins": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 23
+          },
+          "youngster-m": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 14
+          }
+        },
+        "status": "Evaluated",
+        "update": 0,
+        "initial_policy": true,
+        "rules_hash": "F89988BBFA12ACEA18E7C5A8A1759698817BEE1C4CECEC4E5D40D0AF113F1B8C",
+        "runs": 128,
+        "success_rate": 0.1640625,
+        "average_wins": 5.640625,
+        "confidence_interval_95": [
+          0.10988249779919597,
+          0.23781959319484536
+        ],
+        "policies": [
+          {
+            "policy": 0,
+            "runs": 32,
+            "success_rate": 0.09375,
+            "average_wins": 4.625
+          },
+          {
+            "policy": 1,
+            "runs": 32,
+            "success_rate": 0.15625,
+            "average_wins": 5.625
+          },
+          {
+            "policy": 2,
+            "runs": 32,
+            "success_rate": 0.25,
+            "average_wins": 6.59375
+          },
+          {
+            "policy": 3,
+            "runs": 32,
+            "success_rate": 0.15625,
+            "average_wins": 5.71875
+          }
+        ],
+        "completed": true,
+        "decisions": 75000,
+        "seconds": 311.8600000000006,
+        "diagnostic_fixture": false
+      },
+      "trained": {
+        "opponents": {
+          "current:generation-9": {
+            "battles": 125,
+            "wins": 57
+          },
+          "baseline:generation--1": {
+            "battles": 131,
+            "wins": 64
+          },
+          "current:generation-2": {
+            "battles": 107,
+            "wins": 63
+          },
+          "current:generation-4": {
+            "battles": 170,
+            "wins": 118
+          },
+          "current:generation-8": {
+            "battles": 135,
+            "wins": 72
+          },
+          "current:generation-0": {
+            "battles": 72,
+            "wins": 52
+          },
+          "current:generation-5": {
+            "battles": 150,
+            "wins": 105
+          },
+          "current:generation-6": {
+            "battles": 137,
+            "wins": 81
+          },
+          "current:generation-7": {
+            "battles": 191,
+            "wins": 126
+          },
+          "current:generation-1": {
+            "battles": 103,
+            "wins": 61
+          },
+          "current:generation-3": {
+            "battles": 102,
+            "wins": 72
+          }
+        },
+        "trainers": {
+          "burglar": {
+            "runs": 7,
+            "successes": 2,
+            "wins": 37
+          },
+          "pyromaniac": {
+            "runs": 8,
+            "successes": 3,
+            "wins": 58
+          },
+          "chemist": {
+            "runs": 8,
+            "successes": 4,
+            "wins": 47
+          },
+          "egg-breeder": {
+            "runs": 8,
+            "successes": 2,
+            "wins": 56
+          },
+          "gamer": {
+            "runs": 8,
+            "successes": 5,
+            "wins": 56
+          },
+          "gentleman": {
+            "runs": 8,
+            "successes": 4,
+            "wins": 62
+          },
+          "youngster-f": {
+            "runs": 8,
+            "successes": 4,
+            "wins": 56
+          },
+          "mad-scientist": {
+            "runs": 7,
+            "successes": 4,
+            "wins": 55
+          },
+          "masked-man": {
+            "runs": 6,
+            "successes": 4,
+            "wins": 47
+          },
+          "monster-ranger": {
+            "runs": 5,
+            "successes": 2,
+            "wins": 36
+          },
+          "bug-catcher": {
+            "runs": 6,
+            "successes": 0,
+            "wins": 24
+          },
+          "musician": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 24
+          },
+          "painter": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 27
+          },
+          "redhead": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 25
+          },
+          "lady": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 31
+          },
+          "scavenger": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 31
+          },
+          "shopkeeper": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 30
+          },
+          "smuggler": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 26
+          },
+          "swim-coach": {
+            "runs": 4,
+            "successes": 3,
+            "wins": 30
+          },
+          "treasure-hunter": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 29
+          },
+          "twins": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 30
+          },
+          "youngster-m": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 27
+          },
+          "black-belt": {
+            "runs": 5,
+            "successes": 1,
+            "wins": 27
+          }
+        },
+        "status": "Evaluated",
+        "update": 100,
+        "initial_policy": false,
+        "rules_hash": "F89988BBFA12ACEA18E7C5A8A1759698817BEE1C4CECEC4E5D40D0AF113F1B8C",
+        "runs": 128,
+        "success_rate": 0.390625,
+        "average_wins": 6.8046875,
+        "confidence_interval_95": [
+          0.3104688157120751,
+          0.47715512089063605
+        ],
+        "policies": [
+          {
+            "policy": 0,
+            "runs": 32,
+            "success_rate": 0.1875,
+            "average_wins": 6.09375
+          },
+          {
+            "policy": 1,
+            "runs": 32,
+            "success_rate": 0.0,
+            "average_wins": 3.03125
+          },
+          {
+            "policy": 2,
+            "runs": 32,
+            "success_rate": 0.6875,
+            "average_wins": 8.8125
+          },
+          {
+            "policy": 3,
+            "runs": 32,
+            "success_rate": 0.6875,
+            "average_wins": 9.28125
+          }
+        ],
+        "completed": true,
+        "decisions": 165328,
+        "seconds": 572.109000000004,
+        "diagnostic_fixture": false
+      },
+      "training": {
+        "status": "Training",
+        "update": 100,
+        "generation": 10,
+        "device": "cuda",
+        "device_seconds": {
+          "cpu": 0.008664320000389126,
+          "cuda": 0.004405699999188073
+        },
+        "decisions": 204800,
+        "decisions_per_second": 1324.8974627695934,
+        "loss": 0.48938244668534026,
+        "checkpoint": null,
+        "actual_workers": 8,
+        "worker_milliseconds": {
+          "1": 87.3102,
+          "2": 43.3639,
+          "4": 16.3629,
+          "8": 10.9574,
+          "12": 24.065
+        },
+        "success_rate": 0.3509090909090909,
+        "average_wins": 6.607272727272727,
+        "diagnostic_fixture": false,
+        "runs": 1100,
+        "successes": 386,
+        "total_wins": 7268,
+        "trainers": {
+          "twins": {
+            "runs": 45,
+            "successes": 11,
+            "wins": 277
+          },
+          "youngster-f": {
+            "runs": 50,
+            "successes": 17,
+            "wins": 311
+          },
+          "black-belt": {
+            "runs": 45,
+            "successes": 14,
+            "wins": 303
+          },
+          "treasure-hunter": {
+            "runs": 46,
+            "successes": 18,
+            "wins": 297
+          },
+          "musician": {
+            "runs": 51,
+            "successes": 20,
+            "wins": 327
+          },
+          "burglar": {
+            "runs": 48,
+            "successes": 16,
+            "wins": 324
+          },
+          "gamer": {
+            "runs": 48,
+            "successes": 12,
+            "wins": 289
+          },
+          "egg-breeder": {
+            "runs": 48,
+            "successes": 18,
+            "wins": 311
+          },
+          "gentleman": {
+            "runs": 50,
+            "successes": 21,
+            "wins": 358
+          },
+          "chemist": {
+            "runs": 46,
+            "successes": 24,
+            "wins": 344
+          },
+          "smuggler": {
+            "runs": 46,
+            "successes": 11,
+            "wins": 279
+          },
+          "lady": {
+            "runs": 48,
+            "successes": 16,
+            "wins": 331
+          },
+          "scavenger": {
+            "runs": 47,
+            "successes": 11,
+            "wins": 265
+          },
+          "swim-coach": {
+            "runs": 47,
+            "successes": 20,
+            "wins": 357
+          },
+          "painter": {
+            "runs": 47,
+            "successes": 16,
+            "wins": 299
+          },
+          "shopkeeper": {
+            "runs": 48,
+            "successes": 15,
+            "wins": 320
+          },
+          "monster-ranger": {
+            "runs": 51,
+            "successes": 17,
+            "wins": 346
+          },
+          "pyromaniac": {
+            "runs": 47,
+            "successes": 19,
+            "wins": 325
+          },
+          "masked-man": {
+            "runs": 51,
+            "successes": 17,
+            "wins": 313
+          },
+          "redhead": {
+            "runs": 48,
+            "successes": 17,
+            "wins": 322
+          },
+          "mad-scientist": {
+            "runs": 51,
+            "successes": 23,
+            "wins": 367
+          },
+          "youngster-m": {
+            "runs": 45,
+            "successes": 15,
+            "wins": 280
+          },
+          "bug-catcher": {
+            "runs": 47,
+            "successes": 18,
+            "wins": 323
+          }
+        },
+        "generations": {
+          "0": {
+            "runs": 31,
+            "successes": 8,
+            "wins": 174
+          },
+          "1": {
+            "runs": 60,
+            "successes": 21,
+            "wins": 401
+          },
+          "2": {
+            "runs": 73,
+            "successes": 27,
+            "wins": 474
+          },
+          "3": {
+            "runs": 70,
+            "successes": 12,
+            "wins": 405
+          },
+          "4": {
+            "runs": 108,
+            "successes": 29,
+            "wins": 655
+          },
+          "5": {
+            "runs": 167,
+            "successes": 44,
+            "wins": 964
+          },
+          "6": {
+            "runs": 167,
+            "successes": 63,
+            "wins": 1118
+          },
+          "7": {
+            "runs": 165,
+            "successes": 64,
+            "wins": 1111
+          },
+          "8": {
+            "runs": 148,
+            "successes": 68,
+            "wins": 1105
+          },
+          "9": {
+            "runs": 111,
+            "successes": 50,
+            "wins": 861
+          }
+        }
+      },
+      "improvement_percentage_points": 22.65625
+    },
+    {
+      "seed": 44,
+      "initial": {
+        "opponents": {
+          "baseline:generation--1": {
+            "battles": 125,
+            "wins": 56
+          },
+          "current:generation-4": {
+            "battles": 116,
+            "wins": 49
+          },
+          "current:generation-2": {
+            "battles": 83,
+            "wins": 53
+          },
+          "current:generation-0": {
+            "battles": 88,
+            "wins": 49
+          },
+          "current:generation-3": {
+            "battles": 127,
+            "wins": 73
+          },
+          "current:generation-7": {
+            "battles": 140,
+            "wins": 54
+          },
+          "current:generation-8": {
+            "battles": 152,
+            "wins": 39
+          },
+          "current:generation-1": {
+            "battles": 79,
+            "wins": 44
+          },
+          "current:generation-9": {
+            "battles": 152,
+            "wins": 34
+          },
+          "current:generation-5": {
+            "battles": 108,
+            "wins": 57
+          },
+          "current:generation-6": {
+            "battles": 91,
+            "wins": 32
+          }
+        },
+        "trainers": {
+          "burglar": {
+            "runs": 7,
+            "successes": 0,
+            "wins": 16
+          },
+          "pyromaniac": {
+            "runs": 8,
+            "successes": 2,
+            "wins": 37
+          },
+          "black-belt": {
+            "runs": 5,
+            "successes": 1,
+            "wins": 25
+          },
+          "chemist": {
+            "runs": 8,
+            "successes": 0,
+            "wins": 32
+          },
+          "bug-catcher": {
+            "runs": 6,
+            "successes": 0,
+            "wins": 25
+          },
+          "egg-breeder": {
+            "runs": 8,
+            "successes": 0,
+            "wins": 32
+          },
+          "gamer": {
+            "runs": 8,
+            "successes": 0,
+            "wins": 28
+          },
+          "gentleman": {
+            "runs": 8,
+            "successes": 1,
+            "wins": 48
+          },
+          "youngster-f": {
+            "runs": 8,
+            "successes": 0,
+            "wins": 42
+          },
+          "mad-scientist": {
+            "runs": 7,
+            "successes": 0,
+            "wins": 37
+          },
+          "masked-man": {
+            "runs": 6,
+            "successes": 0,
+            "wins": 17
+          },
+          "monster-ranger": {
+            "runs": 5,
+            "successes": 0,
+            "wins": 20
+          },
+          "musician": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 15
+          },
+          "painter": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 25
+          },
+          "redhead": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 16
+          },
+          "lady": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 10
+          },
+          "scavenger": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 15
+          },
+          "shopkeeper": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 22
+          },
+          "smuggler": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 18
+          },
+          "swim-coach": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 16
+          },
+          "treasure-hunter": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 15
+          },
+          "twins": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 10
+          },
+          "youngster-m": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 19
+          }
+        },
+        "status": "Evaluated",
+        "update": 0,
+        "initial_policy": true,
+        "rules_hash": "F89988BBFA12ACEA18E7C5A8A1759698817BEE1C4CECEC4E5D40D0AF113F1B8C",
+        "runs": 128,
+        "success_rate": 0.0546875,
+        "average_wins": 4.21875,
+        "confidence_interval_95": [
+          0.02673986088319332,
+          0.10858616671355914
+        ],
+        "policies": [
+          {
+            "policy": 0,
+            "runs": 32,
+            "success_rate": 0.09375,
+            "average_wins": 4.9375
+          },
+          {
+            "policy": 1,
+            "runs": 32,
+            "success_rate": 0.0,
+            "average_wins": 3.21875
+          },
+          {
+            "policy": 2,
+            "runs": 32,
+            "success_rate": 0.125,
+            "average_wins": 5.375
+          },
+          {
+            "policy": 3,
+            "runs": 32,
+            "success_rate": 0.0,
+            "average_wins": 3.34375
+          }
+        ],
+        "completed": true,
+        "decisions": 63256,
+        "seconds": 254.95299999999406,
+        "diagnostic_fixture": false
+      },
+      "trained": {
+        "opponents": {
+          "current:generation-4": {
+            "battles": 115,
+            "wins": 68
+          },
+          "current:generation-1": {
+            "battles": 80,
+            "wins": 59
+          },
+          "current:generation-5": {
+            "battles": 116,
+            "wins": 81
+          },
+          "current:generation-0": {
+            "battles": 64,
+            "wins": 46
+          },
+          "current:generation-8": {
+            "battles": 226,
+            "wins": 105
+          },
+          "baseline:generation--1": {
+            "battles": 147,
+            "wins": 92
+          },
+          "current:generation-3": {
+            "battles": 150,
+            "wins": 104
+          },
+          "current:generation-9": {
+            "battles": 183,
+            "wins": 95
+          },
+          "current:generation-7": {
+            "battles": 161,
+            "wins": 92
+          },
+          "current:generation-6": {
+            "battles": 120,
+            "wins": 78
+          },
+          "current:generation-2": {
+            "battles": 118,
+            "wins": 86
+          }
+        },
+        "trainers": {
+          "pyromaniac": {
+            "runs": 8,
+            "successes": 3,
+            "wins": 60
+          },
+          "burglar": {
+            "runs": 7,
+            "successes": 2,
+            "wins": 51
+          },
+          "chemist": {
+            "runs": 8,
+            "successes": 3,
+            "wins": 53
+          },
+          "black-belt": {
+            "runs": 5,
+            "successes": 2,
+            "wins": 36
+          },
+          "egg-breeder": {
+            "runs": 8,
+            "successes": 4,
+            "wins": 57
+          },
+          "gamer": {
+            "runs": 8,
+            "successes": 2,
+            "wins": 47
+          },
+          "gentleman": {
+            "runs": 8,
+            "successes": 4,
+            "wins": 65
+          },
+          "bug-catcher": {
+            "runs": 6,
+            "successes": 2,
+            "wins": 40
+          },
+          "youngster-f": {
+            "runs": 8,
+            "successes": 1,
+            "wins": 57
+          },
+          "mad-scientist": {
+            "runs": 7,
+            "successes": 2,
+            "wins": 50
+          },
+          "masked-man": {
+            "runs": 6,
+            "successes": 2,
+            "wins": 46
+          },
+          "monster-ranger": {
+            "runs": 5,
+            "successes": 2,
+            "wins": 39
+          },
+          "musician": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 25
+          },
+          "painter": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 27
+          },
+          "redhead": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 29
+          },
+          "lady": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 32
+          },
+          "scavenger": {
+            "runs": 4,
+            "successes": 3,
+            "wins": 32
+          },
+          "shopkeeper": {
+            "runs": 4,
+            "successes": 0,
+            "wins": 21
+          },
+          "smuggler": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 28
+          },
+          "swim-coach": {
+            "runs": 4,
+            "successes": 3,
+            "wins": 32
+          },
+          "treasure-hunter": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 26
+          },
+          "twins": {
+            "runs": 4,
+            "successes": 2,
+            "wins": 28
+          },
+          "youngster-m": {
+            "runs": 4,
+            "successes": 1,
+            "wins": 25
+          }
+        },
+        "status": "Evaluated",
+        "update": 100,
+        "initial_policy": false,
+        "rules_hash": "F89988BBFA12ACEA18E7C5A8A1759698817BEE1C4CECEC4E5D40D0AF113F1B8C",
+        "runs": 128,
+        "success_rate": 0.375,
+        "average_wins": 7.078125,
+        "confidence_interval_95": [
+          0.2959229423700823,
+          0.46136155660444467
+        ],
+        "policies": [
+          {
+            "policy": 0,
+            "runs": 32,
+            "success_rate": 0.53125,
+            "average_wins": 8.5
+          },
+          {
+            "policy": 1,
+            "runs": 32,
+            "success_rate": 0.0,
+            "average_wins": 3.71875
+          },
+          {
+            "policy": 2,
+            "runs": 32,
+            "success_rate": 0.625,
+            "average_wins": 8.5625
+          },
+          {
+            "policy": 3,
+            "runs": 32,
+            "success_rate": 0.34375,
+            "average_wins": 7.53125
+          }
+        ],
+        "completed": true,
+        "decisions": 140064,
+        "seconds": 492.39100000000326,
+        "diagnostic_fixture": false
+      },
+      "training": {
+        "status": "Training",
+        "update": 100,
+        "generation": 10,
+        "device": "cuda",
+        "device_seconds": {
+          "cpu": 0.009059339998930226,
+          "cuda": 0.004439700000511948
+        },
+        "decisions": 204800,
+        "decisions_per_second": 1401.3959217189054,
+        "loss": 0.05146925448207185,
+        "checkpoint": null,
+        "actual_workers": 8,
+        "worker_milliseconds": {
+          "1": 86.4867,
+          "2": 30.1088,
+          "4": 18.2794,
+          "8": 11.9154,
+          "12": 28.1085
+        },
+        "success_rate": 0.38652482269503546,
+        "average_wins": 7.198581560283688,
+        "diagnostic_fixture": false,
+        "runs": 846,
+        "successes": 327,
+        "total_wins": 6090,
+        "trainers": {
+          "black-belt": {
+            "runs": 35,
+            "successes": 7,
+            "wins": 212
+          },
+          "burglar": {
+            "runs": 36,
+            "successes": 8,
+            "wins": 229
+          },
+          "gamer": {
+            "runs": 40,
+            "successes": 15,
+            "wins": 271
+          },
+          "scavenger": {
+            "runs": 36,
+            "successes": 10,
+            "wins": 261
+          },
+          "chemist": {
+            "runs": 38,
+            "successes": 10,
+            "wins": 272
+          },
+          "egg-breeder": {
+            "runs": 39,
+            "successes": 11,
+            "wins": 266
+          },
+          "youngster-f": {
+            "runs": 41,
+            "successes": 21,
+            "wins": 315
+          },
+          "monster-ranger": {
+            "runs": 38,
+            "successes": 16,
+            "wins": 281
+          },
+          "mad-scientist": {
+            "runs": 40,
+            "successes": 21,
+            "wins": 295
+          },
+          "pyromaniac": {
+            "runs": 38,
+            "successes": 22,
+            "wins": 311
+          },
+          "painter": {
+            "runs": 36,
+            "successes": 14,
+            "wins": 254
+          },
+          "lady": {
+            "runs": 37,
+            "successes": 13,
+            "wins": 251
+          },
+          "swim-coach": {
+            "runs": 34,
+            "successes": 16,
+            "wins": 266
+          },
+          "bug-catcher": {
+            "runs": 35,
+            "successes": 12,
+            "wins": 251
+          },
+          "masked-man": {
+            "runs": 40,
+            "successes": 15,
+            "wins": 285
+          },
+          "gentleman": {
+            "runs": 40,
+            "successes": 18,
+            "wins": 306
+          },
+          "smuggler": {
+            "runs": 36,
+            "successes": 19,
+            "wins": 303
+          },
+          "musician": {
+            "runs": 38,
+            "successes": 19,
+            "wins": 307
+          },
+          "treasure-hunter": {
+            "runs": 33,
+            "successes": 11,
+            "wins": 225
+          },
+          "youngster-m": {
+            "runs": 33,
+            "successes": 11,
+            "wins": 216
+          },
+          "shopkeeper": {
+            "runs": 35,
+            "successes": 11,
+            "wins": 215
+          },
+          "redhead": {
+            "runs": 36,
+            "successes": 17,
+            "wins": 275
+          },
+          "twins": {
+            "runs": 32,
+            "successes": 10,
+            "wins": 223
+          }
+        },
+        "generations": {
+          "0": {
+            "runs": 30,
+            "successes": 4,
+            "wins": 132
+          },
+          "1": {
+            "runs": 43,
+            "successes": 8,
+            "wins": 263
+          },
+          "2": {
+            "runs": 51,
+            "successes": 15,
+            "wins": 324
+          },
+          "3": {
+            "runs": 67,
+            "successes": 30,
+            "wins": 519
+          },
+          "4": {
+            "runs": 93,
+            "successes": 32,
+            "wins": 602
+          },
+          "5": {
+            "runs": 90,
+            "successes": 28,
+            "wins": 623
+          },
+          "6": {
+            "runs": 96,
+            "successes": 41,
+            "wins": 716
+          },
+          "7": {
+            "runs": 109,
+            "successes": 46,
+            "wins": 814
+          },
+          "8": {
+            "runs": 125,
+            "successes": 51,
+            "wins": 972
+          },
+          "9": {
+            "runs": 142,
+            "successes": 72,
+            "wins": 1125
+          }
+        }
+      },
+      "improvement_percentage_points": 32.03125
+    }
+  ],
+  "aggregate": {
+    "runs_per_condition": 384,
+    "initial_success_rate": 0.0859375,
+    "trained_success_rate": 0.3489583333333333,
+    "initial_confidence_interval_95": [
+      0.06184508508413947,
+      0.11823255485959017
+    ],
+    "trained_confidence_interval_95": [
+      0.30299351629218163,
+      0.3979153083413801
+    ],
+    "initial_average_wins": 4.388020833333333,
+    "trained_average_wins": 6.658854166666667,
+    "uncertainty_note": "Wilson intervals treat runs as Bernoulli trials; policy/trainer/seed dependence and guessed-rule fidelity introduce additional uncertainty. Per-seed and per-policy results are included."
+  },
+  "cpu_execution": {
+    "status": "Stopped",
+    "update": 4,
+    "checkpoint": "checkpoint-4-de7abbb3",
+    "device": "cpu",
+    "device_seconds": {
+      "cpu": 0.00633283999923151,
+      "cuda": 0.005054719999316148
+    },
+    "actual_workers": 8,
+    "worker_milliseconds": {
+      "1": 50.2774,
+      "2": 17.1531,
+      "4": 10.4128,
+      "8": 8.1073,
+      "12": 9.4078
+    },
+    "actual_environments": 16,
+    "environment_milliseconds_per_run": {
+      "16": 0.6724125
+    },
+    "decisions": 2048,
+    "decisions_per_second": 564.9655172413793,
+    "success_rate": 0.0,
+    "average_wins": 0.0,
+    "diagnostic_fixture": false,
+    "runs": 0,
+    "successes": 0,
+    "total_wins": 0,
+    "trainers": {}
+  },
+  "default_resource_smoke": {
+    "status": "Stopped",
+    "update": 1,
+    "checkpoint": "checkpoint-1-3f22fc6c",
+    "device": "cuda",
+    "device_seconds": {
+      "cpu": 0.0529283600000781,
+      "cuda": 0.005483179999282583
+    },
+    "actual_workers": 12,
+    "worker_milliseconds": {
+      "1": 432.7695,
+      "2": 178.3595,
+      "4": 91.3413,
+      "8": 58.9817,
+      "12": 54.5601
+    },
+    "actual_environments": 256,
+    "environment_milliseconds_per_run": {
+      "64": 0.3073765625,
+      "128": 0.2783765625,
+      "256": 0.216084765625
+    },
+    "decisions": 4096,
+    "decisions_per_second": 2647.705235942821,
+    "success_rate": 0.0,
+    "average_wins": 0.0,
+    "diagnostic_fixture": false,
+    "runs": 0,
+    "successes": 0,
+    "total_wins": 0,
+    "trainers": {}
+  },
+  "checkpoint_resume_and_export": "Passed: Pantra seed 42, update 100 -> 101, optimizer/RNG/environment/league recovery and encoding-3 export.",
+  "history": "Actual saved Pantra history rendered and inspected; immutability, restart, retention, pinned duplicate protection and filters pass automated checks.",
+  "llm_source_scan": "No Ollama, F10, ShoppingPrompt, ShoppingSettings or ShoppingViewModel paths in src/tests/tools.",
+  "previous_validation": {
+    "scope": "Synthetic diagnostic fixture only. Full Pantra simulation and game policy validation are incomplete.",
+    "game_training_ready": false,
+    "target_build": "25738032",
+    "balance": "25",
+    "unresolved_entries": 45,
+    "unresolved_by_kind": {
+      "trainers": 16,
+      "trinkets": 29
+    },
+    "hardware": "NVIDIA GeForce RTX 3080 Ti, 12 GiB; 16 logical CPU cores",
+    "dotnet_tests_passed": 297,
+    "python_tests_passed": 4,
+    "fixture_battle_benchmark": {
+      "battles": 1000,
+      "milliseconds": 400.6295
+    },
+    "checkpoint_resume_and_export": "Passed with seed 42, update 30 -> 31",
+    "seeds": [
+      {
+        "seed": 42,
+        "initial": {
+          "status": "Evaluated",
+          "update": 0,
+          "initial_policy": true,
+          "rules_hash": "fixture-v2",
+          "runs": 32,
+          "success_rate": 0.125,
+          "average_wins": 4.5625,
+          "confidence_interval_95": [
+            0.04970053844474301,
+            0.2806864978482796
+          ],
+          "policies": [
+            {
+              "policy": 0,
+              "runs": 8,
+              "success_rate": 0.25,
+              "average_wins": 5.625
+            },
+            {
+              "policy": 1,
+              "runs": 8,
+              "success_rate": 0.0,
+              "average_wins": 3.625
+            },
+            {
+              "policy": 2,
+              "runs": 8,
+              "success_rate": 0.125,
+              "average_wins": 5.25
+            },
+            {
+              "policy": 3,
+              "runs": 8,
+              "success_rate": 0.125,
+              "average_wins": 3.75
+            }
+          ],
+          "completed": true,
+          "decisions": 15480,
+          "seconds": 24.78099999999995,
+          "diagnostic_fixture": true
+        },
+        "learned": {
+          "status": "Evaluated",
+          "update": 31,
+          "rules_hash": "fixture-v2",
+          "runs": 32,
+          "success_rate": 0.28125,
+          "average_wins": 5.71875,
+          "confidence_interval_95": [
+            0.15564406845647866,
+            0.4537483693811179
+          ],
+          "policies": [
+            {
+              "policy": 0,
+              "runs": 8,
+              "success_rate": 0.25,
+              "average_wins": 7.125
+            },
+            {
+              "policy": 1,
+              "runs": 8,
+              "success_rate": 0.0,
+              "average_wins": 3.375
+            },
+            {
+              "policy": 2,
+              "runs": 8,
+              "success_rate": 0.0,
+              "average_wins": 2.5
+            },
+            {
+              "policy": 3,
+              "runs": 8,
+              "success_rate": 0.875,
+              "average_wins": 9.875
+            }
+          ],
+          "completed": true,
+          "decisions": 11052,
+          "seconds": 17.811999999999898,
+          "diagnostic_fixture": true
+        },
+        "last_training_update": {
+          "status": "Training",
+          "update": 31,
+          "generation": 3,
+          "device": "cuda",
+          "device_seconds": {
+            "cpu": 0.00996157999998104,
+            "cuda": 0.003228080000008049
+          },
+          "decisions": 4096,
+          "decisions_per_second": 2675.37557152197,
+          "loss": -0.04396584306959994,
+          "checkpoint": null,
+          "success_rate": 0.14836795252225518,
+          "average_wins": 4.7626112759643915,
+          "diagnostic_fixture": true,
+          "runs": 337,
+          "successes": 50,
+          "total_wins": 1605,
+          "trainers": {
+            "fixture": {
+              "runs": 337,
+              "successes": 50,
+              "wins": 1605
+            }
+          }
+        }
+      },
+      {
+        "seed": 43,
+        "initial": {
+          "status": "Evaluated",
+          "update": 0,
+          "initial_policy": true,
+          "rules_hash": "fixture-v2",
+          "runs": 32,
+          "success_rate": 0.15625,
+          "average_wins": 5.78125,
+          "confidence_interval_95": [
+            0.06864319106627216,
+            0.31754492553566527
+          ],
+          "policies": [
+            {
+              "policy": 0,
+              "runs": 8,
+              "success_rate": 0.125,
+              "average_wins": 6.0
+            },
+            {
+              "policy": 1,
+              "runs": 8,
+              "success_rate": 0.125,
+              "average_wins": 4.5
+            },
+            {
+              "policy": 2,
+              "runs": 8,
+              "success_rate": 0.125,
+              "average_wins": 6.375
+            },
+            {
+              "policy": 3,
+              "runs": 8,
+              "success_rate": 0.25,
+              "average_wins": 6.25
+            }
+          ],
+          "completed": true,
+          "decisions": 15660,
+          "seconds": 24.936999999999898,
+          "diagnostic_fixture": true
+        },
+        "learned": {
+          "status": "Evaluated",
+          "update": 30,
+          "initial_policy": false,
+          "rules_hash": "fixture-v2",
+          "runs": 32,
+          "success_rate": 0.46875,
+          "average_wins": 7.09375,
+          "confidence_interval_95": [
+            0.30869129901682335,
+            0.6355076206742619
+          ],
+          "policies": [
+            {
+              "policy": 0,
+              "runs": 8,
+              "success_rate": 0.25,
+              "average_wins": 5.75
+            },
+            {
+              "policy": 1,
+              "runs": 8,
+              "success_rate": 0.5,
+              "average_wins": 7.375
+            },
+            {
+              "policy": 2,
+              "runs": 8,
+              "success_rate": 1.0,
+              "average_wins": 10.0
+            },
+            {
+              "policy": 3,
+              "runs": 8,
+              "success_rate": 0.125,
+              "average_wins": 5.25
+            }
+          ],
+          "completed": true,
+          "decisions": 64456,
+          "seconds": 101.04699999999957,
+          "diagnostic_fixture": true
+        },
+        "last_training_update": {
+          "status": "Training",
+          "update": 30,
+          "generation": 3,
+          "device": "cuda",
+          "device_seconds": {
+            "cpu": 0.009918300000026647,
+            "cuda": 0.0031433000000106403
+          },
+          "decisions": 122880,
+          "decisions_per_second": 3678.3811291384836,
+          "loss": -0.04388001869665459,
+          "checkpoint": null,
+          "success_rate": 0.10112359550561797,
+          "average_wins": 4.46067415730337,
+          "diagnostic_fixture": true,
+          "runs": 267,
+          "successes": 27,
+          "total_wins": 1191,
+          "trainers": {
+            "fixture": {
+              "runs": 267,
+              "successes": 27,
+              "wins": 1191
+            }
+          }
+        }
+      },
+      {
+        "seed": 44,
+        "initial": {
+          "status": "Evaluated",
+          "update": 0,
+          "initial_policy": true,
+          "rules_hash": "fixture-v2",
+          "runs": 32,
+          "success_rate": 0.0625,
+          "average_wins": 4.4375,
+          "confidence_interval_95": [
+            0.017310203195157234,
+            0.2014746724800358
+          ],
+          "policies": [
+            {
+              "policy": 0,
+              "runs": 8,
+              "success_rate": 0.0,
+              "average_wins": 2.25
+            },
+            {
+              "policy": 1,
+              "runs": 8,
+              "success_rate": 0.0,
+              "average_wins": 6.5
+            },
+            {
+              "policy": 2,
+              "runs": 8,
+              "success_rate": 0.25,
+              "average_wins": 5.5
+            },
+            {
+              "policy": 3,
+              "runs": 8,
+              "success_rate": 0.0,
+              "average_wins": 3.5
+            }
+          ],
+          "completed": true,
+          "decisions": 14988,
+          "seconds": 24.09400000000005,
+          "diagnostic_fixture": true
+        },
+        "learned": {
+          "status": "Evaluated",
+          "update": 30,
+          "initial_policy": false,
+          "rules_hash": "fixture-v2",
+          "runs": 32,
+          "success_rate": 0.5625,
+          "average_wins": 8.375,
+          "confidence_interval_95": [
+            0.3932530203122613,
+            0.7183491403055682
+          ],
+          "policies": [
+            {
+              "policy": 0,
+              "runs": 8,
+              "success_rate": 0.625,
+              "average_wins": 8.375
+            },
+            {
+              "policy": 1,
+              "runs": 8,
+              "success_rate": 0.75,
+              "average_wins": 9.0
+            },
+            {
+              "policy": 2,
+              "runs": 8,
+              "success_rate": 0.625,
+              "average_wins": 8.25
+            },
+            {
+              "policy": 3,
+              "runs": 8,
+              "success_rate": 0.25,
+              "average_wins": 7.875
+            }
+          ],
+          "completed": true,
+          "decisions": 15072,
+          "seconds": 24.17199999999957,
+          "diagnostic_fixture": true
+        },
+        "last_training_update": {
+          "status": "Training",
+          "update": 30,
+          "generation": 3,
+          "device": "cuda",
+          "device_seconds": {
+            "cpu": 0.01053570000003674,
+            "cuda": 0.0031714199998532423
+          },
+          "decisions": 122880,
+          "decisions_per_second": 3630.883786898341,
+          "loss": -0.042868777381954715,
+          "checkpoint": null,
+          "success_rate": 0.23770491803278687,
+          "average_wins": 5.595628415300546,
+          "diagnostic_fixture": true,
+          "runs": 366,
+          "successes": 87,
+          "total_wins": 2048,
+          "trainers": {
+            "fixture": {
+              "runs": 366,
+              "successes": 87,
+              "wins": 2048
+            }
+          }
+        }
+      }
+    ],
+    "prior_validation_rules_hash": "fixture-v2",
+    "previous_pipeline_validation": {
+      "rules_hash": "fixture-v3",
+      "dotnet_tests": 131,
+      "python_tests": 3,
+      "item_definitions": 40,
+      "fixture_battle_benchmark": {
+        "battles": 1000,
+        "milliseconds": 387.0416
+      },
+      "cpu_checkpoint_resume": "Passed update 4 -> 5, export update 5",
+      "cuda": {
+        "status": "Stopped",
+        "update": 20,
+        "checkpoint": "checkpoint-20-5550099e",
+        "device": "cuda",
+        "device_seconds": {
+          "cpu": 0.003187419999812846,
+          "cuda": 0.0032823600002302557
+        },
+        "actual_workers": 4,
+        "worker_milliseconds": {
+          "1": 7.8028,
+          "2": 2.8062,
+          "4": 1.7258
+        },
+        "decisions": 17408,
+        "decisions_per_second": 1503.5411988251847,
+        "success_rate": 0.05128205128205128,
+        "average_wins": 3.6666666666666665,
+        "diagnostic_fixture": true,
+        "runs": 39,
+        "successes": 2,
+        "total_wins": 143,
+        "trainers": {
+          "fixture": {
+            "runs": 39,
+            "successes": 2,
+            "wins": 143
+          }
+        }
+      },
+      "cpu_latest": {
+        "status": "Training",
+        "update": 5,
+        "generation": 0,
+        "device": "cpu",
+        "device_seconds": {
+          "cpu": 0.0031812799999897832,
+          "cuda": 0.002998040000238689
+        },
+        "decisions": 512,
+        "decisions_per_second": 555.3145336222705,
+        "loss": -0.042359685874544084,
+        "checkpoint": null,
+        "actual_workers": 4,
+        "worker_milliseconds": {
+          "1": 7.7363,
+          "2": 2.87,
+          "4": 1.5396
+        },
+        "success_rate": 0.0,
+        "average_wins": 0.0,
+        "diagnostic_fixture": true,
+        "runs": 0,
+        "successes": 0,
+        "total_wins": 0,
+        "trainers": {}
+      }
+    },
+    "current_validation": {
+      "imported_creature_variants": 1164,
+      "fixture_battle_benchmark": {
+        "battles": 1000,
+        "milliseconds": 457.4197
+      },
+      "notes": "Current synthetic pipeline only. Earlier CUDA timing is retained under its original revision. Full game learning remains incomplete.",
+      "guessed_rule_groups": 29,
+      "checkpoint_resume_and_export": "Passed updates 6 -> 7; exported fixture-v7/revision 6/encoding 2; Auto retained measured CPU selection",
+      "game_training_ready": false,
+      "full_suite_tests": 297,
+      "python_tests": 4,
+      "encoding": 2,
+      "unresolved_entries": 45,
+      "auto_device_run": {
+        "status": "Training",
+        "update": 6,
+        "generation": 0,
+        "device": "cpu",
+        "device_seconds": {
+          "cpu": 0.003334359999280423,
+          "cuda": 0.003402720000303816
+        },
+        "decisions": 6144,
+        "decisions_per_second": 655.36,
+        "loss": -0.03850442101247609,
+        "checkpoint": null,
+        "actual_workers": 4,
+        "worker_milliseconds": {
+          "1": 25.0071,
+          "2": 17.3568,
+          "4": 15.5474
+        },
+        "success_rate": 0.0,
+        "average_wins": 1.1,
+        "diagnostic_fixture": true,
+        "runs": 10,
+        "successes": 0,
+        "total_wins": 11,
+        "trainers": {
+          "fixture": {
+            "runs": 10,
+            "successes": 0,
+            "wins": 11
+          }
+        }
+      },
+      "cpu": {
+        "status": "Stopped",
+        "update": 6,
+        "checkpoint": "checkpoint-6-677fc13f",
+        "device": "cpu",
+        "device_seconds": {
+          "cpu": 0.0035017600006540307,
+          "cuda": 0.003448240000579972
+        },
+        "actual_workers": 4,
+        "worker_milliseconds": {
+          "1": 24.9622,
+          "2": 17.527,
+          "4": 14.4201
+        },
+        "decisions": 6144,
+        "decisions_per_second": 631.124807395956,
+        "success_rate": 0.0,
+        "average_wins": 1.1,
+        "diagnostic_fixture": true,
+        "runs": 10,
+        "successes": 0,
+        "total_wins": 11,
+        "trainers": {
+          "fixture": {
+            "runs": 10,
+            "successes": 0,
+            "wins": 11
+          }
+        }
+      },
+      "rules_hash": "fixture-v7",
+      "additional_optimization_regressions": 31,
+      "simulation_revision": 6
+    },
+    "previous_validation_v4": {
+      "rules_hash": "fixture-v4",
+      "simulation_revision": 3,
+      "full_suite_tests": 143,
+      "latest_simulation_tests": 45,
+      "item_definitions": 40,
+      "additional_shop_trinkets": 25,
+      "additional_shop_trainers": 6,
+      "fixture_battle_benchmark": {
+        "battles": 1000,
+        "milliseconds": 403.9375
+      },
+      "checkpoint_resume_and_export": "Passed updates 6 -> 7 -> 8 -> 9; export uses fixture-v4 and revision 3; Auto resumes preserve the recorded device",
+      "cpu": {
+        "status": "Stopped",
+        "update": 6,
+        "checkpoint": "checkpoint-6-b81aacf1",
+        "device": "cpu",
+        "device_seconds": {
+          "cpu": 0.0031827600003452973,
+          "cuda": 0.0030517600003804545
+        },
+        "actual_workers": 4,
+        "worker_milliseconds": {
+          "1": 9.0041,
+          "2": 3.3651,
+          "4": 2.122
+        },
+        "decisions": 6144,
+        "decisions_per_second": 685.0262013604454,
+        "success_rate": 0.0,
+        "average_wins": 1.1,
+        "diagnostic_fixture": true,
+        "runs": 10,
+        "successes": 0,
+        "total_wins": 11,
+        "trainers": {
+          "fixture": {
+            "runs": 10,
+            "successes": 0,
+            "wins": 11
+          }
+        }
+      },
+      "auto_device_run": {
+        "status": "Training",
+        "update": 6,
+        "generation": 0,
+        "device": "cuda",
+        "device_seconds": {
+          "cpu": 0.0035311399995407557,
+          "cuda": 0.003278979999595322
+        },
+        "decisions": 6144,
+        "decisions_per_second": 1404.3428571428572,
+        "loss": -0.03937384649179876,
+        "checkpoint": null,
+        "actual_workers": 4,
+        "worker_milliseconds": {
+          "1": 9.4265,
+          "2": 3.6922,
+          "4": 2.3559
+        },
+        "success_rate": 0.0,
+        "average_wins": 1.6666666666666667,
+        "diagnostic_fixture": true,
+        "runs": 12,
+        "successes": 0,
+        "total_wins": 20,
+        "trainers": {
+          "fixture": {
+            "runs": 12,
+            "successes": 0,
+            "wins": 20
+          }
+        }
+      },
+      "python_tests": 4,
+      "resolved_device": "cuda"
+    },
+    "guessed_rule_groups": 29,
+    "previous_validation_v6": {
+      "normal_encounter_definitions": 13,
+      "item_definitions": 40,
+      "auto_device_run": {
+        "status": "Training",
+        "update": 7,
+        "generation": 0,
+        "device": "cuda",
+        "device_seconds": {
+          "cpu": 0.0033114199992269277,
+          "cuda": 0.0032423800003016368
+        },
+        "decisions": 7168,
+        "decisions_per_second": 1318.1316660532307,
+        "loss": -0.039579582400619984,
+        "checkpoint": null,
+        "actual_workers": 4,
+        "worker_milliseconds": {
+          "1": 9.3612,
+          "2": 3.8646,
+          "4": 2.1781
+        },
+        "success_rate": 0.0,
+        "average_wins": 1.9285714285714286,
+        "diagnostic_fixture": true,
+        "runs": 14,
+        "successes": 0,
+        "total_wins": 27,
+        "trainers": {
+          "fixture": {
+            "runs": 14,
+            "successes": 0,
+            "wins": 27
+          }
+        }
+      },
+      "encoding": 2,
+      "fixture_battle_benchmark": {
+        "milliseconds": 472.5341,
+        "battles": 1000
+      },
+      "checkpoint_resume_and_export": "Passed updates 6 -> 7; exported fixture-v6/revision 5/encoding 2; Auto retained CUDA",
+      "rules_hash": "fixture-v6",
+      "python_tests": 4,
+      "game_training_ready": false,
+      "guessed_rule_groups": 22,
+      "cpu": {
+        "status": "Stopped",
+        "update": 6,
+        "checkpoint": "checkpoint-6-921691be",
+        "device": "cpu",
+        "device_seconds": {
+          "cpu": 0.0032751000006101096,
+          "cuda": 0.00348937999951886
+        },
+        "actual_workers": 4,
+        "worker_milliseconds": {
+          "1": 9.4149,
+          "2": 3.4649,
+          "4": 2.1567
+        },
+        "decisions": 6144,
+        "decisions_per_second": 646.7368421052631,
+        "success_rate": 0.0,
+        "average_wins": 1.1,
+        "diagnostic_fixture": true,
+        "runs": 10,
+        "successes": 0,
+        "total_wins": 11,
+        "trainers": {
+          "fixture": {
+            "runs": 10,
+            "successes": 0,
+            "wins": 11
+          }
+        }
+      },
+      "full_suite_tests": 276,
+      "simulation_revision": 5
+    }
+  }
+}

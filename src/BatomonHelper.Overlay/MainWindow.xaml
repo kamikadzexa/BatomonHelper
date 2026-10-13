@@ -65,7 +65,7 @@
         <StackPanel x:Name="DragSurface" Background="Transparent" MouseLeftButtonDown="DragWindow">
           <TextBlock FontWeight="Bold" FontSize="21" Text="Batomon Helper" />
           <TextBlock x:Name="VersionLabel" Margin="0,1,0,0" FontSize="10" Foreground="#8495A9" />
-          <TextBlock FontSize="12" Foreground="#AAB7CA" Text="F8 visibility · F9 capture · F10 advice · F11 fullscreen" />
+          <TextBlock FontSize="12" Foreground="#AAB7CA" Text="F8 visibility · F9 capture · F11 fullscreen" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
           <Button Style="{StaticResource OverlayButton}" Content="Capture Board (F9)" Command="{Binding CaptureShopCommand}" />
@@ -117,7 +117,7 @@
       <Grid Grid.Row="4">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <StackPanel><TextBlock FontWeight="SemiBold" Text="{Binding Status}" /><TextBlock FontSize="11" Foreground="#AAB7CA" TextWrapping="Wrap" Text="{Binding RunSummary}" /></StackPanel>
-        <TabControl x:Name="AdviceTabs" SelectedIndex="0" Grid.Row="1" Margin="0,8,0,0" Style="{StaticResource BrowserTabs}">
+        <TabControl x:Name="BoardTabs" SelectedIndex="0" Grid.Row="1" Margin="0,8,0,0" Style="{StaticResource BrowserTabs}">
           <TabControl.Resources>
             <DataTemplate x:Key="BoardCard">
               <Border Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="5" Padding="8" Margin="3">
@@ -133,46 +133,6 @@
               </Border>
             </DataTemplate>
           </TabControl.Resources>
-          <TabItem Header="Advice">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-              <StackPanel Margin="12">
-                <TextBlock Text="Shopping plan" FontSize="20" FontWeight="Bold" />
-                <TextBlock Text="F9 captures the shop. F10 suggests one or two moves using the selected pool and displayed odds." TextWrapping="Wrap" Margin="0,6" />
-                <TextBlock Text="{Binding AdviceCaptureLabel}" Foreground="#AAB7CA" TextWrapping="Wrap" Margin="0,6" />
-                <TextBlock Text="{Binding ShoppingStatus}" TextWrapping="Wrap" Margin="0,6" />
-                <Border Background="#203246" BorderBrush="#78E2B8" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,10">
-                  <StackPanel>
-                    <ItemsControl ItemsSource="{Binding AdviceMoves}">
-                      <ItemsControl.ItemTemplate><DataTemplate>
-                        <StackPanel Margin="0,0,0,12">
-                          <TextBlock Text="{Binding Label}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
-                          <TextBlock Text="{Binding Reason}" TextWrapping="Wrap" Margin="0,6,0,0" />
-                        </StackPanel>
-                      </DataTemplate></ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBlock Text="{Binding DecisionObjective}" Foreground="#FFCE79" TextWrapping="Wrap" Margin="0,5" />
-                    <TextBlock Text="{Binding DecisionNextStep}" TextWrapping="Wrap" Margin="0,8" />
-                    <Expander Header="Expected results, evidence and assumptions" Foreground="#F2F5FA" Margin="0,8">
-                      <StackPanel>
-                        <TextBlock Text="{Binding DecisionExpected}" Foreground="#B7C7D9" TextWrapping="Wrap" Margin="0,5" />
-                        <TextBlock Text="{Binding DecisionAssumptions}" Foreground="#B7C7D9" TextWrapping="Wrap" Margin="0,5" />
-                        <ItemsControl ItemsSource="{Binding AdviceEvidenceLinks}">
-                          <ItemsControl.ItemTemplate><DataTemplate>
-                            <TextBlock Margin="0,3"><Hyperlink Foreground="#78E2B8" NavigateUri="{Binding Mode=OneWay}" RequestNavigate="EvidenceRequestNavigate"><Run Text="{Binding Mode=OneWay}" /></Hyperlink></TextBlock>
-                          </DataTemplate></ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </StackPanel>
-                    </Expander>
-                  </StackPanel>
-                </Border>
-                <WrapPanel>
-                  <Button Content="Suggest plan (F10)" Command="{Binding SuggestShoppingCommand}" Style="{StaticResource OverlayButton}" />
-                  <Button Content="Model settings" Command="{Binding ShoppingSettingsCommand}" Style="{StaticResource OverlayButton}" />
-                </WrapPanel>
-                <TextBlock Text="{Binding ShoppingModelLabel}" Foreground="#AAB7CA" TextWrapping="Wrap" Margin="0,12" />
-              </StackPanel>
-            </ScrollViewer>
-          </TabItem>
           <TabItem Header="Board">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Margin="5">

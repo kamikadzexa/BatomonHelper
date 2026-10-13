@@ -25,8 +25,9 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     private CatalogSnapshot _catalog = CatalogSnapshot.Empty;
     private ShopOddsSnapshot? _snapshot;
     private ShopOddsSnapshot? _capturedSnapshot;
-    private ShoppingAdviceContext? _adviceContext;
-    public ShoppingAdviceContext? DisplayedAdviceContext => _adviceContext;
+    private PoolContext? _poolContext;
+    private BoardSnapshot? _acceptedBoard;
+    public PoolContext? DisplayedPoolContext => _poolContext;
     private IReadOnlyDictionary<string, MonsterOdds> _oddsByMonster = new Dictionary<string, MonsterOdds>();
     private IReadOnlyDictionary<string, ItemOdds> _oddsByItem = new Dictionary<string, ItemOdds>();
     private IReadOnlyDictionary<string, TrinketOdds> _oddsByTrinket = new Dictionary<string, TrinketOdds>();
@@ -56,7 +57,6 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         DecreaseRankCommand = new RelayCommand(() => ChangeRank(-1));
         IncreaseRankCommand = new RelayCommand(() => ChangeRank(1));
         ResetCommand = new RelayCommand(ResetManualState);
-        InitializeShoppingCommands();
         _ = InitializeAsync();
     }
 
@@ -113,7 +113,6 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
             RefreshItemRows();
             RefreshTrinketRows();
             ResetManualState();
-            await InitializeShoppingAsync();
             Status = $"Loaded {_catalog.Monsters.Length} bundled creatures. Press F9 to capture the focused shop.";
         }
         catch (Exception exception)
@@ -125,13 +124,12 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
 
     public async Task CaptureShopAsync()
     {
-        CancelShoppingAdvice("Capturing the shop; previous advice cleared.");
-        _shoppingCaptureInProgress = true;
-        try { await _captureQueue.RequestAsync(); }
-        finally { _shoppingCaptureInProgress = false; }
+        await _captureQueue.RequestAsync();
     }
 
-    public void StopCaptures() { _captureCancellation.Cancel(); StopShopping(); }
+    public void ReportHotkeyConflict(string message) => Warning = message;
+
+    public void StopCaptures() { _captureCancellation.Cancel(); }
 
     private async Task CaptureBoardOnceAsync()
     {
@@ -171,7 +169,7 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
             }
             var snapshot = board.ToShopOddsSnapshot(_catalog) with { RegionFilter = SelectedRegionFilter.Value };
             _boardState.Publish(result, _catalog, acceptedFields is null ? null : board);
-            AcceptShoppingCapture(board, result);
+            _acceptedBoard = board;
             var odds = CalculateOdds(snapshot);
             _capturedSnapshot = snapshot;
             _itemAvailable = snapshot.ItemAvailable;
@@ -265,7 +263,7 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
             var sprite = monster.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, monster.SpritePath.Replace('/', Path.DirectorySeparatorChar));
             var reference = string.Join("\n", monster.ReferenceValues.Select(value => $"{value.Key}: {value.Value}"));
             if (!monster.ReferenceNotes.IsEmpty) reference += "\n\n" + string.Join("\n", monster.ReferenceNotes) + "\n" + _catalog.SourceUrls.LastOrDefault();
-            CreatureRows.Add(new(monster.Id, monster.Name, DisplayRarity(monster.Rarity), (int)monster.Rarity, string.Join(", ", monster.Regions.OrderBy(region => region)), odds?.PerBatomonRoll, odds?.NextShopChance, sprite, _adviceContext?.LevelThreeMonsterIds.Contains(monster.Id) ?? _levelThreeCreatureIds.Contains(monster.Id), SetCreatureLevelThree, reference));
+            CreatureRows.Add(new(monster.Id, monster.Name, DisplayRarity(monster.Rarity), (int)monster.Rarity, string.Join(", ", monster.Regions.OrderBy(region => region)), odds?.PerBatomonRoll, odds?.NextShopChance, sprite, _poolContext?.LevelThreeMonsterIds.Contains(monster.Id) ?? _levelThreeCreatureIds.Contains(monster.Id), SetCreatureLevelThree, reference));
         }
         OnPropertyChanged(nameof(CreatureCount));
     }
@@ -306,7 +304,6 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
 
     private void ApplyRegionFilter()
     {
-        CancelShoppingAdvice("Pool region changed. Press F10 for updated advice.");
         if (_snapshot is null) { RefreshCreatureRows(); return; }
         var snapshot = _snapshot with { RegionFilter = SelectedRegionFilter.Value };
         Render(CalculateOdds(snapshot), snapshot);
@@ -317,7 +314,6 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         if (_snapshot is null) return;
         var rank = Math.Clamp(_snapshot.ShopRank + change, ShopRankOdds.MinimumRank, ShopRankOdds.MaximumRank);
         if (rank == _snapshot.ShopRank) return;
-        CancelShoppingAdvice("Displayed rank odds changed. Press F10 for updated advice.");
         var source = _capturedSnapshot;
         var odds = source is null ? ShopRankOdds.ForRank(rank) : ShopRankOdds.ApplyCapturedModifier(source.ShopRank, source.RarityOdds, rank);
         var snapshot = _snapshot with { ShopRank = rank, RarityOdds = odds, CapturedAt = DateTimeOffset.UtcNow };
@@ -327,7 +323,6 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
 
     private void SetItemAvailable(bool itemAvailable)
     {
-        CancelShoppingAdvice("Item-slot odds changed. Press F10 for updated advice.");
         var snapshot = _snapshot! with { ItemAvailable = itemAvailable, CapturedAt = DateTimeOffset.UtcNow };
         Render(CalculateOdds(snapshot), snapshot);
         Status = itemAvailable ? "Item slot enabled: four Batomon slots." : "Item slot disabled: five Batomon slots.";
@@ -336,7 +331,6 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     private void ResetManualState()
     {
         if (_catalog == CatalogSnapshot.Empty) return;
-        CancelShoppingAdvice("Pool controls reset. Press F10 for updated advice.");
         _capturedSnapshot = null;
         _levelThreeCreatureIds.Clear();
         _ownedUniqueTrinketIds.Clear();
@@ -355,9 +349,9 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
 
     private OddsResult CalculateOdds(ShopOddsSnapshot snapshot)
     {
-        _adviceContext = ShoppingAdviceContext.Create(_catalog, snapshot, _latestShoppingCapture?.Board,
+        _poolContext = PoolContext.Create(_catalog, snapshot, _acceptedBoard,
             _levelThreeCreatureIds, _ownedUniqueTrinketIds, _oddsCalculator);
-        return _adviceContext.Odds;
+        return _poolContext.Odds;
     }
 
     private void SetCreatureLevelThree(string id, bool isLevelThree)
@@ -374,7 +368,6 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
 
     private void RecalculatePools()
     {
-        CancelShoppingAdvice("Pool exclusions changed. Press F10 for updated advice.");
         if (_snapshot is null) { RefreshCreatureRows(); RefreshTrinketRows(); return; }
         Render(CalculateOdds(_snapshot), _snapshot);
     }

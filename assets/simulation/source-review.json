@@ -1,0 +1,144 @@
+{
+  "Build": "25738032",
+  "Balance": "25",
+  "Pages": [
+    {
+      "Url": "https://www.batomon.wiki/mechanics",
+      "Role": "Navigation index; its links lead to the already imported community mechanic pages.",
+      "RetrievedAt": "2026-10-13T07:25:19.7905292+00:00",
+      "Sha256": "502F0C74A28531524ECBB8FB982C4496D5BC82FBBBD4EF1E9B01C3601552634F"
+    },
+    {
+      "Url": "https://batomon.com/mechanics/monster-pool",
+      "Role": "Detailed shop rules; older assertions must be reconciled against current references.",
+      "RetrievedAt": "2026-10-13T07:25:20.6425528+00:00",
+      "Sha256": "393B89FE62A2077FAE54DFC4B6C1115F52EC6CB491BD6A8A9CAF1E38BCAB1A97"
+    },
+    {
+      "Url": "https://batomon.com/whats-new",
+      "Role": "Developer patch notes republished by the wiki; current conflict precedence.",
+      "RetrievedAt": "2026-10-13T07:25:20.9021162+00:00",
+      "Sha256": "9A3E2E0FAB088FE739729C463A0FD556801213F4B3A0251B5C81DE061B4AFB0F"
+    },
+    {
+      "Url": "https://batomon.com/items/coupon",
+      "Role": "Current item effect.",
+      "RetrievedAt": "2026-10-13T07:25:21.1632468+00:00",
+      "Sha256": "8AC68ACDA6D5A6FE408ADCFD48C392A6FCB0940B70F044A3B27D4743F7D4C066"
+    },
+    {
+      "Url": "https://batomon.com/trinkets/membership-card",
+      "Role": "Current trinket effect.",
+      "RetrievedAt": "2026-10-13T07:25:21.4085999+00:00",
+      "Sha256": "89007ACC7EFC4EC6EFA38EC265C388C32676F1314A3C35D2862C3BE6A8983473"
+    },
+    {
+      "Url": "https://batomon.com/mechanics/evolution",
+      "Role": "Evolution timing; Pipskull threshold conflicts with the pinned creature tooltip.",
+      "RetrievedAt": "2026-10-13T07:25:21.588247+00:00",
+      "Sha256": "69E5A42816F8550D7CFA8171116260347BA759830D06A8DBE8FA977ADB44136E"
+    },
+    {
+      "Url": "https://batomon.com/batomon/pipskull",
+      "Role": "Pinned creature threshold takes precedence over the older narrative count.",
+      "RetrievedAt": "2026-10-13T07:25:21.7989825+00:00",
+      "Sha256": "48C56ED4800E174D892FA75147A74146C5E3D8B57EB1D19454ED44543B1E98C4"
+    },
+    {
+      "Url": "https://batomon.com/mechanics/transformation",
+      "Role": "Persistent state preservation and Aerophim revival.",
+      "RetrievedAt": "2026-10-13T07:25:21.980804+00:00",
+      "Sha256": "ED7465E0C969B33198F62E973792206CC1C48A17BFCB50566E6A7180E2FF9C43"
+    },
+    {
+      "Url": "https://batomon.com/batomon/gachapod",
+      "Role": "Growing trinket ability; increment is not specified.",
+      "RetrievedAt": "2026-10-13T07:25:22.1772048+00:00",
+      "Sha256": "B1553E743B14E4B7CBB6F3473AF388264E55F55782CBC55CCF069848A22E014E"
+    }
+  ],
+  "Decisions": [
+    {
+      "Id": "mechanics-index",
+      "Decision": "The supplemental index contains links to batomon.com rather than additional numeric mechanics tables.",
+      "Sources": [
+        "https://www.batomon.wiki/mechanics"
+      ]
+    },
+    {
+      "Id": "coupon",
+      "Decision": "Use a discount of 3, as the current item and patch notes agree. The shop guide's 5 is retained only as a recorded conflict.",
+      "Sources": [
+        "https://batomon.com/mechanics/monster-pool",
+        "https://batomon.com/whats-new",
+        "https://batomon.com/items/coupon"
+      ]
+    },
+    {
+      "Id": "level-four-resale",
+      "Decision": "Use the level-3 resale multiplier for level 4. The shop guide's old multiplier 12 is superseded by launch notes.",
+      "Sources": [
+        "https://batomon.com/mechanics/monster-pool",
+        "https://batomon.com/whats-new"
+      ]
+    },
+    {
+      "Id": "membership-card",
+      "Decision": "Implement one additional daily item allowance per copy, matching the current trinket. Do not use the old guide's reroll-after-purchase behavior.",
+      "Sources": [
+        "https://batomon.com/mechanics/monster-pool",
+        "https://batomon.com/trinkets/membership-card"
+      ]
+    },
+    {
+      "Id": "common-bug-purchase",
+      "Decision": "Consume Bargain Bin before Bug Catcher, following the 1.3.0 fix.",
+      "Sources": [
+        "https://batomon.com/whats-new"
+      ]
+    },
+    {
+      "Id": "catalog-pool",
+      "Decision": "Keep refreshed catalog membership; use a labelled foreign eligibility guess rather than the old 70-of-88 narrative count.",
+      "Sources": [
+        "https://batomon.com/mechanics/monster-pool"
+      ]
+    },
+    {
+      "Id": "pipskull-threshold",
+      "Decision": "User confirms two Knockouts, overriding the imported three-Knockout tooltip. Next-shop timing and the owned-Ratacomb restriction remain sourced separately.",
+      "Sources": [
+        "https://batomon.com/mechanics/evolution",
+        "https://batomon.com/batomon/pipskull",
+        "User correction, 2026-10-13"
+      ]
+    },
+    {
+      "Id": "aerophim-transform",
+      "Decision": "Persistent transformation preserves identity/state and revives knocked-out targets; Multicast is retained before changing species. Cooldown and queued-cast behavior are explicitly provisional.",
+      "Sources": [
+        "https://batomon.com/mechanics/transformation"
+      ]
+    },
+    {
+      "Id": "gachapod-growth",
+      "Decision": "Use a labelled increment of one extra Common trinket per cast; the source states improvement but not the increment.",
+      "Sources": [
+        "https://batomon.com/batomon/gachapod"
+      ]
+    },
+    {
+      "Id": "user-timing-and-stacking",
+      "Decision": "User confirms additive percentages, same-tick Shock applies only on later damage ticks, simultaneous defeat is a player win, and daily gold increases by 5 from starting 30.",
+      "Sources": [
+        "User correction, 2026-10-13"
+      ]
+    }
+  ],
+  "StillMissing": [
+    "HP gaps and later values are explicitly extrapolated; latest gold correction is 30 + 5 * (day - 1).",
+    "Event timing/tiers are user-provided; sampling weights are provisionally uniform.",
+    "Cooldown lattice and complete battle-start priority are labelled guesses.",
+    "Foreign eligibility, conditional item eligibility, rounding and remaining interaction assumptions are inspectable in the rules evidence table."
+  ]
+}

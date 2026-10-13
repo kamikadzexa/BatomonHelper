@@ -1,0 +1,13 @@
+<Application x:Class="BatomonHelper.Training.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <Application.Resources>
+  <Style TargetType="Window"><Setter Property="Background" Value="#101D2A"/><Setter Property="Foreground" Value="#EAF0F6"/><Setter Property="FontFamily" Value="Segoe UI"/></Style>
+  <Style TargetType="Button"><Setter Property="Background" Value="#25425B"/><Setter Property="Foreground" Value="White"/><Setter Property="Padding" Value="12,7"/><Setter Property="Margin" Value="0,0,8,0"/></Style>
+  <Style TargetType="TextBlock"><Setter Property="Foreground" Value="#EAF0F6"/></Style>
+  <Style TargetType="DataGridColumnHeader"><Setter Property="Background" Value="#284056"/><Setter Property="Foreground" Value="#EAF0F6"/><Setter Property="Padding" Value="6,8"/></Style>
+  <Style TargetType="TextBox"><Setter Property="Background" Value="#203246"/><Setter Property="Foreground" Value="White"/><Setter Property="Padding" Value="5"/><Setter Property="Margin" Value="0,4,10,8"/></Style>
+  <Style TargetType="ComboBox"><Setter Property="Padding" Value="5"/><Setter Property="Margin" Value="0,4,10,8"/></Style>
+  <Style TargetType="ComboBoxItem"><Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="{Binding}" Foreground="#101D2A"/></DataTemplate></Setter.Value></Setter></Style>
+  <Style TargetType="TabItem"><Setter Property="Padding" Value="15,6"/><Setter Property="Foreground" Value="#111E2B"/><Setter Property="HeaderTemplate"><Setter.Value><DataTemplate><TextBlock Text="{Binding}" Foreground="#111E2B"/></DataTemplate></Setter.Value></Setter></Style>
+  <Style TargetType="DataGrid"><Setter Property="Background" Value="#172B3C"/><Setter Property="Foreground" Value="#EAF0F6"/><Setter Property="RowBackground" Value="#172B3C"/><Setter Property="AlternatingRowBackground" Value="#203246"/><Setter Property="GridLinesVisibility" Value="None"/><Setter Property="CanUserAddRows" Value="False"/><Setter Property="IsReadOnly" Value="True"/></Style>
+ </Application.Resources>
+</Application>

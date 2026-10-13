@@ -6,7 +6,6 @@ public partial class MainWindow : Window
 {
     private const int HotkeyId = 0xB470;
     private const int CaptureHotkeyId = 0xB471;
-    private const int SuggestShoppingHotkeyId = 0xB472;
     private const int WmHotkey = 0x0312;
     private HwndSource? _source;
     private bool _isExpanded;
@@ -55,19 +54,12 @@ public partial class MainWindow : Window
             var captureKey = NativeOverlay.RegisterHotKey(_source.Handle, CaptureHotkeyId, 0x4000, 0x78); // F9
             if ((!visibilityKey || !captureKey) && DataContext is OverlayViewModel keyModel)
                 keyModel.ReportHotkeyConflict($"Could not register {(!visibilityKey ? "F8 visibility " : "")}{(!captureKey ? "F9 capture" : "")}: another application owns the shortcut.");
-            RegisterShoppingHotkeys();
         };
-        Closed += (_, _) => { if (DataContext is OverlayViewModel viewModel) viewModel.StopCaptures(); if (_source is not null) { NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, SuggestShoppingHotkeyId); } };
+        Closed += (_, _) => { if (DataContext is OverlayViewModel viewModel) viewModel.StopCaptures(); if (_source is not null) { NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId); } };
     }
 
     private IntPtr WndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (message == WmHotkey && wParam.ToInt32() == SuggestShoppingHotkeyId)
-        {
-            if (DataContext is OverlayViewModel shoppingModel) _ = shoppingModel.SuggestShoppingAsync();
-            AdviceTabs.SelectedIndex = 0;
-            handled = true;
-        }
         if (message == WmHotkey && wParam.ToInt32() == HotkeyId)
         {
             Visibility = Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
@@ -81,22 +73,7 @@ public partial class MainWindow : Window
         return IntPtr.Zero;
     }
 
-    public void RegisterShoppingHotkeys()
-    {
-        if (_source is null || DataContext is not OverlayViewModel viewModel) return;
-        NativeOverlay.UnregisterHotKey(_source.Handle, SuggestShoppingHotkeyId);
-        if (!NativeOverlay.RegisterHotKey(_source.Handle, SuggestShoppingHotkeyId, 0x4000, 0x79)) // F10, no repeat
-            viewModel.ReportHotkeyConflict("Could not register F10 advice: another application owns the shortcut. Use Suggest move in the helper.");
-    }
-
     private void DragWindow(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); }
-    private void EvidenceRequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
-    {
-        if (e.Uri.Scheme == "https" && e.Uri.Host == "batomon.com")
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
-        e.Handled = true;
-    }
-
     private void ToggleExpanded(object sender, RoutedEventArgs e)
     {
         if (!_isExpanded)
