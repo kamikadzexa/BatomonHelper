@@ -16,6 +16,7 @@ namespace BatomonHelper.Training;
 public sealed record HistoryCard(string Name,string Level,string Types,string Stats,string? Sprite);
 public sealed record GenerationResult(int Generation,int Runs,double SuccessRate,double AverageWins);
 public sealed record TrainerResult(string Trainer,int Runs,double SuccessRate,double AverageWins);
+public sealed record RankingResult(int Rank,string Label,int Update,int Generation,int Runs,double SuccessRate,double Lower95,double Upper95,double AverageWins,double AverageDeployed,double UnusedBench,double LimitedTurns);
 public partial class MainWindow : Window,INotifyPropertyChanged
 {
     private readonly string _root;
@@ -48,6 +49,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     public ObservableCollection<HistoryCard> Bench {get;}=[];
     public ObservableCollection<TrainerResult> TrainerResults {get;}=[];
     public ObservableCollection<GenerationResult> GenerationResults {get;}=[];
+    public ObservableCollection<RankingResult> RankingResults {get;}=[];
     public event PropertyChangedEventHandler? PropertyChanged;
     public MainWindow()
     {
@@ -56,6 +58,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         _rules=File.Exists(path)?JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(path))!:RuleCompiler.Fixture() with {Issues=[new("rules-file","Source","Refresh the simulation rules first.","https://batomon.com/status")]};
         OutputDirectory=Path.Combine(_root,"work","training");
         InitializeComponent(); DataContext=this;
+        LoadConfiguration(OutputDirectory);
         foreach(var issue in _rules.Issues) Issues.Add(issue);
         foreach(var entry in _rules.Evidence??[])Evidence.Add(entry);
         foreach(var entry in _rules.Parameters.HpEvidence??[])HpEvidence.Add(entry);
@@ -77,14 +80,20 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     public void OpenOutput(string directory)
     {
         Output.Text=Path.GetFullPath(directory);
-        var configuration=Path.Combine(CurrentOutput,"configuration.json");
+        LoadConfiguration(CurrentOutput);
+        Tabs.SelectedIndex=1;RefreshHistory(this,new RoutedEventArgs());
+    }
+    private void LoadConfiguration(string directory)
+    {
+        var configuration=Path.Combine(directory,"configuration.json");
         if(File.Exists(configuration)){
             using var json=JsonDocument.Parse(File.ReadAllText(configuration));var c=json.RootElement;
             Seed.Text=c.GetProperty("seed").ToString();Workers.Text=c.GetProperty("workers").ToString();
             Environments.Text=(c.TryGetProperty("requested_environments",out var requested)?requested:c.GetProperty("environments")).ToString();
+            Minibatch.Text=c.TryGetProperty("minibatch",out var batch)?batch.ToString():"512";
+            AutoCalibrate.IsChecked=c.TryGetProperty("auto_calibrate",out var calibrate)&&calibrate.GetBoolean();
             Device.SelectedIndex=c.GetProperty("device").GetString() switch {"cpu"=>1,"cuda"=>2,_=>0};
         }
-        Tabs.SelectedIndex=1;RefreshHistory(this,new RoutedEventArgs());
     }
     private static string FindRoot()
     {
@@ -117,8 +126,9 @@ public partial class MainWindow : Window,INotifyPropertyChanged
                 ["host"]=Path.Combine(_root,"tools","BatomonHelper.TrainingHost","bin","Release","net10.0","BatomonHelper.TrainingHost.dll"),
                 ["workers"]=int.Parse(Workers.Text),["environments"]=int.Parse(Environments.Text),["seed"]=int.Parse(Seed.Text),
                 ["minutes"]=double.Parse(Minutes.Text,System.Globalization.CultureInfo.InvariantCulture),["device"]=((ComboBoxItem)Device.SelectedItem).Content.ToString()!,
-                ["rollout"]=64,["minibatch"]=256,["updates"]=0,["resume"]=resume };
+                ["rollout"]=128,["minibatch"]=int.Parse(Minibatch.Text),["updates"]=0,["resume"]=resume,["auto_calibrate"]=AutoCalibrate.IsChecked==true&&!resume };
             if((int)config["environments"]<4 || (int)config["workers"]<1) throw new ArgumentException("Use at least four environments and one worker.");
+            if((int)config["minibatch"]<32)throw new ArgumentException("Use a PPO batch of at least 32.");
             Directory.CreateDirectory(CurrentOutput); Control("run"); Atomic(Path.Combine(CurrentOutput,"launch.json"),JsonSerializer.Serialize(config));
             StartPython("--config",Path.Combine(CurrentOutput,"launch.json"));
             Status=Diagnostic.IsChecked==true?"Synthetic diagnostic training — results are not Batomon performance.":$"Starting Pantra training with {_rules.GuessedRules} labelled guesses…";
@@ -140,7 +150,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     }
     private void SessionFields(bool enabled)
     {
-        foreach(var control in new Control[]{Device,Workers,Environments,Seed,Minutes,Output,Diagnostic})control.IsEnabled=enabled;
+        foreach(var control in new Control[]{Device,Workers,Environments,Minibatch,Seed,Minutes,Output,Diagnostic,AutoCalibrate})control.IsEnabled=enabled;
     }
     private void Pause(object sender,RoutedEventArgs e) { if(_process is {HasExited:false}) {Control("pause");Status="Pausing after the current PPO update…";} }
     private async void Resume(object sender,RoutedEventArgs e)
@@ -159,6 +169,21 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         try { if(_process is {HasExited:false}) throw new InvalidOperationException("Stop and save before export."); StartPython("--config",Path.Combine(CurrentOutput,"configuration.json"),"--export"); Status="Exporting learned policies and encoding metadata…"; }
         catch(Exception error) {Status=error.Message;}
     }
+    private void RankGenerations(object sender,RoutedEventArgs e)
+    {
+        try {if(_process is {HasExited:false})throw new InvalidOperationException("Stop and save before ranking generations.");StartPython("--config",Path.Combine(CurrentOutput,"configuration.json"),"--rank-generations","--runs","128");Status="Ranking every retained generation against one frozen opponent schedule…";}
+        catch(Exception error){Status=error.Message;}
+    }
+    private void ExportSelected(object sender,RoutedEventArgs e)
+    {
+        try
+        {
+            if(_process is {HasExited:false})throw new InvalidOperationException("Stop and save before export.");
+            if(RankingList.SelectedItem is not RankingResult selected)throw new InvalidOperationException("Select a generation leaderboard row first.");
+            StartPython("--config",Path.Combine(CurrentOutput,"configuration.json"),"--export","--export-update",selected.Update.ToString());Status=$"Exporting {selected.Label}…";
+        }
+        catch(Exception error){Status=error.Message;}
+    }
     private async Task UpdateProgress()
     {
         if(_refreshing) return; _refreshing=true;
@@ -168,10 +193,15 @@ public partial class MainWindow : Window,INotifyPropertyChanged
             using var json=JsonDocument.Parse(await File.ReadAllTextAsync(path)); var p=json.RootElement;
             var status=p.GetProperty("status").GetString();
             if(status=="Failed") {Status=p.GetProperty("error").GetString()!;return;}
+            if(status=="Ranked") {LoadRanking();Status="Generation ranking complete.";return;}
             double Number(string key)=>p.TryGetProperty(key,out var v)?v.GetDouble():0;
             Progress=$"{status} · update {Number("update"):N0} · {Number("runs"):N0} completed runs\n"+
-                $"Ten-win success {Number("success_rate"):P1} · average wins {Number("average_wins"):F2} · {Number("decisions_per_second"):N0} decisions/s";
+                $"Recent ({Number("recent_runs"):N0}) success {Number("recent_success_rate"):P1} · wins {Number("recent_average_wins"):F2} · {Number("decisions_per_second"):N0} decisions/s";
             if(p.TryGetProperty("device",out var device) && p.TryGetProperty("actual_workers",out _))Progress+=$"\nDevice {device.GetString()} · workers {Number("actual_workers"):N0} · environments {Number("actual_environments"):N0}";
+            if(p.TryGetProperty("average_deployed",out _))Progress+=$"\nDeployed {Number("average_deployed"):F2}/6 · unused bench {Number("unused_deployable_bench"):F2} · turn limit {Number("limited_turn_rate"):P1}";
+            if(p.TryGetProperty("rollout_seconds",out _))Progress+=$"\nSimulation/inference {Number("rollout_seconds"):F2}s · PPO {Number("optimization_seconds"):F2}s per update";
+            if(p.TryGetProperty("finish_with_deployable_bench",out _))Progress+=$"\nFinish with usable bench {Number("finish_with_deployable_bench"):N0} · improving moves {Number("deployment_improving"):N0} · reversing moves {Number("deployment_reversing"):N0}";
+            if(Number("session_runs")>0)Progress+=$"\nThis launch: {Number("session_runs"):N0} runs · success {Number("session_success_rate"):P1} · average wins {Number("session_average_wins"):F2}";
             Checkpoint=p.TryGetProperty("checkpoint",out var cp)?"Checkpoint: "+cp.ToString():"No checkpoint yet.";
             if(p.TryGetProperty("diagnostic_fixture",out var diagnostic) && diagnostic.GetBoolean()) Status="Synthetic diagnostic fixture — not game training.";
             else Status=status??"Training";
@@ -189,6 +219,18 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         }
         catch(Exception error) when(error is IOException or JsonException) {Status="Progress refresh: "+error.Message;}
         finally {_refreshing=false;}
+    }
+    private void LoadRanking()
+    {
+        var path=Path.Combine(CurrentOutput,"generation-ranking.json");if(!File.Exists(path))return;
+        using var json=JsonDocument.Parse(File.ReadAllText(path));RankingResults.Clear();
+        foreach(var row in json.RootElement.GetProperty("snapshots").EnumerateArray())
+        {
+            var interval=row.GetProperty("confidence_interval_95").EnumerateArray().Select(x=>x.GetDouble()).ToArray();
+            RankingResults.Add(new(row.GetProperty("rank").GetInt32(),row.GetProperty("label").GetString()!,row.GetProperty("update").GetInt32(),row.GetProperty("generation").GetInt32(),
+                row.GetProperty("runs").GetInt32(),row.GetProperty("success_rate").GetDouble(),interval[0],interval[1],row.GetProperty("average_wins").GetDouble(),
+                row.GetProperty("average_deployed").GetDouble(),row.GetProperty("unused_deployable_bench").GetDouble(),row.GetProperty("limited_turn_rate").GetDouble()));
+        }
     }
     private async void RefreshHistory(object sender,RoutedEventArgs e)
     {

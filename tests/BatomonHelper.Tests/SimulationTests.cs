@@ -143,7 +143,9 @@ public sealed class SimulationTests
             Assert.Equal(1,(await history.LoadAsync("pinned")).Summary.Wins);
             Assert.Equal(0,(await history.LoadAsync("pinned")).Days[0].BeforeBattle.Units[0]!.Bonuses[0]);
             for(var i=1;i<5;i++)await history.AppendAsync(new(record.Summary with {RunId="run-"+i,Generation=i,Wins=i,Evaluation=true,CompletedAt=DateTimeOffset.UtcNow.AddSeconds(i)},[day]));
+            await history.AppendAsync(new(record.Summary with {RunId="training-4",Generation=4,Wins=3,Evaluation=false,CompletedAt=DateTimeOffset.UtcNow.AddSeconds(5)},[day]));
             await history.FlushAsync();Assert.Contains(history.List(),x=>x.RunId=="pinned");Assert.Single(history.List(evaluation:true));
+            Assert.Contains(history.List(evaluation:false),x=>x.RunId=="training-4");
             Assert.Throws<ArgumentException>(()=>history.Pin("../escape",true));
         }
         await using var reopened=new HistoryStore(path,recent:1,best:1,generations:1);

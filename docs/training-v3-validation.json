@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-13",
+  "seed": 69,
+  "budget": {
+    "updates": 10,
+    "environments": 512,
+    "rollout": 128,
+    "minibatch": 512
+  },
+  "existing_objective_v2": {
+    "average_wins": 6.27088392423507,
+    "success_rate": 0.341185041282176,
+    "average_deployed": 2.27650971560258,
+    "unused_deployable_bench": 0.802178808987587,
+    "steady_state_decisions_per_second": 2951.6731973155
+  },
+  "objective_v3": {
+    "average_wins": 6.30636132315522,
+    "success_rate": 0.330178117048346,
+    "recent_average_wins": 6.833,
+    "recent_success_rate": 0.383,
+    "average_deployed": 1.37293999245188,
+    "unused_deployable_bench": 0.346867530506982,
+    "steady_state_decisions_per_second": 3153.64996872102
+  },
+  "result": {
+    "unused_deployable_bench_change": -0.455311278480605,
+    "average_wins_change": 0.03547739892015,
+    "steady_state_throughput_change_percent": 6.842113225,
+    "fallback_configuration_retained": true
+  }
+}

@@ -5,7 +5,7 @@ namespace BatomonHelper.Simulation;
 /// <summary>Versioned, player-visible numeric contract. Random state and future opponents are excluded.</summary>
 public sealed class PolicyEncoding(RulesManifest rules)
 {
-    public const int Version=3;
+    public const int Version=4;
     public const int TokenWidth=12;
     public const int ActionWidth=40;
     private readonly Dictionary<string,int> _ids=rules.Species.Select((x,i)=>(x.Id,i)).ToDictionary(x=>x.Id,x=>x.i+1);
@@ -48,7 +48,14 @@ public sealed class PolicyEncoding(RulesManifest rules)
     }
     public float[] Action(Observation observation,SimAction action)
     {
-        var result=new float[ActionWidth]; result[(int)action.Kind]=1;
+        var result=new float[ActionWidth];
+        Action(observation,action,result);
+        return result;
+    }
+    public void Action(Observation observation,SimAction action,Span<float> result)
+    {
+        if(result.Length<ActionWidth)throw new ArgumentException("Action feature destination is too small.",nameof(result));
+        result[..ActionWidth].Clear();result[(int)action.Kind]=1;
         result[9]=(action.Source+1)/11f; result[10]=(action.Target+1)/11f; result[11]=(action.Choice+1)/10f;
         if(action.Kind is Move.Buy or Move.BuyItem && observation.Shop[action.Source] is { } offer)
         {
@@ -69,11 +76,33 @@ public sealed class PolicyEncoding(RulesManifest rules)
         if(action.Kind==Move.Choose && action.Choice>=0){var choice=observation.Choices[action.Choice];Fingerprint(JsonSerializer.Serialize(choice),result,30);result[34]=choice.Effects.Length;}
         if(action.Source is >=0 and <10 && observation.Units[action.Source] is { } source)result[35]=_ids[source.SpeciesId];
         if(action.Target is >=0 and <10 && observation.Units[action.Target] is { } target)result[36]=_ids[target.SpeciesId];
-        return result;
+        var deployed=0;var bench=0;
+        for(var i=0;i<6;i++)if(observation.Units[i] is not null)deployed++;
+        for(var i=6;i<10;i++)if(observation.Units[i] is not null)bench++;
+        var afterDeployed=deployed;var afterBench=bench;
+        switch(action.Kind)
+        {
+            case Move.Buy when action.Target is >=0 and <6: afterDeployed++;break;
+            case Move.Buy when action.Target is >=6 and <10: afterBench++;break;
+            case Move.Sell when action.Source is >=0 and <6: afterDeployed--;break;
+            case Move.Sell when action.Source is >=6 and <10: afterBench--;break;
+            case Move.Move when action.Source==10 && action.Target is >=0 and <6: afterDeployed++;break;
+            case Move.Move when action.Source==10 && action.Target is >=6 and <10: afterBench++;break;
+            case Move.Move when action.Source is >=0 and <6 && action.Target is >=6 and <10 && observation.Units[action.Target] is null:
+                afterDeployed--;afterBench++;break;
+            case Move.Move when action.Source is >=6 and <10 && action.Target is >=0 and <6 && observation.Units[action.Target] is null:
+                afterBench--;afterDeployed++;break;
+            case Move.Merge when action.Source is >=0 and <6: afterDeployed--;break;
+            case Move.Merge when action.Source is >=6 and <10: afterBench--;break;
+        }
+        var gap=Math.Min(6-deployed,bench);var afterGap=Math.Min(6-afterDeployed,afterBench);
+        result[37]=afterDeployed-deployed;
+        result[38]=afterGap-gap;
+        result[39]=action.Kind==Move.Finish && gap>0?1:0;
     }
     private static readonly JsonSerializerOptions TokenJson=new(){DefaultIgnoreCondition=JsonIgnoreCondition.WhenWritingDefault};
     private static ulong Hash(string text){ulong hash=14695981039346656037;foreach(var c in text){hash^=c;hash*=1099511628211;}return hash;}
-    private static void Fingerprint(string text,float[] target,int offset){var hash=Hash(text);for(var i=0;i<4;i++)target[offset+i]=((hash>>(16*i))&65535)/65535f;}
+    private static void Fingerprint(string text,Span<float> target,int offset){var hash=Hash(text);for(var i=0;i<4;i++)target[offset+i]=((hash>>(16*i))&65535)/65535f;}
     private List<float> Tokens(object value)
     {
         using var document=JsonSerializer.SerializeToDocument(value,TokenJson);var result=new List<float>();

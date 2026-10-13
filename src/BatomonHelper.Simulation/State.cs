@@ -144,13 +144,15 @@ public sealed record FrozenBoard(int Day, double MaxHp, string Trainer, Unit?[] 
         state.Units.Take(6).Select(x => x?.Clone()).ToArray(), [.. state.Bag], [.. state.ExtraTrainers], new(state.Counters),state.Rank,[..state.ForeignPool],state.Wins);
 }
 public sealed record BattleResult(bool PlayerWon, bool BothDefeated, double Seconds, double PlayerHp,
-    double OpponentHp, Unit?[] PersistentTeam, BagEntry[] Bag, double Gold, string[] Trace,Dictionary<string,double>? PersistentCounters=null);
+    double OpponentHp, Unit?[] PersistentTeam, BagEntry[] Bag, double Gold, string[] Trace,Dictionary<string,double>? PersistentCounters=null,
+    PurchaseBuff[]? PendingPurchaseBuffs=null);
 public sealed record StepResult(Observation Observation, double Reward, bool Terminal, BattleResult? Battle = null,
     DayRecord? DayRecord = null);
 public sealed record DayRecord(int Day, Observation BeforeBattle, FrozenBoard Opponent, BattleResult Result,
     int WinsAfter, int LivesAfter, string[] Choices);
 public sealed record RunSummary(string RunId, int Generation, int Policy, string Trainer, int Wins,
-    int Lives, int Days, bool Success, bool Evaluation, DateTimeOffset CompletedAt, string RulesHash, bool Pinned = false)
+    int Lives, int Days, bool Success, bool Evaluation, DateTimeOffset CompletedAt, string RulesHash, bool Pinned = false,
+    int SnapshotUpdate = -1, string? EvaluationBatch = null)
 {
     public string Outcome => Success?"Success":"Failure";
 }

@@ -6,6 +6,45 @@ namespace BatomonHelper.Tests;
 public sealed class ImportedCreatureCoverageTests
 {
     [Fact]
+    public void Combat_retriggering_preserves_imported_pending_purchase_and_berry_effects()
+    {
+        var root=new DirectoryInfo(AppContext.BaseDirectory);
+        while(root is not null && !File.Exists(Path.Combine(root.FullName,"assets","simulation","rules.json")))root=root.Parent;
+        Assert.NotNull(root);
+        var imported=JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(Path.Combine(root.FullName,"assets","simulation","rules.json")))!;
+        var gemwing=imported.Species.Single(x=>x.Id=="gemwing");
+        var effect=gemwing.Normal.Single(x=>x.Level==1).Effects.Single(x=>x.Operation==Operation.ActivateAbility) with {Trigger=Trigger.BattleStart};
+        var activator=gemwing with {Normal=[gemwing.Normal[0] with {Cooldown=null,Effects=[effect]}]};
+        var rules=RuleCompiler.Fixture() with {Species=[..imported.Species.Where(x=>x.Id!="gemwing"),activator]};
+        var count=0;
+        foreach(var creature in imported.Species)
+        foreach(var (levels,shiny) in new[]{(creature.Normal,false),(creature.Shiny,true)})
+        foreach(var level in levels)
+        {
+            var purchase=level.Effects.FirstOrDefault(x=>x.Trigger==Trigger.Bought && x.Operation is Operation.PendingPurchase or Operation.ForceBerryItems);
+            if(purchase is null)continue;
+            var own=new FrozenBoard(1,100,"fixture",[new(){SpeciesId=creature.Id,Instance=100,Level=level.Level,Shiny=shiny},null,null,
+                new(){SpeciesId="gemwing",Instance=200},null,null],[],[]);
+            var enemy=own with {MaxHp=1,Team=new Unit?[6]};
+            var before=JsonSerializer.Serialize(own);
+            var fast=new Combat(rules).ResolveBattle(own,enemy,123);
+            var reference=new Combat(rules).ResolveBattle(own,enemy,123,reference:true);
+            if(purchase.Operation==Operation.PendingPurchase)
+            {
+                var pending=Assert.Single(fast.PendingPurchaseBuffs!);Assert.Equal(100,pending.SourceInstance);Assert.Equal(purchase,pending.Effect);
+                Assert.Equal(fast.PendingPurchaseBuffs,reference.PendingPurchaseBuffs);
+            }
+            else
+            {
+                Assert.Equal(purchase.Amount,fast.PersistentCounters!["forced-berries"]);
+                Assert.Equal(fast.PersistentCounters["forced-berries"],reference.PersistentCounters!["forced-berries"]);
+            }
+            Assert.Equal(before,JsonSerializer.Serialize(own));count++;
+        }
+        Assert.Equal(20,count);
+    }
+
+    [Fact]
     public void Every_imported_normal_and_shiny_level_has_a_handler_and_executes_in_an_isolated_fixture()
     {
         var root=new DirectoryInfo(AppContext.BaseDirectory);

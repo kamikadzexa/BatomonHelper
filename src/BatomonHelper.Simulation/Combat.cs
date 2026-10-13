@@ -142,7 +142,7 @@ public sealed class Combat(RulesManifest rules)
         for(var slot=0;slot<6;slot++) if(teams[0].Units[slot] is not null) Activate(0,slot,won?Trigger.Victory:Trigger.Defeat);
         Inventory(0,1,won?Trigger.Victory:Trigger.Defeat);
         return new(won,teams.All(x=>x.Hp<=0),now*tickSeconds,teams[0].Hp,teams[1].Hp,
-            teams[0].Units.Select(x=>x is {TemporarySpawn:false}?x.PersistentUnit.Clone():null).ToArray(),[..teams[0].Bag],teams[0].Gold,[..log],new(teams[0].Counters));
+            teams[0].Units.Select(x=>x is {TemporarySpawn:false}?x.PersistentUnit.Clone():null).ToArray(),[..teams[0].Bag],teams[0].Gold,[..log],new(teams[0].Counters),[..teams[0].PendingPurchaseBuffs]);
 
         LevelDefinition Definition(Fighter u)
         {
@@ -293,6 +293,19 @@ public sealed class Combat(RulesManifest rules)
             {
                 effect=effect with {Amount=effect.Amount*Scale(side,slot,effect,eventStats:eventStats),Scale=EffectScale.None};
                 if(effect.Operation==Operation.GrantTrinket && effect.Amount==0)return;
+            }
+            if(effect.Operation==Operation.PendingPurchase)
+            {
+                var source=teams[side].Units[slot]??throw new InvalidOperationException("A contingent purchase buff needs a source creature.");
+                // Gemwing can activate Bought effects in combat. Their Type/EventType
+                // constrain the future purchase, not the source's current combat type.
+                if(!source.TemporarySpawn)teams[side].PendingPurchaseBuffs.Add(new(source.PersistentUnit.Instance,effect));
+                return;
+            }
+            if(effect.Operation==Operation.ForceBerryItems)
+            {
+                teams[side].Counters["forced-berries"]=teams[side].Counters.GetValueOrDefault("forced-berries")+effect.Amount;
+                return;
             }
             var enemy=effect.Target is Target.Opposite or Target.Enemies or Target.RandomEnemy or Target.EnemyRow;
             var recipientSide=enemy?1-side:side; var team=teams[recipientSide];
@@ -473,6 +486,7 @@ public sealed class Combat(RulesManifest rules)
         public Fighter?[] Units=board.Team.Select(x=>x is null?null:new Fighter(x)).ToArray();
         public double MaxHp,Hp,Shield,Gold; public double[] Status=new double[3]; public List<BagEntry> Bag=[..board.Bag];
         public Dictionary<string,double> Counters=board.Counters is null?[]:new(board.Counters);
+        public List<PurchaseBuff> PendingPurchaseBuffs=[];
         public string[] Trainers=board.ExtraTrainers.Prepend(board.Trainer).ToArray();
         public int Rank=board.Rank,Day=board.Day,Wins=board.Wins;public string[] ForeignPool=board.ForeignPool is null?[]:[..board.ForeignPool];
         public long NextInventoryInstance=board.Bag.Select(x=>x.Instance).DefaultIfEmpty(0).Max()+1;

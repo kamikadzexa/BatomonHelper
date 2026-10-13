@@ -54,8 +54,10 @@ public sealed partial class GameEnvironment(RulesManifest rules)
             actions.Add(new(Move.Sell,i));
             for(var j=0;j<10;j++) if(i!=j)
             {
-                actions.Add(new(Move.Move,i,j));
-                if(State.Units[j] is { } target && _species[source.SpeciesId].MergeGroup==_species[target.SpeciesId].MergeGroup &&
+                var target=State.Units[j];
+                // Occupied swaps are symmetric; publish exactly one action for each result.
+                if(target is null || i<j)actions.Add(new(Move.Move,i,j));
+                if(target is not null && _species[source.SpeciesId].MergeGroup==_species[target.SpeciesId].MergeGroup &&
                     source.Level==target.Level && CanMerge(source)) actions.Add(new(Move.Merge,i,j));
             }
         }
@@ -128,6 +130,8 @@ public sealed partial class GameEnvironment(RulesManifest rules)
                 ActivateInventory(Trigger.DayEnd);var before=GetObservation(); var own=FrozenBoard.From(State); var enemy=opponent(own);
                 battle=_combat.ResolveBattle(own,enemy,_random.Next());
                 for(var i=0;i<6;i++) State.Units[i]=battle.PersistentTeam[i]?.Clone();
+                State.PendingPurchaseBuffs=State.PendingPurchaseBuffs.Concat(battle.PendingPurchaseBuffs??[])
+                    .Where(x=>State.Units.Any(u=>u?.Instance==x.SourceInstance)).ToArray();
                 State.Bag=[..battle.Bag]; State.Gold+=battle.Gold;
                 if(battle.PersistentCounters is not null)State.Counters=new(battle.PersistentCounters);
                 EnsureInventoryInstances();
@@ -463,15 +467,16 @@ public sealed partial class GameEnvironment(RulesManifest rules)
     }
     private void ApplyPurchaseBuffs(Unit bought)
     {
-        var consumed=new List<PurchaseBuff>();
+        var remaining=new List<PurchaseBuff>();
         foreach(var pending in State.PendingPurchaseBuffs)
         {
             var effect=pending.Effect;
-            if(effect.EventType is not null && !_species[bought.SpeciesId].Types.Concat(bought.AddedTypes).Contains(effect.EventType))continue;
+            if(effect.EventType is not null && !_species[bought.SpeciesId].Types.Concat(bought.AddedTypes).Contains(effect.EventType))
+            {remaining.Add(pending);continue;}
             if(effect.Type is not null)PersistentEffect(bought,effect with {Operation=Operation.AddType,Target=Target.Self});
-            PersistentEffect(bought,effect with {Operation=Operation.Add,Target=Target.Self,Type=null});consumed.Add(pending);
+            PersistentEffect(bought,effect with {Operation=Operation.Add,Target=Target.Self,Type=null});
         }
-        State.PendingPurchaseBuffs=State.PendingPurchaseBuffs.Except(consumed).ToArray();
+        State.PendingPurchaseBuffs=remaining.ToArray();
     }
     private LevelDefinition Definition(Unit unit) => LevelRules.Resolve(_species[unit.SpeciesId],unit.Level,unit.Shiny);
     private double[] UnitStats(Unit unit) => Definition(unit).Stats

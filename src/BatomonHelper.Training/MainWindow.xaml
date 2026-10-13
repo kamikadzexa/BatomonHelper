@@ -19,16 +19,22 @@
    <TabItem Header="Training"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="16">
     <WrapPanel>
      <StackPanel Width="160"><TextBlock Text="Device"/><ComboBox x:Name="Device" SelectedIndex="0"><ComboBoxItem Content="auto"/><ComboBoxItem Content="cpu"/><ComboBoxItem Content="cuda"/></ComboBox></StackPanel>
-     <StackPanel Width="120"><TextBlock Text="Workers"/><TextBox x:Name="Workers" Text="12"/></StackPanel>
-     <StackPanel Width="150"><TextBlock Text="Environments"/><TextBox x:Name="Environments" Text="256"/></StackPanel>
-     <StackPanel Width="150"><TextBlock Text="Seed"/><TextBox x:Name="Seed" Text="42"/></StackPanel>
+     <StackPanel Width="120"><TextBlock Text="Worker ceiling"/><TextBox x:Name="Workers" Text="16"/></StackPanel>
+     <StackPanel Width="150"><TextBlock Text="Environment ceiling"/><TextBox x:Name="Environments" Text="1024"/></StackPanel>
+     <StackPanel Width="140"><TextBlock Text="PPO batch ceiling"/><TextBox x:Name="Minibatch" Text="2048"/></StackPanel>
+     <StackPanel Width="150"><TextBlock Text="Seed"/><TextBox x:Name="Seed" Text="69"/></StackPanel>
      <StackPanel Width="160"><TextBlock Text="Minutes (0 = until stopped)"/><TextBox x:Name="Minutes" Text="0"/></StackPanel>
+     <CheckBox x:Name="AutoCalibrate" IsChecked="True" Content="Auto-calibrate new sessions" Foreground="#EAF0F6" VerticalAlignment="Center" Margin="8,18,0,0"/>
     </WrapPanel>
     <TextBlock Text="Output directory"/><TextBox x:Name="Output" Text="{Binding OutputDirectory, Mode=OneWay}"/>
-    <WrapPanel Margin="0,10,0,12"><Button Content="Start" Click="Start"/><Button Content="Pause" Click="Pause"/><Button Content="Resume" Click="Resume"/><Button Content="Stop and save" Click="Stop"/><Button Content="Evaluate" Click="Evaluate"/><Button Content="Export" Click="Export"/></WrapPanel>
+    <WrapPanel Margin="0,10,0,12"><Button Content="Start" Click="Start"/><Button Content="Pause" Click="Pause"/><Button Content="Resume" Click="Resume"/><Button Content="Stop and save" Click="Stop"/><Button Content="Evaluate current" Click="Evaluate"/><Button Content="Rank generations" Click="RankGenerations"/><Button Content="Export current" Click="Export"/><Button Content="Export selected" Click="ExportSelected"/></WrapPanel>
     <Border Background="#203246" CornerRadius="6" Padding="18"><StackPanel><TextBlock Text="{Binding Progress}" FontSize="18" TextWrapping="Wrap"/><TextBlock Text="{Binding Checkpoint}" Foreground="#A7BBD0" Margin="0,10" TextWrapping="Wrap"/>
      <Polyline Points="{Binding Curve}" Stroke="#8DDABF" StrokeThickness="2" Height="110" Stretch="Fill" Margin="0,10"/><TextBlock Text="Ten-win success rate over completed updates" Foreground="#A7BBD0"/>
     </StackPanel></Border>
+    <TextBlock Text="Generation performance (complete counters, not retained-history samples)" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
+    <DataGrid ItemsSource="{Binding GenerationResults}" AutoGenerateColumns="True" MaxHeight="220"/>
+    <TextBlock Text="Fixed evaluation leaderboard" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
+    <DataGrid x:Name="RankingList" ItemsSource="{Binding RankingResults}" AutoGenerateColumns="True" MaxHeight="260"/>
     <TextBlock Text="Trainer results" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
     <DataGrid ItemsSource="{Binding TrainerResults}" AutoGenerateColumns="True" MaxHeight="250"/>
     <Expander Header="Rules coverage" Foreground="#EAF0F6" Margin="0,18"><DataGrid ItemsSource="{Binding Issues}" AutoGenerateColumns="True" Height="280"/></Expander>
@@ -43,7 +49,7 @@
    </StackPanel></ScrollViewer></TabItem>
    <TabItem Header="History"><Grid Margin="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
     <WrapPanel>
-     <StackPanel Width="150"><TextBlock Text="View"/><ComboBox x:Name="HistoryView" SelectedIndex="0"><ComboBoxItem Content="Recent runs"/><ComboBoxItem Content="Best runs"/></ComboBox></StackPanel>
+     <StackPanel Width="230"><TextBlock Text="View"/><ComboBox x:Name="HistoryView" SelectedIndex="0"><ComboBoxItem Content="Recent runs"/><ComboBoxItem Content="Best examples (curated, not performance)"/></ComboBox></StackPanel>
      <StackPanel Width="85"><TextBlock Text="Generation"/><TextBox x:Name="GenerationFilter"/></StackPanel>
      <StackPanel Width="85"><TextBlock Text="Policy"/><TextBox x:Name="PolicyFilter"/></StackPanel>
      <StackPanel Width="170"><TextBlock Text="Trainer ID"/><TextBox x:Name="TrainerFilter"/></StackPanel>

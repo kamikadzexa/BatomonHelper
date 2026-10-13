@@ -26,7 +26,7 @@ public sealed class HistoryStore : IAsyncDisposable
             PRAGMA journal_mode=WAL;
             CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, generation INTEGER, policy INTEGER,
                 trainer TEXT, wins INTEGER, lives INTEGER, days INTEGER, success INTEGER, evaluation INTEGER,
-                completed TEXT, rules_hash TEXT, pinned INTEGER NOT NULL DEFAULT 0);
+                completed TEXT, rules_hash TEXT, snapshot_update INTEGER NOT NULL DEFAULT -1, evaluation_batch TEXT, pinned INTEGER NOT NULL DEFAULT 0);
             CREATE INDEX IF NOT EXISTS recent_runs ON runs(completed DESC);
             CREATE INDEX IF NOT EXISTS generation_runs ON runs(generation,wins DESC,lives DESC,days,id);
             """; command.ExecuteNonQuery();
@@ -60,15 +60,18 @@ public sealed class HistoryStore : IAsyncDisposable
                     File.Move(staged,path,true);
                     using var c=Connect(); using var cmd=c.CreateCommand();
                     cmd.CommandText="""
-                        INSERT INTO runs VALUES($id,$generation,$policy,$trainer,$wins,$lives,$days,$success,$evaluation,$completed,$hash,0)
+                        INSERT INTO runs(id,generation,policy,trainer,wins,lives,days,success,evaluation,completed,rules_hash,snapshot_update,evaluation_batch,pinned)
+                        VALUES($id,$generation,$policy,$trainer,$wins,$lives,$days,$success,$evaluation,$completed,$hash,$snapshot,$batch,0)
                         ON CONFLICT(id) DO UPDATE SET generation=excluded.generation,policy=excluded.policy,trainer=excluded.trainer,
                             wins=excluded.wins,lives=excluded.lives,days=excluded.days,success=excluded.success,
-                            evaluation=excluded.evaluation,completed=excluded.completed,rules_hash=excluded.rules_hash;
+                            evaluation=excluded.evaluation,completed=excluded.completed,rules_hash=excluded.rules_hash,
+                            snapshot_update=excluded.snapshot_update,evaluation_batch=excluded.evaluation_batch;
                         """;
                     var s=record.Summary;
                     foreach(var (key,value) in new (string,object)[] {("id",s.RunId),("generation",s.Generation),("policy",s.Policy),("trainer",s.Trainer),
                         ("wins",s.Wins),("lives",s.Lives),("days",s.Days),("success",s.Success),("evaluation",s.Evaluation),("completed",s.CompletedAt.ToString("O")),("hash",s.RulesHash)})
                         cmd.Parameters.AddWithValue("$"+key,value);
+                    cmd.Parameters.AddWithValue("$snapshot",s.SnapshotUpdate);cmd.Parameters.AddWithValue("$batch",(object?)s.EvaluationBatch??DBNull.Value);
                     cmd.ExecuteNonQuery(); Prune(); Interlocked.Increment(ref _committed);
                 }
                 finally { if(File.Exists(staged)) File.Delete(staged); }
@@ -79,7 +82,7 @@ public sealed class HistoryStore : IAsyncDisposable
     public RunSummary[] List(bool best=false,int? generation=null,int? policy=null,string? trainer=null,bool? success=null,bool? evaluation=null)
     {
         using var c=Connect(); using var cmd=c.CreateCommand();
-        cmd.CommandText="SELECT * FROM runs WHERE ($generation IS NULL OR generation=$generation) AND ($policy IS NULL OR policy=$policy) " +
+        cmd.CommandText="SELECT id,generation,policy,trainer,wins,lives,days,success,evaluation,completed,rules_hash,pinned,snapshot_update,evaluation_batch FROM runs WHERE ($generation IS NULL OR generation=$generation) AND ($policy IS NULL OR policy=$policy) " +
             "AND ($trainer IS NULL OR trainer=$trainer) AND ($success IS NULL OR success=$success) AND ($evaluation IS NULL OR evaluation=$evaluation) ORDER BY "+
             (best?"wins DESC,lives DESC,days,id":"completed DESC,id")+" LIMIT 1000";
         cmd.Parameters.AddWithValue("$generation",(object?)generation??DBNull.Value); cmd.Parameters.AddWithValue("$policy",(object?)policy??DBNull.Value);
@@ -87,7 +90,7 @@ public sealed class HistoryStore : IAsyncDisposable
         cmd.Parameters.AddWithValue("$evaluation",(object?)evaluation??DBNull.Value);
         using var reader=cmd.ExecuteReader(); var result=new List<RunSummary>();
         while(reader.Read()) result.Add(new(reader.GetString(0),reader.GetInt32(1),reader.GetInt32(2),reader.GetString(3),reader.GetInt32(4),reader.GetInt32(5),reader.GetInt32(6),
-            reader.GetBoolean(7),reader.GetBoolean(8),DateTimeOffset.Parse(reader.GetString(9),System.Globalization.CultureInfo.InvariantCulture),reader.GetString(10),reader.GetBoolean(11)));
+            reader.GetBoolean(7),reader.GetBoolean(8),DateTimeOffset.Parse(reader.GetString(9),System.Globalization.CultureInfo.InvariantCulture),reader.GetString(10),reader.GetBoolean(11),reader.GetInt32(12),reader.IsDBNull(13)?null:reader.GetString(13)));
         return result.ToArray();
     }
     public async Task<RunRecord> LoadAsync(string id,CancellationToken token=default)
@@ -125,7 +128,7 @@ public sealed class HistoryStore : IAsyncDisposable
         cmd.CommandText="""
             SELECT id FROM runs WHERE pinned=0 AND id NOT IN (SELECT id FROM runs ORDER BY completed DESC,id LIMIT $recent)
             AND id NOT IN (SELECT id FROM (
-                SELECT id,generation,ROW_NUMBER() OVER(PARTITION BY generation ORDER BY wins DESC,lives DESC,days,id) AS ordinal FROM runs
+                SELECT id,generation,ROW_NUMBER() OVER(PARTITION BY generation,evaluation ORDER BY wins DESC,lives DESC,days,id) AS ordinal FROM runs
                 WHERE generation IN (SELECT DISTINCT generation FROM runs ORDER BY generation DESC LIMIT $generations)) WHERE ordinal<=$best);
             """;
         cmd.Parameters.AddWithValue("$recent",_recent); cmd.Parameters.AddWithValue("$generations",_generations); cmd.Parameters.AddWithValue("$best",_best);

@@ -20,6 +20,45 @@ public sealed class PurchaseAbilityTests
     private static void Offer(GameEnvironment env, string id, int index, long instance) => env.State.Shop[index] = new(new() { SpeciesId = id, Instance = instance }, null, 10);
 
     [Theory]
+    [InlineData("Give the next Flying monster you buy +2 Multicast. Lost if sold.",false)]
+    [InlineData("Give the next monster you buy Toxic typing and +8 Poison. Lost if sold.",true)]
+    public void Bought_abilities_retriggered_in_combat_queue_purchase_bonuses_until_an_eligible_purchase(string text,bool toxic)
+    {
+        var basis=Fixture(text);
+        var activator=basis.Species[1] with {Id="activator",MergeGroup="activator",Normal=basis.Species[1].Normal.Select(x=>x with {
+            Effects=[new(Trigger.BattleStart,Operation.ActivateAbility,Target.Above,Amount:2,SubjectTrigger:Trigger.Bought)]}).ToArray()};
+        var rules=basis with {Species=[..basis.Species,activator]};
+        foreach(var sell in new[]{false,true})
+        {
+            var env=Ready(rules);Offer(env,"actor",0,100);env.Step(new(Move.Buy,0,0));
+            env.State.Units[3]=new(){SpeciesId="activator",Instance=200};
+            var frozen=FrozenBoard.From(env.State);var serialized=JsonSerializer.Serialize(frozen);
+            var optimized=new Combat(rules).ResolveBattle(frozen,frozen,123);
+            var reference=new Combat(rules).ResolveBattle(frozen,frozen,123,reference:true);
+            Assert.Equal(2,optimized.PendingPurchaseBuffs!.Length);
+            Assert.Equal(optimized.PendingPurchaseBuffs,reference.PendingPurchaseBuffs);
+            Assert.Equal(serialized,JsonSerializer.Serialize(frozen));
+            var battle=env.Step(new(Move.Finish),b=>b);
+            Assert.Equal(2,battle.Battle!.PendingPurchaseBuffs!.Length);
+            Assert.Equal(3,env.State.PendingPurchaseBuffs.Length); // One purchase plus two combat activations.
+            Assert.Equal(0,env.State.Units[0]!.Bonuses[toxic?4:7]);
+            var restored=new GameEnvironment(rules);restored.Restore(env.State);
+            foreach(var run in new[]{env,restored})
+            {
+                if(sell)run.Step(new(Move.Sell,0));
+                if(!toxic && !sell){Offer(run,"plain",1,300);run.Step(new(Move.Buy,1,1));Assert.Equal(3,run.State.PendingPurchaseBuffs.Length);}
+                Offer(run,toxic?"plain":"flying",2,301);run.Step(new(Move.Buy,2,2));
+                Assert.Equal(sell?0:toxic?24:6,run.State.Units[2]!.Bonuses[toxic?4:7]);
+                if(toxic)Assert.Equal(sell?[]:new[]{"toxic"},run.State.Units[2]!.AddedTypes);
+                Assert.Empty(run.State.PendingPurchaseBuffs);
+                Offer(run,toxic?"plain":"flying",4,302);run.Step(new(Move.Buy,4,4));
+                Assert.Equal(0,run.State.Units[4]!.Bonuses[toxic?4:7]);
+            }
+            Assert.Equal(JsonSerializer.Serialize(env.State),JsonSerializer.Serialize(restored.State));
+        }
+    }
+
+    [Theory]
     [InlineData("Give all monsters in the shop +5 Damage for the rest of the run.", Trigger.Bought, Target.Shop)]
     [InlineData("Give all monsters in the shop, on your team, and on your bench +5 Damage for the rest of the run.", Trigger.Bought, Target.ShopAndAll)]
     [InlineData("Give Toxic monsters in the shop and on your team +2 Poison for the rest of the run.", Trigger.Bought, Target.ShopAndTeam)]
