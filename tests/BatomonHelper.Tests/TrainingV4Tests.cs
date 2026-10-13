@@ -74,6 +74,26 @@ public sealed class TrainingV4Tests
         Assert.Throws<InvalidOperationException>(()=>league.Pick(2,1,true));
     }
     [Fact]
+    public void Targeted_items_require_an_eligible_table_or_bench_creature()
+    {
+        var basis=RuleCompiler.Fixture();
+        var heal=new InventoryDefinition("water-heal","Water heal",0,false,1,
+            [new(Trigger.Bought,Operation.Add,Target.All,Stat.Heal,10,Type:"water")],"fixture","Give Water monsters +10 Heal.");
+        var rules=basis with {Items=[heal]};var env=new GameEnvironment(rules);env.Reset(3,"fixture");
+        Assert.Null(env.State.Shop[4]!.ItemId);
+        env.State.Units[6]=new(){SpeciesId="striker",AddedTypes=["water"]};env.Step(new(Move.Reroll));
+        Assert.Equal("water-heal",env.State.Shop[4]!.ItemId);
+    }
+    [Fact]
+    public void Turn_cap_ends_runs_after_the_last_turn_even_when_the_target_is_not_met()
+    {
+        var basis=RuleCompiler.Fixture();var rules=basis with {Parameters=basis.Parameters with {TurnCap=2}};
+        var env=new GameEnvironment(rules);env.Reset(9,"fixture");
+        env.State.Day=2;env.State.Phase=Phase.Shop;
+        var result=env.Step(new(Move.Finish),b=>b);Assert.True(result.Terminal);Assert.Equal(Phase.Complete,env.State.Phase);
+        Assert.Equal(0,env.GetObservation().TurnsRemaining);
+    }
+    [Fact]
     public void User_session_replays_resumes_deduplicates_and_rejects_tampering()
     {
         var rules=RuleCompiler.Fixture();var directory=Path.Combine(Path.GetTempPath(),Guid.NewGuid().ToString("N"));

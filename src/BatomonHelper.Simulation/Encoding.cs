@@ -50,7 +50,7 @@ public sealed class PolicyEncoding
     public float[] Observation(Observation observation,int decisions=0,int limit=64,ShopTurnMemory? memory=null)
     {
         var result=new float[ObservationWidth]; var n=0;
-        foreach(var value in new double[] {observation.Day/20d,observation.Lives/10d,observation.Wins/10d,observation.Gold/100d,
+        foreach(var value in new double[] {observation.Day/20d,observation.TurnsRemaining/Math.Max(1,rules.Parameters.EffectiveTurnCap),observation.Wins/10d,observation.Gold/100d,
             observation.MaxHp/1000d,observation.Rank/14d,observation.FreeRerolls/10d,observation.ItemUses/5d,observation.MaximumItemUses/5d,
             observation.Locked?1:0,(int)observation.Phase/6d,observation.Choices.Length/10d,observation.Overflow is null?0:1,
             observation.Counters?.GetValueOrDefault("next-battle-start-repeat")??0,

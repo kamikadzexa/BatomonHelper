@@ -192,7 +192,7 @@ while(await Console.In.ReadLineAsync() is { } line)
                     if(results[i].Terminal)
                     {
                         var state=environments[i].State;
-                        var summary=new RunSummary($"{(initialEvaluation?"initial-":"")}{sessionId}-{baseSeed:X16}-{i}-{episodes[i]}",evaluation&&snapshotGeneration>=0?snapshotGeneration:initialEvaluation?0:generation,i%4,state.Trainer,state.Wins,Math.Max(0,state.Lives),state.Day,
+                        var summary=new RunSummary($"{(initialEvaluation?"initial-":"")}{sessionId}-{baseSeed:X16}-{i}-{episodes[i]}",evaluation&&snapshotGeneration>=0?snapshotGeneration:initialEvaluation?0:generation,i%4,state.Trainer,state.Wins,Math.Max(0,rules.Parameters.EffectiveTurnCap-state.Day),state.Day,
                             state.Wins>=rules.Parameters.WinTarget,evaluation,DateTimeOffset.UtcNow,rules.Hash,false,snapshotUpdate,evaluationBatch,evaluation?scenarioIds[i]:null,startingRanks[i],startingWins[i]);
                         saved[i]=new(summary,records[i].ToArray());
                         if(evaluation){scenarioIds[i]+=count;if(scenarioIds[i]>=evaluationRuns)active[i]=false;else Reset(i);}

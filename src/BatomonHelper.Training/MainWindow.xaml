@@ -22,9 +22,9 @@
    </Border>
   </DataTemplate>
   <DataTemplate x:Key="PlayActionButton">
-   <Button Content="{Binding Description}" Tag="{Binding Action}" Click="PlayActionButtonClick"
-           Margin="3" Padding="10,7" MinWidth="132" MaxWidth="260" Background="#29445A" Foreground="#EAF0F6"
-           BorderBrush="#4F708C" BorderThickness="1" ToolTip="{Binding Description}"/>
+   <Button Tag="{Binding Action}" Click="PlayActionButtonClick" Margin="3" Padding="10,7" MinWidth="132" MaxWidth="310" Background="#29445A" Foreground="#EAF0F6" BorderBrush="#4F708C" BorderThickness="1" ToolTip="{Binding Description}">
+    <StackPanel Orientation="Horizontal"><Image Source="{Binding Icon}" Width="28" Height="28" Margin="0,0,7,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/><TextBlock Text="{Binding Description}" TextWrapping="Wrap" MaxWidth="250"/></StackPanel>
+   </Button>
   </DataTemplate>
  </Window.Resources>
  <Grid Margin="18" Background="#101D2A"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
@@ -53,6 +53,8 @@
     <DataGrid ItemsSource="{Binding GenerationResults}" AutoGenerateColumns="True" MaxHeight="220"/>
     <TextBlock Text="Fixed evaluation leaderboard" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
     <DataGrid x:Name="RankingList" ItemsSource="{Binding RankingResults}" AutoGenerateColumns="True" MaxHeight="260"/>
+    <TextBlock Text="Current policy vs saved user-session boards" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
+    <DataGrid ItemsSource="{Binding UserSessionComparisons}" AutoGenerateColumns="True" MaxHeight="110"/>
     <TextBlock Text="Trainer results" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
     <DataGrid ItemsSource="{Binding TrainerResults}" AutoGenerateColumns="True" MaxHeight="250"/>
     <Expander Header="Rules coverage" Foreground="#EAF0F6" Margin="0,18"><DataGrid ItemsSource="{Binding Issues}" AutoGenerateColumns="True" Height="280"/></Expander>
@@ -77,7 +79,7 @@
     </WrapPanel>
     <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="490"/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
      <DataGrid x:Name="RunList" ItemsSource="{Binding Runs}" SelectionChanged="SelectRun" AutoGenerateColumns="False" HeadersVisibility="Column">
-      <DataGrid.Columns><DataGridTextColumn Header="Gen" Binding="{Binding Generation}" Width="40"/><DataGridTextColumn Header="Policy" Binding="{Binding Policy}" Width="45"/><DataGridTextColumn Header="Trainer" Binding="{Binding Trainer}" Width="155"/><DataGridTextColumn Header="Wins" Binding="{Binding Wins}" Width="45"/><DataGridTextColumn Header="Lives" Binding="{Binding Lives}" Width="45"/><DataGridTextColumn Header="Days" Binding="{Binding Days}" Width="40"/><DataGridTextColumn Header="Outcome" Binding="{Binding Outcome}" Width="65"/><DataGridCheckBoxColumn Header="Eval" Binding="{Binding Evaluation}" Width="40"/></DataGrid.Columns>
+     <DataGrid.Columns><DataGridTextColumn Header="Gen" Binding="{Binding Generation}" Width="40"/><DataGridTextColumn Header="Policy" Binding="{Binding Policy}" Width="45"/><DataGridTextColumn Header="Trainer" Binding="{Binding Trainer}" Width="155"/><DataGridTextColumn Header="Wins" Binding="{Binding Wins}" Width="45"/><DataGridTextColumn Header="Turns left" Binding="{Binding TurnsRemaining}" Width="70"/><DataGridTextColumn Header="Days" Binding="{Binding Days}" Width="40"/><DataGridTextColumn Header="Outcome" Binding="{Binding Outcome}" Width="65"/><DataGridCheckBoxColumn Header="Eval" Binding="{Binding Evaluation}" Width="40"/></DataGrid.Columns>
      </DataGrid>
      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto"><StackPanel>
       <TextBlock Text="{Binding SelectedRunLabel}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="4,0,0,10"/>
@@ -104,7 +106,7 @@
     <ItemsControl ItemsSource="{Binding PlayTeam}" ItemTemplate="{StaticResource PlayCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
     <TextBlock Text="BENCH · slots 7–10" FontWeight="SemiBold" Margin="0,8,0,0"/>
     <ItemsControl ItemsSource="{Binding PlayBench}" ItemTemplate="{StaticResource PlayCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
-    <TextBlock Text="SHOP · click an offer to buy; choose a slot if needed" FontWeight="SemiBold" Margin="0,8,0,0"/>
+    <TextBlock Text="SHOP · icons identify creatures and usable items; click an offer to buy" FontWeight="SemiBold" Margin="0,8,0,0"/>
     <ItemsControl ItemsSource="{Binding PlayShop}" ItemTemplate="{StaticResource PlayCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="5"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
     <TextBlock Text="{Binding PlayInventory}" TextWrapping="Wrap" Margin="4,10"/>
     <Border Background="#182B3B" BorderBrush="#3D5A70" BorderThickness="1" CornerRadius="7" Padding="10" Margin="0,4,0,12">
@@ -117,7 +119,7 @@
    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"><StackPanel Margin="12,4,0,4">
     <TextBlock Text="Play session" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8"/>
     <Border Background="#182B3B" BorderBrush="#3D5A70" BorderThickness="1" CornerRadius="7" Padding="10" Margin="0,0,0,12">
-     <StackPanel><TextBlock Text="How to play" FontWeight="SemiBold"/><TextBlock Text="Click a shop card to buy it; if several slots are open, click the empty destination. Drag a team or bench card onto another slot to move or swap it. Merging is automatic when the required matching creatures are on the team or bench. Use the buttons beneath the board for selling, rerolling, locking, rewards, and battle." TextWrapping="Wrap" Foreground="#A7BBD0" Margin="0,6,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="How to play" FontWeight="SemiBold"/><TextBlock Text="Click a shop card to buy it; if several slots are open, click the empty destination. Drag a team or bench card onto another slot to move or swap it. Merging is automatic when the required matching creatures are on the team or bench. Event and reward buttons explain their effects before you choose. Every session runs to the turn cap—losses do not remove lives." TextWrapping="Wrap" Foreground="#A7BBD0" Margin="0,6,0,0"/></StackPanel>
     </Border>
     <TextBlock Text="Battle result" FontWeight="SemiBold" Margin="0,2,0,4"/><TextBlock Text="{Binding PlayResult}" TextWrapping="Wrap" Foreground="#8DDABF" Margin="0,0,0,14"/>
     <TextBlock Text="Your saved sessions · boards are used only as opponents" FontWeight="SemiBold" Margin="0,18,0,8"/>

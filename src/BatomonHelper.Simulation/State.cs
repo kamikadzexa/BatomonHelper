@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BatomonHelper.Simulation;
 
@@ -48,10 +49,11 @@ public sealed record RulesManifest(string Build, string Balance, string Version,
     }
 }
 public sealed record RunParameters(double InitialGold, double[] DailyIncome, double[] DailyHp,
-    int InitialLives = 10, int WinTarget = 10, bool Verified = false, bool AllowGuesses = false,
+    int TurnCap = 0, int WinTarget = 10, bool Verified = false, bool AllowGuesses = false,
     ValueEvidence[]? HpEvidence = null,ValueEvidence[]? IncomeEvidence = null)
 {
-    public bool Usable => (Verified || AllowGuesses) && DailyIncome.Length>0 && DailyHp.Length==DailyIncome.Length;
+    public int EffectiveTurnCap => TurnCap>0?TurnCap:Math.Min(DailyIncome.Length,DailyHp.Length);
+    public bool Usable => (Verified || AllowGuesses) && EffectiveTurnCap>0 && DailyIncome.Length>=EffectiveTurnCap && DailyHp.Length>=EffectiveTurnCap;
 }
 public sealed record SimAction(Move Kind, int Source = -1, int Target = -1, int Choice = -1);
 
@@ -96,7 +98,8 @@ public sealed class RunState
 {
     public string RunId { get; set; } = "";
     public int Day { get; set; } = 1;
-    public int Lives { get; set; } = 10;
+    [JsonIgnore]
+    public int Lives { get => 0; set { } }
     public int Wins { get; set; }
     public double Gold { get; set; }
     public double MaxHp { get; set; }
@@ -130,7 +133,7 @@ public sealed class RunState
     public string? CurrentEvent { get; set; }
     public PurchaseBuff[] PendingPurchaseBuffs { get; set; } = [];
     public RunState Clone() => new() {
-        RunId=RunId,Day=Day,Lives=Lives,Wins=Wins,Gold=Gold,MaxHp=MaxHp,Rank=Rank,Trainer=Trainer,
+        RunId=RunId,Day=Day,Wins=Wins,Gold=Gold,MaxHp=MaxHp,Rank=Rank,Trainer=Trainer,
         Units=Units.Select(x=>x?.Clone()).ToArray(),Shop=Shop.Select(x=>x is null?null:x with {Creature=x.Creature?.Clone()}).ToArray(),
         Bag=[..Bag],ExtraTrainers=[..ExtraTrainers],ForeignPool=[..ForeignPool],Counters=new(Counters),
         Locked=Locked,CarryShop=CarryShop,SecondChanceUsed=SecondChanceUsed,FreeRerolls=FreeRerolls,ItemUses=ItemUses,MaximumItemUses=MaximumItemUses,
@@ -141,10 +144,14 @@ public sealed class RunState
     };
     internal static Choice CopyChoice(Choice x)=>x with {Effects=[..x.Effects]};
 }
-public sealed record Observation(int Day, int Lives, int Wins, double Gold, double MaxHp, int Rank,
+public sealed record Observation(int Day, int TurnsRemaining, int Wins, double Gold, double MaxHp, int Rank,
     string Trainer, Unit?[] Units, Offer?[] Shop, BagEntry[] Bag, string[] ExtraTrainers,
     bool Locked, int FreeRerolls, int ItemUses, int MaximumItemUses, Phase Phase, Choice[] Choices, Unit? Overflow,
-    Dictionary<string, double>? Counters = null, VisibleRunState? VisibleState = null);
+    Dictionary<string, double>? Counters = null, VisibleRunState? VisibleState = null)
+{
+    [JsonIgnore]
+    public int Lives => 0;
+}
 public sealed record VisibleRunState(string[] ForeignPool,bool CarryShop,bool SecondChanceUsed,Unit[] PendingUnits,
     bool TakeAllChoices,Effect[] PendingShopEffects,PurchaseBuff[] PendingPurchaseBuffs,bool PendingShopStart,Phase ActiveChoicePhase,string? CurrentEvent);
 public sealed record FrozenBoard(int Day, double MaxHp, string Trainer, Unit?[] Team, BagEntry[] Bag, string[] ExtraTrainers,
@@ -159,9 +166,9 @@ public sealed record BattleResult(bool PlayerWon, bool BothDefeated, double Seco
 public sealed record StepResult(Observation Observation, double Reward, bool Terminal, BattleResult? Battle = null,
     DayRecord? DayRecord = null);
 public sealed record DayRecord(int Day, Observation BeforeBattle, FrozenBoard Opponent, BattleResult Result,
-    int WinsAfter, int LivesAfter, string[] Choices);
+    int WinsAfter, int TurnsRemainingAfter, string[] Choices);
 public sealed record RunSummary(string RunId, int Generation, int Policy, string Trainer, int Wins,
-    int Lives, int Days, bool Success, bool Evaluation, DateTimeOffset CompletedAt, string RulesHash, bool Pinned = false,
+    int TurnsRemaining, int Days, bool Success, bool Evaluation, DateTimeOffset CompletedAt, string RulesHash, bool Pinned = false,
     int SnapshotUpdate = -1, string? EvaluationBatch = null,long? ScenarioId=null,int StartingRank=1,int StartingWins=0)
 {
     public string Outcome => Success?"Success":"Failure";

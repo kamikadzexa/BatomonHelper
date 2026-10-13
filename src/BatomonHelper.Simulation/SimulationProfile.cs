@@ -41,11 +41,11 @@ public sealed record SimulationProfile(ProgressionPoint[] Observations,EventSche
         var hp=Table(x=>x.Hp,"base team HP");
         var income=Enumerable.Range(1,ScheduleDays).Select(day=>new ValueEvidence(day,points[0].Income+5*(day-1),EvidenceKind.UserProvided,
             "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations.")).ToArray();
-        var parameters=new RunParameters(points[0].Income,income.Select(x=>x.Value).ToArray(),hp.Select(x=>x.Value).ToArray(),
+        var parameters=new RunParameters(points[0].Income,income.Select(x=>x.Value).ToArray(),hp.Select(x=>x.Value).ToArray(),TurnCap:ScheduleDays,
             Verified:hp.All(x=>x.Kind!=EvidenceKind.Guessed) && income.All(x=>x.Kind!=EvidenceKind.Guessed),
             AllowGuesses:AllowGuesses,HpEvidence:hp,IncomeEvidence:income);
         var evidence=new List<RuleEvidence>{
-            new("starting-hp",EvidenceKind.UserProvided,points[0].Hp.ToString(System.Globalization.CultureInfo.InvariantCulture),"Starting life in the user's table is interpreted as shared team HP; run lives remain 10.","User message"),
+            new("turn-cap",EvidenceKind.UserProvided,ScheduleDays.ToString(System.Globalization.CultureInfo.InvariantCulture),"Runs always simulate through the configured turn cap; battle losses do not end a run.","User message"),
             new("starting-gold",EvidenceKind.UserProvided,points[0].Income.ToString(System.Globalization.CultureInfo.InvariantCulture),"Starting gold is granted once; later daily values are added to unspent gold.","User message"),
             new("event-schedule",EvidenceKind.UserProvided,string.Join(", ",Events.Select(x=>$"day {x.Day}: tier {x.Tier}")),"Normal scheduled events are distinct from Second Chance.","User message"),
             new("shared-rarity-odds",EvidenceKind.UserProvided,SharedRarityOdds.ToString(),"Ordinary item and trinket rarity draws use the same final shop odds as creatures; explicit reward rarities stay explicit.","User message"),
@@ -55,7 +55,7 @@ public sealed record SimulationProfile(ProgressionPoint[] Observations,EventSche
             new("battle-start-order",EvidenceKind.Guessed,"player before opponent; inventory/trainer effects before creatures, slots 0–5","A deterministic ordering for unspecified start-effect interactions. Documented player-first queued casts are preserved.","Authorized guess"),
             new("event-weights",EvidenceKind.Guessed,"uniform within eligible tier","Fully unlocked Pantra excludes Oshima-only and endless events; special events use their own conditions.","Authorized guess"),
             new("foreign-pool",EvidenceKind.Guessed,"foreign regional base species, non-egg, non-event, rarity <= Legendary","Use catalog region/base-species metadata rather than stale narrative pool counts.","Authorized guess"),
-            new("item-eligibility",EvidenceKind.Guessed,"allow rarity-eligible items even when no target is present","Explicit shop effects can suppress items. A targetless item effect can resolve without changing a creature.","Authorized guess"),
+            new("item-eligibility",EvidenceKind.UserProvided,"offer only items with an eligible current table or bench target","Targeted items are excluded when no qualifying creature is owned; targetless items remain eligible.","User message"),
             new("price-rounding",EvidenceKind.Guessed,PriceRounding,"Round percentage-discount prices using the configured policy.","Authorized guess"),
             new("normal-event-order",EvidenceKind.Guessed,"choose event and nested rewards before generating the day's shop","Do not expose unrolled shop randomness while choosing an event.","Authorized guess"),
             new("transform-pool",EvidenceKind.Guessed,"active regional pool, preserving identity, levels, shiny flag and persistent state","Foreign event grants admit the obtained species to later shops. A missing shiny form uses normal level data.","Authorized guess"),

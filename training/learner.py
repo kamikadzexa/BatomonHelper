@@ -661,7 +661,7 @@ def export(config):
 
 def encoding_metadata(rules,version=ENCODING):
     """Describe every existing column, including padding, without claiming missing game inputs are encoded."""
-    headers=['day','lives','wins','gold','max_hp','rank','free_rerolls','item_uses','maximum_item_uses',
+    headers=['day','turns_remaining','wins','gold','max_hp','rank','free_rerolls','item_uses','maximum_item_uses',
              'locked','phase','choice_count','overflow_present','next_battle_start_repeat','next_victory_gold','next_copy_enemy']
     entity=['species_id','level','shiny','copies','base_cooldown','damage','heal','shield','burn','poison','shock',
             'speed','multicast','sell_value','rarity','added_types_bitmask','shop_item_id','shop_price']

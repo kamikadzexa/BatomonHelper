@@ -11,6 +11,8 @@ public sealed partial class GameEnvironment(RulesManifest rules)
     private readonly bool _hasOwnedShopTraits=rules.Species.Any(s=>s.Normal.Concat(s.Shiny).Any(l=>l.Effects.Any(e=>e.Operation==Operation.ShopModifier)));
     private SeedStream _random=new(1);
     public RunState State { get; private set; } = new();
+    private int TurnsRemaining() => State.Phase==Phase.Complete?0:Math.Max(0,rules.Parameters.EffectiveTurnCap-State.Day+1);
+    private int TurnsRemainingAfterBattle() => Math.Max(0,rules.Parameters.EffectiveTurnCap-State.Day);
     public void Restore(RunState state)
     {
         rules.RequireReady(); _revision++; State=state.Clone(); _random=new(State.RandomState);
@@ -20,7 +22,7 @@ public sealed partial class GameEnvironment(RulesManifest rules)
         rules.RequireReady();
         if(!rules.Trainers.Any(x=>x.Id==trainer)) throw new ArgumentException("Unknown trainer.");
         _revision++; _random=new(seed);
-        State=new() { RunId=$"{seed:X16}-{trainer}",Trainer=trainer,Lives=rules.Parameters.InitialLives,
+        State=new() { RunId=$"{seed:X16}-{trainer}",Trainer=trainer,
             Gold=rules.Parameters.InitialGold,MaxHp=rules.Parameters.DailyHp[0] };
         ApplyTrainerStart(); ActivateInventory(Trigger.DayStart); RollShop(); DrainPendingChoices();State.RandomState=_random.State; return GetObservation();
     }
@@ -29,7 +31,7 @@ public sealed partial class GameEnvironment(RulesManifest rules)
     {
         using var copyTiming=Timings.Copy();
         if(!State.PendingShopStart)RefreshShop();
-        return new(State.Day,State.Lives,State.Wins,State.Gold,State.MaxHp,State.Rank,
+        return new(State.Day,TurnsRemaining(),State.Wins,State.Gold,State.MaxHp,State.Rank,
         State.Trainer,State.Units.Select(x=>x?.Clone()).ToArray(),State.PendingShopStart?new Offer?[5]:State.Shop.Select(x=>x is null?null:x with { Creature=x.Creature?.Clone() }).ToArray(),
         [..State.Bag],[..State.ExtraTrainers],State.Locked,State.FreeRerolls,State.ItemUses,State.MaximumItemUses,State.Phase,
         State.Choices.Select(x=>x with { Effects=[..x.Effects] }).ToArray(),State.Overflow?.Clone(),new(State.Counters),VisibleState());
@@ -166,17 +168,15 @@ public sealed partial class GameEnvironment(RulesManifest rules)
                     for(var copy=0;copy<gained.Quantity;copy++)foreach(var bench in State.Units.Skip(6).OfType<Unit>())ActivatePersistent(bench,Trigger.TrinketGained);
                 }
                 if(battle.PlayerWon) { State.Wins++; State.Gold+=State.Counters.GetValueOrDefault("next-victory-gold"); }
-                else {var lost=State.Day<=2?1:State.Day<=4?2:3;AddCounter("lives-lost",Math.Min(State.Lives,lost));State.Lives-=lost;}
+                else AddCounter("losses",1);
                 State.Counters.Remove("next-victory-gold"); State.Counters.Remove("next-battle-start-repeat");
                 var copyCount=(int)State.Counters.GetValueOrDefault("next-copy-enemy"); State.Counters.Remove("next-copy-enemy");
                 if(enemy.Team[1] is { } copied) for(var copy=0;copy<copyCount;copy++)
                 { var recruited=copied.Clone(); recruited.Instance=State.NextInstance++; PlaceUnit(recruited); }
-                var secondChance=State.Lives<=0 && !State.SecondChanceUsed;
-                if(secondChance) { State.SecondChanceUsed=true; State.Lives=1; }
-                else State.Lives=Math.Max(0,State.Lives);
-                day=new(State.Day,before,enemy,battle,State.Wins,Math.Max(0,State.Lives),[..State.DayChoices]);
-                if(State.Wins>=rules.Parameters.WinTarget || State.Lives<=0) State.Phase=Phase.Complete;
-                else NextDay(secondChance);
+                day=new(State.Day,before,enemy,battle,State.Wins,TurnsRemainingAfterBattle(),[..State.DayChoices]);
+                // Every episode reaches the configured horizon. Win target is an evaluation objective, not an early exit.
+                if(State.Day>=rules.Parameters.EffectiveTurnCap) State.Phase=Phase.Complete;
+                else NextDay(false);
                 break;
         }
         if(State.Phase!=Phase.Complete) DrainPendingChoices();
@@ -240,14 +240,16 @@ public sealed partial class GameEnvironment(RulesManifest rules)
             var itemTier=Math.Min(5,tier+itemBonus);
             var mythicalChance=TraitSum(ShopTrait.MythicalItemChance);
             if(i==4 && rarity is null && State.ItemUses>0 && !noItems && mythicalChance>0 && _random.Uniform()<Math.Min(1,mythicalChance))itemTier=5;
-            var items=rules.Items.Where(x=>x.Rarity==itemTier).ToArray();
+            var items=rules.Items.Where(x=>x.Rarity==itemTier&&ItemEligible(x)).ToArray();
             var forcedBerry=i==4 && rarity is null && State.ItemUses>0 && !noItems && State.Counters.GetValueOrDefault("forced-berries")>0;
             if(forcedBerry)
             {
-                var berries=rules.Items.Where(x=>x.Id.EndsWith("-berry",StringComparison.Ordinal)).ToArray();
-                var berryTier=berries.Where(x=>x.Rarity<=itemTier).Select(x=>x.Rarity).DefaultIfEmpty(berries.Select(x=>x.Rarity).DefaultIfEmpty(-1).Min()).Max();
-                items=berries.Where(x=>x.Rarity==berryTier).ToArray();
-                if(items.Length==0)throw new InvalidOperationException("No eligible berry item.");
+                var berries=rules.Items.Where(x=>x.Id.EndsWith("-berry",StringComparison.Ordinal)&&ItemEligible(x)).ToArray();
+                if(berries.Length>0){
+                    var berryTier=berries.Where(x=>x.Rarity<=itemTier).Select(x=>x.Rarity).DefaultIfEmpty(berries.Min(x=>x.Rarity)).Max();
+                    items=berries.Where(x=>x.Rarity==berryTier).ToArray();
+                }
+                else forcedBerry=false;
             }
             if(i==4 && rarity is null && State.ItemUses>0 && !noItems && items.Length>0)
             { var item=items[_random.Index(items.Length)]; State.Shop[i]=new(null,item.Id,item.Cost,item.Cost);if(forcedBerry)AddCounter("forced-berries",-1); }
@@ -255,6 +257,29 @@ public sealed partial class GameEnvironment(RulesManifest rules)
         }
         RefreshShop();FinishAdvancedShop();
         State.RandomState=_random.State;
+    }
+    /// <summary>Targeted consumables are only stocked when they can affect an owned creature.
+    /// This includes both the table and bench, while targetless effects stay available.</summary>
+    private bool ItemEligible(InventoryDefinition item) => item.Effects.Length==0||item.Effects.Any(EffectEligibleForOwnedUnit);
+    private bool EffectEligibleForOwnedUnit(Effect effect)
+    {
+        if(effect.Operation is not (Operation.Add or Operation.LevelUp or Operation.Transform or Operation.Shiny)) return true;
+        IEnumerable<Unit> candidates=effect.Target==Target.BottomRight
+            ? State.Units.Skip(5).Take(1).OfType<Unit>()
+            : State.Units.OfType<Unit>();
+        return candidates.Any(unit =>
+        {
+            var species=_species[unit.SpeciesId];
+            var types=species.Types.Concat(unit.AddedTypes);
+            if(effect.Type is not null&&!types.Contains(effect.Type,StringComparer.OrdinalIgnoreCase))return false;
+            if(effect.Rarity is { } rarity&&species.Rarity!=rarity)return false;
+            if(effect.MinimumLevel is { } minimum&&unit.Level<minimum)return false;
+            if(effect.MaximumLevel is { } maximum&&unit.Level>maximum)return false;
+            if(effect.MaximumRarity is { } maximumRarity&&species.Rarity>maximumRarity)return false;
+            if(effect.RequireNoAbility&&Definition(unit).Effects.Length!=0)return false;
+            if(effect.Operation==Operation.Shiny&&unit.Shiny)return false;
+            return true;
+        });
     }
     private void MergeInto(int source,int target)
     {
@@ -357,7 +382,7 @@ public sealed partial class GameEnvironment(RulesManifest rules)
     private void PersistentEffect(Unit? source,Effect effect,double[]? discarded=null)
     {
         if(effect.Scale!=EffectScale.None)effect=effect with {Amount=effect.Amount*EffectScaling.Factor(effect,source,State.Units.Take(6).OfType<Unit>(),State.Bag,
-            _species,UnitStats,lostLives:State.Counters.GetValueOrDefault("lives-lost"),trinkets:_trinkets,wins:State.Wins,
+            _species,UnitStats,lostLives:State.Counters.GetValueOrDefault("losses"),trinkets:_trinkets,wins:State.Wins,
             itemsUsed:State.Counters.GetValueOrDefault("items-used-rarity-"+effect.ScaleRarity)),Scale=EffectScale.None};
         switch(effect.Operation)
         {
@@ -422,10 +447,8 @@ public sealed partial class GameEnvironment(RulesManifest rules)
             case Operation.NextVictoryGold: AddCounter("next-victory-gold",effect.Amount);return;
             case Operation.NextCopyEnemy: AddCounter("next-copy-enemy",effect.Amount);return;
             case Operation.LoseLife:
-                AddCounter("lives-lost",Math.Min(State.Lives,effect.Amount));
-                State.Lives-=(int)effect.Amount;
-                if(State.Lives<=0) {if(State.SecondChanceUsed){State.Lives=0;State.Phase=Phase.Complete;}else {State.Lives=1;State.SecondChanceUsed=true;SecondChance();}}
-                return;
+                // Runs are bounded by turns, not lives. Keep a visible loss counter for legacy effects.
+                AddCounter("losses",effect.Amount);return;
             case Operation.DiscardStats:
                 if(source is null||discarded is null)throw new InvalidOperationException("Discard stats requires the source and discarded shop snapshot.");
                 for(var stat=0;stat<6;stat++)source.Bonuses[stat]+=discarded[stat]*effect.Amount;return;

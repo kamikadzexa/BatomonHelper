@@ -18,6 +18,7 @@ public sealed record HistoryCard(string Name,string Level,string Types,string St
 public sealed record GenerationResult(int Generation,int Runs,double SuccessRate,double AverageWins);
 public sealed record TrainerResult(string Trainer,int Runs,double SuccessRate,double AverageWins);
 public sealed record RankingResult(int Rank,string Label,int Update,int Generation,int Runs,double SuccessRate,double Lower95,double Upper95,double AverageWins,double AverageDeployed,double UnusedBench,double LimitedTurns,string? Archive,bool Complete,bool Baseline);
+public sealed record UserSessionComparison(string Scope,int Battles,int Wins,double WinRate);
 public partial class MainWindow : Window,INotifyPropertyChanged
 {
     private readonly string _root;
@@ -32,7 +33,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     private string _status="Loading rules…",_progress="No training session yet.",_checkpoint="",_selectedRunLabel="Select a run to inspect its day-by-day boards.",_dayLabel="",_inventory="",_decisions="";
     private PointCollection _curve=[];
     public string OutputDirectory {get;}
-    public string RulesLabel => $"{_rules.Version} · build {_rules.Build} · {_rules.Issues.Length} missing handlers · {_rules.GuessedRules} guesses";
+    public string RulesLabel => $"{_rules.Version} · build {_rules.Build} · {_rules.Parameters.EffectiveTurnCap}-turn cap · {_rules.Issues.Length} missing handlers · {_rules.GuessedRules} guesses";
     public string Status {get=>_status;set=>Set(ref _status,value);}
     public string Progress {get=>_progress;set=>Set(ref _progress,value);}
     public string Checkpoint {get=>_checkpoint;set=>Set(ref _checkpoint,value);}
@@ -51,6 +52,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     public ObservableCollection<TrainerResult> TrainerResults {get;}=[];
     public ObservableCollection<GenerationResult> GenerationResults {get;}=[];
     public ObservableCollection<RankingResult> RankingResults {get;}=[];
+    public ObservableCollection<UserSessionComparison> UserSessionComparisons {get;}=[];
     public event PropertyChangedEventHandler? PropertyChanged;
     public MainWindow()
     {
@@ -210,6 +212,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
             if(status is "Ranking generations" or "Ranked" or "Cancelled" or "Incomplete"){
                 LoadRanking();Status=status=="Ranked"?"Generation ranking complete.":status!;
                 if(status!="Ranking generations"){
+                    LoadUserSessionComparison();
                     Progress=p.TryGetProperty("snapshots",out _)?$"{status} · completed snapshots {NumberOrZero(p,"completed")} / {NumberOrZero(p,"total")}":
                         $"{status} · {NumberOrZero(p,"runs")} / {NumberOrZero(p,"target")} runs";return;
                 }
@@ -237,6 +240,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
             {var n=t.Value.GetProperty("runs").GetInt32();TrainerResults.Add(new(t.Name,n,t.Value.GetProperty("successes").GetInt32()/(double)Math.Max(1,n),t.Value.GetProperty("wins").GetInt32()/(double)Math.Max(1,n)));}
             GenerationResults.Clear();if(p.TryGetProperty("generations",out var cohorts))foreach(var cohort in cohorts.EnumerateObject().OrderBy(x=>int.Parse(x.Name))){
                 var n=cohort.Value.GetProperty("runs").GetInt32();GenerationResults.Add(new(int.Parse(cohort.Name),n,cohort.Value.GetProperty("successes").GetDouble()/Math.Max(1,n),cohort.Value.GetProperty("wins").GetDouble()/Math.Max(1,n)));}
+            LoadUserSessionComparison();
             var metricsPath=Path.Combine(CurrentOutput,"metrics.jsonl");
             if(File.Exists(metricsPath))
             {
@@ -261,6 +265,14 @@ public partial class MainWindow : Window,INotifyPropertyChanged
                 row.GetProperty("average_deployed").GetDouble(),row.GetProperty("unused_deployable_bench").GetDouble(),row.GetProperty("limited_turn_rate").GetDouble(),row.TryGetProperty("archive",out var archive)?archive.GetString():null,
                 row.GetProperty("completed").GetBoolean(),row.TryGetProperty("baseline",out var baseline)&&baseline.GetBoolean()));
         }
+    }
+    private void LoadUserSessionComparison()
+    {
+        var path=Path.Combine(CurrentOutput,"evaluation.json");if(!File.Exists(path))return;
+        using var json=JsonDocument.Parse(File.ReadAllText(path));var root=json.RootElement;
+        if(!root.TryGetProperty("user_session_comparison",out var comparison))return;
+        var battles=NumberOrZero(comparison,"battles");var wins=NumberOrZero(comparison,"wins");
+        UserSessionComparisons.Clear();UserSessionComparisons.Add(new("Current evaluation",battles,wins,battles==0?0:wins/(double)battles));
     }
     private async void RefreshHistory(object sender,RoutedEventArgs e)
     {
@@ -293,7 +305,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
             if(_historyRules.Hash!=record.Summary.RulesHash)throw new InvalidDataException("History rules hash does not match the selected run.");
             _selected=record;_day=0;
             SelectedRunLabel=$"{(summary.Pinned?"Pinned · ":"")}{summary.Trainer} · generation {summary.Generation}, policy {summary.Policy}\n"+
-                $"{summary.Wins} wins · {summary.Lives} lives · {summary.Days} days · {(summary.Evaluation?"Evaluation":"Training")}";
+                $"{summary.Wins} wins · {summary.TurnsRemaining} turns remaining · {summary.Days} days · {(summary.Evaluation?"Evaluation":"Training")}";
             DisplayDay();
         }
         catch(Exception error) {Status="History load: "+error.Message;}
@@ -316,7 +328,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     {
         if(_selected is null||_selected.Days.Length==0)return;
         var d=_selected.Days[_day];var enemy=ShowOpponent.IsChecked==true;var o=d.BeforeBattle;
-        DayLabel=$"Day {d.Day} · {(d.Result.PlayerWon?"Win":"Loss")} · {d.WinsAfter} wins, {d.LivesAfter} lives after battle\n"+
+        DayLabel=$"Turn {d.Day} · {(d.Result.PlayerWon?"Win":"Loss")} · {d.WinsAfter} wins, {d.TurnsRemainingAfter} turns remaining\n"+
             (enemy?$"Opponent: {d.Opponent.Trainer} · HP {d.Opponent.MaxHp:N0}":$"Before battle: ${o.Gold:N0} · rank {o.Rank} · HP {o.MaxHp:N0} · items {o.ItemUses}/{o.MaximumItemUses}");
         Team.Clear();Bench.Clear();
         var units=enemy?d.Opponent.Team:o.Units;

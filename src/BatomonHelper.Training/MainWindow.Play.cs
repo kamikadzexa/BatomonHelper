@@ -8,8 +8,8 @@ using System.Windows.Input;
 
 namespace BatomonHelper.Training;
 
-public sealed record PlayActionRow(string Kind,string Description,SimAction Action);
-public sealed record PlaySessionRow(string Id,string Trainer,int Wins,int Lives,int Day,bool InPool,bool Enabled);
+public sealed record PlayActionRow(string Kind,string Description,string? Icon,SimAction Action);
+public sealed record PlaySessionRow(string Id,string Trainer,int Wins,int TurnsRemaining,int Day,bool InPool,bool Enabled);
 
 public partial class MainWindow
 {
@@ -59,7 +59,7 @@ public partial class MainWindow
     private void DisplayPlay()
     {
         if(_play is null)return;var s=_play.Environment.State;
-        PlayInfo=$"Day {s.Day} · rank {s.Rank} · ${s.Gold:0.##} · {s.Wins}/10 wins · {s.Lives} lives · HP {s.MaxHp:0} · {s.Phase}\n"+
+        PlayInfo=$"Turn {s.Day}/{_rules.Parameters.EffectiveTurnCap} · {RemainingTurns(s)} turns remaining · rank {s.Rank} · ${s.Gold:0.##} · {s.Wins}/10 wins · HP {s.MaxHp:0} · {s.Phase}\n"+
             $"{s.Trainer} · item uses {s.ItemUses}/{s.MaximumItemUses} · free rerolls {s.FreeRerolls} · {(s.Locked?"shop locked":"shop unlocked")}";
         PlayTeam.Clear();PlayBench.Clear();PlayShop.Clear();
         for(var i=0;i<6;i++)PlayTeam.Add(PlayCard(s.Units[i],i,"board"));
@@ -67,7 +67,7 @@ public partial class MainWindow
         for(var i=0;i<5;i++){
             var offer=s.PendingShopStart?null:s.Shop[i];
             if(offer?.Creature is {} unit){var card=PlayCard(unit,i,"shop");PlayShop.Add(card with {Name=card.Name+$" · ${offer.Price:0.##}"});}
-            else if(offer?.ItemId is {} item){var def=_rules.Items.First(x=>x.Id==item);PlayShop.Add(new($"{i+1}. {def.Name} · ${offer.Price:0.##}","Item","",def.Description,null,i,false,"shop"));}
+            else if(offer?.ItemId is {} item){var def=_rules.Items.First(x=>x.Id==item);PlayShop.Add(new($"{i+1}. {def.Name} · ${offer.Price:0.##}","Item","",def.Description,ItemSprite(def.Id),i,false,"shop"));}
             else PlayShop.Add(new($"{i+1}. Empty","","","",null,i,false,"shop"));
         }
         PlayInventory="Trinkets: "+string.Join(" · ",s.Bag.Select(x=>$"{_rules.Trinkets.First(t=>t.Id==x.Id).Name} ×{x.Quantity}"))+
@@ -94,9 +94,9 @@ public partial class MainWindow
                 Move.Buy=>$"Buy shop {action.Source+1} → {(action.Target>=0?$"slot {action.Target+1}":"overflow")}",
                 Move.BuyItem=>$"Use item from shop {action.Source+1}",Move.Sell=>$"Sell slot {action.Source+1}",
                 Move.Move=>$"Move / swap slot {action.Source+1} → {action.Target+1}",
-                Move.Choose=>state.Choices[action.Choice].Label+(action.Target<0?"":$" → slot {action.Target+1}"),
+                Move.Choose=>DescribeChoice(state.Choices[action.Choice])+(action.Target<0?"":$" → slot {action.Target+1}"),
                 Move.Lock=>state.Locked?"Unlock shop":"Lock shop",Move.Reroll=>"Reroll shop",_=>"Finish shopping and battle"};
-            PlayActions.Add(new(action.Kind.ToString(),text,action));
+            PlayActions.Add(new(action.Kind.ToString(),text,action.Kind==Move.Choose?ChoiceIcon(state.Choices[action.Choice]):null,action));
         }
     }
     private async void PlayActionButtonClick(object sender,RoutedEventArgs e)
@@ -188,7 +188,7 @@ public partial class MainWindow
     {try{if(_play is not null){SessionStore.Save(_play.Session);RefreshPlaySessions();Status="Playable session saved.";}}catch(Exception error){Status=error.Message;}}
     private void RefreshPlaySessions()
     {
-        PlaySessions.Clear();foreach(var s in SessionStore.List())PlaySessions.Add(new(s.Id,s.Trainer,s.Current.Wins,s.Current.Lives,s.Current.Day,s.InOpponentPool,s.Enabled));
+        PlaySessions.Clear();foreach(var s in SessionStore.List())PlaySessions.Add(new(s.Id,s.Trainer,s.Current.Wins,RemainingTurns(s.Current),s.Current.Day,s.InOpponentPool,s.Enabled));
     }
     private async void ResumePlaySession(object sender,RoutedEventArgs e)
     {
@@ -202,7 +202,7 @@ public partial class MainWindow
     {
         if(PlaySessionList.SelectedItem is not PlaySessionRow row)return;
         try{var session=SessionStore.List().Single(x=>x.Id==row.Id);_historyRules=_rules;_day=0;
-            _selected=new(new(session.Id,-1,-1,session.Trainer,session.Current.Wins,session.Current.Lives,session.Current.Day,
+            _selected=new(new(session.Id,-1,-1,session.Trainer,session.Current.Wins,RemainingTurns(session.Current),session.Current.Day,
                 session.Current.Wins>=10,false,DateTimeOffset.UtcNow,session.RulesHash),session.Days);
             SelectedRunLabel=$"Your session · {session.Trainer} · {session.Decisions.Length} actions";Tabs.SelectedIndex=1;DisplayDay();
         }catch(Exception error){Status=error.Message;}
@@ -216,5 +216,29 @@ public partial class MainWindow
             store.Save(changed);if(_play?.Session.Id==changed.Id)_play.SetPool(changed.InOpponentPool,changed.Enabled);RefreshPlaySessions();
             Status="Opponent pool updated. Training and evaluation load it at the next launch.";
         }catch(Exception error){Status=error.Message;}
+    }
+    private string? ItemSprite(string id)
+    {
+        var path=Path.Combine(_root,"assets","wiki","items",id+".png");
+        return File.Exists(path)?path:null;
+    }
+    private int RemainingTurns(RunState state) => state.Phase==Phase.Complete?0:Math.Max(0,_rules.Parameters.EffectiveTurnCap-state.Day+1);
+    private string? ChoiceIcon(Choice choice)
+    {
+        var id=choice.DefinitionId;
+        if(id is null)return null;
+        var item=_rules.Trinkets.Concat(_rules.Items).FirstOrDefault(x=>x.Id==id);
+        if(item is not null){var folder=_rules.Trinkets.Any(x=>x.Id==id)?"trinkets":"items";var path=Path.Combine(_root,"assets","wiki",folder,id+".png");return File.Exists(path)?path:null;}
+        var trainer=_rules.Trainers.FirstOrDefault(x=>x.Id==id);
+        if(trainer is not null){var path=Path.Combine(_root,"assets","wiki","trainers",id+".png");return File.Exists(path)?path:null;}
+        return null;
+    }
+    private static string DescribeChoice(Choice choice)
+    {
+        var details=choice.Effects.Select(effect=>effect.Operation switch {
+            Operation.Gold=>$"gain ${effect.Amount:0.##}", Operation.GrantTrinket=>"gain a trinket", Operation.GrantUnit=>"gain a creature",
+            Operation.Add=>$"give {effect.Target} +{effect.Amount:0.##} {effect.Stat}", Operation.LevelUp=>$"level up an eligible creature",
+            Operation.ShopRank=>"increase shop rank", _=>effect.Operation.ToString()}).ToArray();
+        return details.Length==0?choice.Label:$"{choice.Label} — {string.Join(", ",details)}";
     }
 }

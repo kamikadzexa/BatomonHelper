@@ -23,14 +23,14 @@ public sealed class UserSessionStore(string directory,RulesManifest rules)
     }
     public void Save(UserSession session)
     {
-        if(session.RulesHash!=rules.Hash||session.Version!=1)throw new InvalidDataException("Incompatible user session.");
+        if(session.RulesHash!=rules.Hash||session.Version!=2)throw new InvalidDataException("Incompatible user session.");
         Directory.CreateDirectory(DirectoryPath);var path=PathFor(session.Id);
         File.WriteAllText(path+".tmp",JsonSerializer.Serialize(session));File.Move(path+".tmp",path,true);
     }
     public void Delete(string id)=>File.Delete(PathFor(id));
     public void Validate(UserSession session)
     {
-        if(session.Version!=1||session.RulesHash!=rules.Hash)throw new InvalidDataException("User session rules differ.");
+        if(session.Version!=2||session.RulesHash!=rules.Hash)throw new InvalidDataException("User session rules differ.");
         var env=new GameEnvironment(rules);var initial=env.Reset(session.Seed,session.Trainer);
         if(JsonSerializer.Serialize(env.State)!=JsonSerializer.Serialize(session.Initial))throw new InvalidDataException("User session initial state differs.");
         var days=new List<DayRecord>();
@@ -45,7 +45,7 @@ public sealed class UserSessionStore(string directory,RulesManifest rules)
     public LeagueEntry[] Opponents()
     {
         var result=new List<LeagueEntry>();var seen=new HashSet<string>();
-        foreach(var session in List().Where(x=>x.InOpponentPool&&x.Enabled&&x.RulesHash==rules.Hash)){
+        foreach(var session in List().Where(x=>x.Version==2&&x.InOpponentPool&&x.Enabled&&x.RulesHash==rules.Hash)){
             Validate(session);
             foreach(var group in session.Days.GroupBy(x=>x.Day))foreach(var day in group.Take(32)){
                 var o=day.BeforeBattle;var board=new FrozenBoard(day.Day,o.MaxHp,o.Trainer,o.Units.Take(6).Select(x=>x?.Clone()).ToArray(),[..o.Bag],[..o.ExtraTrainers],
@@ -66,7 +66,7 @@ public sealed class PlaySession
     public PlaySession(RulesManifest rules,ulong seed,string trainer)
     {
         _rules=rules;_opponents=IndependentOpponentArchive.Build(rules,seed^0xBA5EUL);Environment=new(rules);Environment.Reset(seed,trainer);
-        var initial=Environment.State.Clone();Session=new(1,Guid.NewGuid().ToString("N"),rules.Hash,seed,trainer,initial,initial.Clone(),[],[]);
+        var initial=Environment.State.Clone();Session=new(2,Guid.NewGuid().ToString("N"),rules.Hash,seed,trainer,initial,initial.Clone(),[],[]);
     }
     public PlaySession(RulesManifest rules,UserSession session,UserSessionStore store)
     {store.Validate(session);_rules=rules;_opponents=IndependentOpponentArchive.Build(rules,session.Seed^0xBA5EUL);Environment=new(rules);Environment.Restore(session.Current);Session=session;}

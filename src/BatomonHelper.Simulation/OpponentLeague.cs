@@ -63,7 +63,9 @@ public sealed class OpponentLeague
     {
         var rng=new SeedStream(seed^0xAE61UL);var roll=rng.Uniform();
         var user=Candidates(day,"user");
-        var category=roll<.4?"current":roll<.65?"recent":roll<.85?"champion":roll<.95||user.Count==0?"baseline":"user";
+        // Recorded human boards are scarce and more representative than generated ones, so give
+        // them a modest but meaningful sampling priority whenever a same-day board exists.
+        var category=user.Count>0&&roll<.20?"user":roll<.50?"current":roll<.70?"recent":roll<.85?"champion":"baseline";
         var pool=Candidates(day,category);if(pool.Count==0)pool=Candidates(day,"baseline");if(pool.Count==0)pool=Candidates(day,"all");
         if(pool.Count==0 && evaluation)throw new InvalidOperationException("Independent same-day opponent archive missing for day "+day);
         return pool.Count==0?null:pool[rng.Index(pool.Count)];

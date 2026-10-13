@@ -116,11 +116,13 @@ class EvaluationRunner:
         for row in results:
             target=trainers.setdefault(row['Trainer'],dict(runs=0,successes=0,wins=0));target['runs']+=1;target['successes']+=int(row['Success']);target['wins']+=row['Wins']
         report=dict(label=snapshot['label'],update=snapshot['update'],generation=snapshot['generation'],encoding=snapshot['encoding'],archive=snapshot.get('archive'),baseline=snapshot.get('baseline',False),
-            scenarios=sorted([dict(scenario=x.get('ScenarioId'),policy=x['Policy'],wins=x['Wins'],lives=x['Lives'],days=x['Days'],success=x['Success'],starting_rank=x.get('StartingRank',1),additional_wins=x['Wins']-x.get('StartingWins',0)) for x in results],key=lambda x:x['scenario']),
+            scenarios=sorted([dict(scenario=x.get('ScenarioId'),policy=x['Policy'],wins=x['Wins'],turns_remaining=x.get('TurnsRemaining',0),days=x['Days'],success=x['Success'],starting_rank=x.get('StartingRank',1),additional_wins=x['Wins']-x.get('StartingWins',0)) for x in results],key=lambda x:x['scenario']),
             runs=n,target=self.runs,completed=n==self.runs and all(x['runs']==self.runs//4 for x in scores),
             success_rate=successes/max(1,n),confidence_interval_95=interval,score=interval[0],average_wins=sum(x['Wins'] for x in results)/max(1,n),
             average_deployed=sum(x['deployed'] for x in stats)/battles,unused_deployable_bench=sum(x['bench'] for x in stats)/battles,
             limited_turn_rate=sum(x['limited'] for x in stats)/battles,policies=scores,opponents=opponents,trainers=trainers,
+            user_session_comparison=dict(battles=sum(x['battles'] for key,x in opponents.items() if key.startswith('user:')),
+                wins=sum(x['wins'] for key,x in opponents.items() if key.startswith('user:'))),
             rank_bands=step.get('RankBands',{}),average_additional_wins=sum(x['Wins']-x.get('StartingWins',0) for x in results)/max(1,n),seconds=time.monotonic()-start,decisions=decisions,cache_key=cache_key,model_hash=model_hash,
             suite_hash=self.suite_hash,evaluation_batch=self.batch_id,cached=False,selection='sample' if key['sampling'] else 'greedy',
             diagnostic_fixture=self.rules['Build']=='fixture',reason='cancelled' if self.cancelled else 'decision_limit' if n<self.runs else None)

@@ -74,7 +74,7 @@ public sealed class HistoryStore : IAsyncDisposable
                         """;
                     var s=record.Summary;
                     foreach(var (key,value) in new (string,object)[] {("id",s.RunId),("generation",s.Generation),("policy",s.Policy),("trainer",s.Trainer),
-                        ("wins",s.Wins),("lives",s.Lives),("days",s.Days),("success",s.Success),("evaluation",s.Evaluation),("completed",s.CompletedAt.ToString("O")),("hash",s.RulesHash)})
+                        ("wins",s.Wins),("lives",s.TurnsRemaining),("days",s.Days),("success",s.Success),("evaluation",s.Evaluation),("completed",s.CompletedAt.ToString("O")),("hash",s.RulesHash)})
                         cmd.Parameters.AddWithValue("$"+key,value);
                     cmd.Parameters.AddWithValue("$snapshot",s.SnapshotUpdate);cmd.Parameters.AddWithValue("$batch",(object?)s.EvaluationBatch??DBNull.Value);
                     cmd.ExecuteNonQuery();
