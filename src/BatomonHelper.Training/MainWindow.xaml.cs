@@ -16,7 +16,7 @@ namespace BatomonHelper.Training;
 public sealed record HistoryCard(string Name,string Level,string Types,string Stats,string? Sprite);
 public sealed record GenerationResult(int Generation,int Runs,double SuccessRate,double AverageWins);
 public sealed record TrainerResult(string Trainer,int Runs,double SuccessRate,double AverageWins);
-public sealed record RankingResult(int Rank,string Label,int Update,int Generation,int Runs,double SuccessRate,double Lower95,double Upper95,double AverageWins,double AverageDeployed,double UnusedBench,double LimitedTurns);
+public sealed record RankingResult(int Rank,string Label,int Update,int Generation,int Runs,double SuccessRate,double Lower95,double Upper95,double AverageWins,double AverageDeployed,double UnusedBench,double LimitedTurns,string? Archive,bool Complete,bool Baseline);
 public partial class MainWindow : Window,INotifyPropertyChanged
 {
     private readonly string _root;
@@ -57,7 +57,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         var path=Path.Combine(_root,"assets","simulation","rules.json");
         _rules=File.Exists(path)?JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(path))!:RuleCompiler.Fixture() with {Issues=[new("rules-file","Source","Refresh the simulation rules first.","https://batomon.com/status")]};
         OutputDirectory=Path.Combine(_root,"work","training");
-        InitializeComponent(); DataContext=this;
+        InitializeComponent(); DataContext=this;InitializePlay();
         LoadConfiguration(OutputDirectory);
         foreach(var issue in _rules.Issues) Issues.Add(issue);
         foreach(var entry in _rules.Evidence??[])Evidence.Add(entry);
@@ -126,7 +126,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
                 ["host"]=Path.Combine(_root,"tools","BatomonHelper.TrainingHost","bin","Release","net10.0","BatomonHelper.TrainingHost.dll"),
                 ["workers"]=int.Parse(Workers.Text),["environments"]=int.Parse(Environments.Text),["seed"]=int.Parse(Seed.Text),
                 ["minutes"]=double.Parse(Minutes.Text,System.Globalization.CultureInfo.InvariantCulture),["device"]=((ComboBoxItem)Device.SelectedItem).Content.ToString()!,
-                ["rollout"]=128,["minibatch"]=int.Parse(Minibatch.Text),["updates"]=0,["resume"]=resume,["auto_calibrate"]=AutoCalibrate.IsChecked==true&&!resume };
+                ["rollout"]=128,["user_pool"]=Path.Combine(_root,"work","user-sessions"),["comparison_archives"]=Directory.Exists(Path.Combine(_root,"work","archives"))?Directory.GetDirectories(Path.Combine(_root,"work","archives")).Where(x=>File.Exists(Path.Combine(x,"checkpoint.json"))).ToArray():Array.Empty<string>(),["minibatch"]=int.Parse(Minibatch.Text),["updates"]=0,["resume"]=resume,["auto_calibrate"]=AutoCalibrate.IsChecked==true&&!resume };
             if((int)config["environments"]<4 || (int)config["workers"]<1) throw new ArgumentException("Use at least four environments and one worker.");
             if((int)config["minibatch"]<32)throw new ArgumentException("Use a PPO batch of at least 32.");
             Directory.CreateDirectory(CurrentOutput); Control("run"); Atomic(Path.Combine(CurrentOutput,"launch.json"),JsonSerializer.Serialize(config));
@@ -138,14 +138,24 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     }
     private void StartPython(params string[] arguments)
     {
+        Control("run");
         var python=Path.Combine(_root,"training",".venv","Scripts","python.exe");
         if(!File.Exists(python)) throw new FileNotFoundException("Run training/Setup.ps1 to install the isolated learner.");
         var start=new ProcessStartInfo(python) {WorkingDirectory=_root,UseShellExecute=false,CreateNoWindow=true,RedirectStandardError=true,RedirectStandardOutput=true};
         start.ArgumentList.Add(Path.Combine(_root,"training","learner.py")); foreach(var arg in arguments) start.ArgumentList.Add(arg);
         _process=Process.Start(start)!;
         SessionFields(false);
-        var launched=_process;launched.EnableRaisingEvents=true;
-        launched.Exited+=(_,_)=>Dispatcher.InvokeAsync(()=> {if(ReferenceEquals(_process,launched))SessionFields(true);});
+        var launched=_process;var processOutput=CurrentOutput;launched.EnableRaisingEvents=true;
+        launched.Exited+=(_,_)=>Dispatcher.InvokeAsync(()=> {if(ReferenceEquals(_process,launched)){SessionFields(true);
+            if(launched.ExitCode!=0){
+                var progressPath=Path.Combine(processOutput,"progress.json");
+                try{using var failure=JsonDocument.Parse(File.ReadAllText(progressPath));
+                    if(failure.RootElement.TryGetProperty("error",out var detail)){Status=detail.GetString()!;return;}}
+                catch(Exception error) when(error is IOException or JsonException){ }
+                Status=$"Process failed (exit {launched.ExitCode}).";Atomic(progressPath,JsonSerializer.Serialize(new {status="Failed",error=Status}));
+            }
+            else if(Status.StartsWith("Ranking")||Status.StartsWith("Evaluating"))Status="Process completed.";
+        }});
         _process.BeginOutputReadLine(); _process.ErrorDataReceived+=(_,e)=> {if(e.Data is { } message) Dispatcher.InvokeAsync(()=>Status=message);}; _process.BeginErrorReadLine();
     }
     private void SessionFields(bool enabled)
@@ -161,7 +171,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     private void Stop(object sender,RoutedEventArgs e) { if(_process is {HasExited:false}) {Control("stop");Status="Stopping after the current PPO update and saving…";} }
     private void Evaluate(object sender,RoutedEventArgs e)
     {
-        try { if(_process is {HasExited:false}) throw new InvalidOperationException("Stop and save before evaluation."); StartPython("--config",Path.Combine(CurrentOutput,"configuration.json"),"--evaluate"); Status="Evaluating frozen policies on separate seeds…"; }
+        try { if(_process is {HasExited:false}) throw new InvalidOperationException("Stop and save before evaluation."); StartPython("--config",Path.Combine(CurrentOutput,"configuration.json"),"--evaluate","--runs",ThoroughEvaluation.IsChecked==true?"512":"128"); Status="Evaluating frozen policies on separate seeds…"; }
         catch(Exception error) {Status=error.Message;}
     }
     private void Export(object sender,RoutedEventArgs e)
@@ -171,7 +181,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     }
     private void RankGenerations(object sender,RoutedEventArgs e)
     {
-        try {if(_process is {HasExited:false})throw new InvalidOperationException("Stop and save before ranking generations.");StartPython("--config",Path.Combine(CurrentOutput,"configuration.json"),"--rank-generations","--runs","128");Status="Ranking every retained generation against one frozen opponent schedule…";}
+        try {if(_process is {HasExited:false})throw new InvalidOperationException("Stop and save before ranking generations.");StartPython("--config",Path.Combine(CurrentOutput,"configuration.json"),"--rank-generations","--runs",ThoroughEvaluation.IsChecked==true?"512":"128");Status="Ranking every retained generation against one frozen opponent schedule…";}
         catch(Exception error){Status=error.Message;}
     }
     private void ExportSelected(object sender,RoutedEventArgs e)
@@ -180,7 +190,10 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         {
             if(_process is {HasExited:false})throw new InvalidOperationException("Stop and save before export.");
             if(RankingList.SelectedItem is not RankingResult selected)throw new InvalidOperationException("Select a generation leaderboard row first.");
-            StartPython("--config",Path.Combine(CurrentOutput,"configuration.json"),"--export","--export-update",selected.Update.ToString());Status=$"Exporting {selected.Label}…";
+            if(!selected.Complete||selected.Baseline)throw new InvalidOperationException("Select a completed policy evaluation to export.");
+            var arguments=new List<string>{"--config",Path.Combine(CurrentOutput,"configuration.json"),"--export","--export-update",selected.Update.ToString()};
+            if(selected.Archive is not null){arguments.Add("--export-archive");arguments.Add(selected.Archive);}
+            StartPython(arguments.ToArray());Status=$"Exporting {selected.Label}…";
         }
         catch(Exception error){Status=error.Message;}
     }
@@ -193,11 +206,25 @@ public partial class MainWindow : Window,INotifyPropertyChanged
             using var json=JsonDocument.Parse(await File.ReadAllTextAsync(path)); var p=json.RootElement;
             var status=p.GetProperty("status").GetString();
             if(status=="Failed") {Status=p.GetProperty("error").GetString()!;return;}
-            if(status=="Ranked") {LoadRanking();Status="Generation ranking complete.";return;}
-            double Number(string key)=>p.TryGetProperty(key,out var v)?v.GetDouble():0;
+            if(status is "Ranking generations" or "Ranked" or "Cancelled" or "Incomplete"){
+                LoadRanking();Status=status=="Ranked"?"Generation ranking complete.":status!;
+                if(status!="Ranking generations"){
+                    Progress=p.TryGetProperty("snapshots",out _)?$"{status} · completed snapshots {NumberOrZero(p,"completed")} / {NumberOrZero(p,"total")}":
+                        $"{status} · {NumberOrZero(p,"runs")} / {NumberOrZero(p,"target")} runs";return;
+                }
+            }
+            double Number(string key)=>p.TryGetProperty(key,out var v)&&v.ValueKind==JsonValueKind.Number?v.GetDouble():0;
+            if(status is "Ranking generations" or "Evaluating" or "Preparing evaluation"){
+                var snapshot=p.TryGetProperty("snapshot",out var label)?label.GetString():"Preparing frozen suite";
+                var eta=p.TryGetProperty("remaining_seconds",out var remaining)&&remaining.ValueKind==JsonValueKind.Number?$" · ~{remaining.GetDouble():N0}s remaining":"";
+                Progress=$"{status} · {snapshot} · {Number("runs"):N0}/{Number("target"):N0} runs\n"+
+                    $"Snapshots {Number("completed"):N0}/{Number("total"):N0} · {Number("elapsed_seconds"):N0}s elapsed · {Number("runs_per_second"):F2} runs/s{eta}";
+                return;
+            }
             Progress=$"{status} · update {Number("update"):N0} · {Number("runs"):N0} completed runs\n"+
                 $"Recent ({Number("recent_runs"):N0}) success {Number("recent_success_rate"):P1} · wins {Number("recent_average_wins"):F2} · {Number("decisions_per_second"):N0} decisions/s";
             if(p.TryGetProperty("device",out var device) && p.TryGetProperty("actual_workers",out _))Progress+=$"\nDevice {device.GetString()} · workers {Number("actual_workers"):N0} · environments {Number("actual_environments"):N0}";
+            if(p.TryGetProperty("episode_starts",out var starts))Progress+=$"\nEpisode starts: full {starts[0].GetInt64():N0} · middle {starts[1].GetInt64():N0} · late {starts[2].GetInt64():N0}";
             if(p.TryGetProperty("average_deployed",out _))Progress+=$"\nDeployed {Number("average_deployed"):F2}/6 · unused bench {Number("unused_deployable_bench"):F2} · turn limit {Number("limited_turn_rate"):P1}";
             if(p.TryGetProperty("rollout_seconds",out _))Progress+=$"\nSimulation/inference {Number("rollout_seconds"):F2}s · PPO {Number("optimization_seconds"):F2}s per update";
             if(p.TryGetProperty("finish_with_deployable_bench",out _))Progress+=$"\nFinish with usable bench {Number("finish_with_deployable_bench"):N0} · improving moves {Number("deployment_improving"):N0} · reversing moves {Number("deployment_reversing"):N0}";
@@ -220,6 +247,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         catch(Exception error) when(error is IOException or JsonException) {Status="Progress refresh: "+error.Message;}
         finally {_refreshing=false;}
     }
+    private static int NumberOrZero(JsonElement p,string key)=>p.TryGetProperty(key,out var value)&&value.ValueKind==JsonValueKind.Number?value.GetInt32():0;
     private void LoadRanking()
     {
         var path=Path.Combine(CurrentOutput,"generation-ranking.json");if(!File.Exists(path))return;
@@ -229,7 +257,8 @@ public partial class MainWindow : Window,INotifyPropertyChanged
             var interval=row.GetProperty("confidence_interval_95").EnumerateArray().Select(x=>x.GetDouble()).ToArray();
             RankingResults.Add(new(row.GetProperty("rank").GetInt32(),row.GetProperty("label").GetString()!,row.GetProperty("update").GetInt32(),row.GetProperty("generation").GetInt32(),
                 row.GetProperty("runs").GetInt32(),row.GetProperty("success_rate").GetDouble(),interval[0],interval[1],row.GetProperty("average_wins").GetDouble(),
-                row.GetProperty("average_deployed").GetDouble(),row.GetProperty("unused_deployable_bench").GetDouble(),row.GetProperty("limited_turn_rate").GetDouble()));
+                row.GetProperty("average_deployed").GetDouble(),row.GetProperty("unused_deployable_bench").GetDouble(),row.GetProperty("limited_turn_rate").GetDouble(),row.TryGetProperty("archive",out var archive)?archive.GetString():null,
+                row.GetProperty("completed").GetBoolean(),row.TryGetProperty("baseline",out var baseline)&&baseline.GetBoolean()));
         }
     }
     private async void RefreshHistory(object sender,RoutedEventArgs e)

@@ -13,19 +13,21 @@ public sealed partial class GameEnvironment(RulesManifest rules)
     public RunState State { get; private set; } = new();
     public void Restore(RunState state)
     {
-        rules.RequireReady(); State=state.Clone(); _random=new(State.RandomState);
+        rules.RequireReady(); _revision++; State=state.Clone(); _random=new(State.RandomState);
     }
     public Observation Reset(ulong seed,string trainer)
     {
         rules.RequireReady();
         if(!rules.Trainers.Any(x=>x.Id==trainer)) throw new ArgumentException("Unknown trainer.");
-        _random=new(seed);
+        _revision++; _random=new(seed);
         State=new() { RunId=$"{seed:X16}-{trainer}",Trainer=trainer,Lives=rules.Parameters.InitialLives,
             Gold=rules.Parameters.InitialGold,MaxHp=rules.Parameters.DailyHp[0] };
         ApplyTrainerStart(); ActivateInventory(Trigger.DayStart); RollShop(); DrainPendingChoices();State.RandomState=_random.State; return GetObservation();
     }
+    public SimulationTimings Timings {get;}=new();
     public Observation GetObservation()
     {
+        using var copyTiming=Timings.Copy();
         if(!State.PendingShopStart)RefreshShop();
         return new(State.Day,State.Lives,State.Wins,State.Gold,State.MaxHp,State.Rank,
         State.Trainer,State.Units.Select(x=>x?.Clone()).ToArray(),State.PendingShopStart?new Offer?[5]:State.Shop.Select(x=>x is null?null:x with { Creature=x.Creature?.Clone() }).ToArray(),
@@ -34,6 +36,7 @@ public sealed partial class GameEnvironment(RulesManifest rules)
     }
     public SimAction[] GetLegalActions()
     {
+        using var legalTiming=Timings.Legal();
         if(!State.PendingShopStart)RefreshShop();
         if(State.Phase==Phase.Complete) return [];
         if(State.Phase is Phase.Reward or Phase.Event or Phase.TrainerChoice)
@@ -80,9 +83,34 @@ public sealed partial class GameEnvironment(RulesManifest rules)
         actions.Add(new(Move.Lock)); actions.Add(new(Move.Finish));
         return actions.ToArray();
     }
-    public StepResult Step(SimAction action,Func<FrozenBoard,FrozenBoard>? opponent=null)
+    private long _revision;
+    public sealed class ActionPublication
+    {
+        internal GameEnvironment Owner {get;} internal long Revision {get;}
+        public IReadOnlyList<SimAction> Actions {get;}
+        internal ActionPublication(GameEnvironment owner,long revision,SimAction[] actions)
+        {Owner=owner;Revision=revision;Actions=Array.AsReadOnly(actions);}
+    }
+    public ActionPublication PublishActions(Func<SimAction[],SimAction[]> filter)
+    {
+        var legal=GetLegalActions();var selected=filter(legal);var allowed=legal.ToHashSet();
+        if(selected.Length==0 || selected.Any(x=>!allowed.Contains(x)))throw new ArgumentException("Invalid published candidates.");
+        return new(this,_revision,[..selected]);
+    }
+    public StepResult StepPublished(ActionPublication publication,int index,Func<FrozenBoard,FrozenBoard>? opponent=null,ulong? battleSeed=null)
+    {
+        if(publication.Owner!=this || publication.Revision!=_revision || index<0 || index>=publication.Actions.Count)
+            throw new ArgumentException("Stale or invalid action publication.");
+        return StepCore(publication.Actions[index],opponent,battleSeed);
+    }
+    public StepResult Step(SimAction action,Func<FrozenBoard,FrozenBoard>? opponent=null,ulong? battleSeed=null)
     {
         if(!GetLegalActions().Contains(action)) throw new ArgumentException("Illegal action.");
+        return StepCore(action,opponent,battleSeed);
+    }
+    private StepResult StepCore(SimAction action,Func<FrozenBoard,FrozenBoard>? opponent,ulong? battleSeed)
+    {
+        _revision++;
         BattleResult? battle=null; DayRecord? day=null;
         switch(action.Kind)
         {
@@ -128,7 +156,7 @@ public sealed partial class GameEnvironment(RulesManifest rules)
             case Move.Finish:
                 if(opponent is null) throw new ArgumentNullException(nameof(opponent));
                 ActivateInventory(Trigger.DayEnd);var before=GetObservation(); var own=FrozenBoard.From(State); var enemy=opponent(own);
-                battle=_combat.ResolveBattle(own,enemy,_random.Next());
+                var randomBattleSeed=_random.Next();using(Timings.Combat())battle=_combat.ResolveBattle(own,enemy,battleSeed??randomBattleSeed);
                 for(var i=0;i<6;i++) State.Units[i]=battle.PersistentTeam[i]?.Clone();
                 State.PendingPurchaseBuffs=State.PendingPurchaseBuffs.Concat(battle.PendingPurchaseBuffs??[])
                     .Where(x=>State.Units.Any(u=>u?.Instance==x.SourceInstance)).ToArray();

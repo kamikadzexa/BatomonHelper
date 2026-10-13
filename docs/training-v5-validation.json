@@ -1,0 +1,251 @@
+{
+  "date": "2026-10-13",
+  "dotnet_tests": 437,
+  "python_tests": 24,
+  "model_version": 5,
+  "encoding": 5,
+  "objective": 4,
+  "transport": 2,
+  "acceptance_passed": false,
+  "evaluation_speedup": 2.0781790013094827,
+  "evaluation_speed_scope": "Same 16 legacy-model scenarios, 16 active environments versus 4; requested ceiling 128 was capped to 16 episodes.",
+  "ablations": [
+    {
+      "variant": "full",
+      "seeds": [
+        69,
+        70,
+        71
+      ],
+      "mean_decisions_per_second": 2429.894011855512,
+      "success_rates": [
+        0.3125,
+        0.21875,
+        0.25
+      ],
+      "forced_finish_rates": [
+        0.5855263157894737,
+        0.32432432432432434,
+        0.19310344827586207
+      ]
+    },
+    {
+      "variant": "no-curriculum",
+      "seeds": [
+        69,
+        70,
+        71
+      ],
+      "mean_decisions_per_second": 2507.3721141402107,
+      "success_rates": [
+        0.3125,
+        0.21875,
+        0.21875
+      ],
+      "forced_finish_rates": [
+        0.6516129032258065,
+        0.35135135135135137,
+        0.3120567375886525
+      ]
+    },
+    {
+      "variant": "legacy",
+      "seeds": [
+        69,
+        70,
+        71
+      ],
+      "mean_decisions_per_second": 3853.393606948577,
+      "success_rates": [
+        0.28125,
+        0.3125,
+        0.34375
+      ],
+      "forced_finish_rates": [
+        0.5202702702702703,
+        0.25,
+        0.4339622641509434
+      ]
+    }
+  ],
+  "training_budget_minutes_per_variant_seed": 1,
+  "evaluation_runs_per_variant_seed": 32,
+  "representative_profile": {
+    "RulesHash": "F89988BBFA12ACEA18E7C5A8A1759698817BEE1C4CECEC4E5D40D0AF113F1B8C",
+    "LeagueBoards": 21759,
+    "DiagnosticFixture": false,
+    "Measurements": {
+      "early": {
+        "legacy_state_clone": {
+          "Count": 60,
+          "Milliseconds": 3.399499999999999,
+          "MedianMilliseconds": 0.0508,
+          "P95Milliseconds": 0.0885,
+          "AllocatedBytes": 1145512
+        },
+        "state_clone": {
+          "Count": 60,
+          "Milliseconds": 0.3517999999999999,
+          "MedianMilliseconds": 0.0058,
+          "P95Milliseconds": 0.0087,
+          "AllocatedBytes": 358872
+        },
+        "encoding": {
+          "Count": 60,
+          "Milliseconds": 18.3577,
+          "MedianMilliseconds": 0.0544,
+          "P95Milliseconds": 0.0672,
+          "AllocatedBytes": 4301592
+        },
+        "legacy_encoding": {
+          "Count": 60,
+          "Milliseconds": 4.5916,
+          "MedianMilliseconds": 0.0776,
+          "P95Milliseconds": 0.0875,
+          "AllocatedBytes": 2033192
+        },
+        "combat_uncached": {
+          "Count": 18,
+          "Milliseconds": 357.38660000000004,
+          "MedianMilliseconds": 16.0339,
+          "P95Milliseconds": 48.2963,
+          "AllocatedBytes": 140235624
+        },
+        "combat": {
+          "Count": 18,
+          "Milliseconds": 204.62910000000005,
+          "MedianMilliseconds": 11.7848,
+          "P95Milliseconds": 28.6426,
+          "AllocatedBytes": 97750560
+        }
+      },
+      "middle": {
+        "legacy_state_clone": {
+          "Count": 60,
+          "Milliseconds": 3.4343,
+          "MedianMilliseconds": 0.055,
+          "P95Milliseconds": 0.0766,
+          "AllocatedBytes": 1418312
+        },
+        "state_clone": {
+          "Count": 60,
+          "Milliseconds": 0.13460000000000005,
+          "MedianMilliseconds": 0.002,
+          "P95Milliseconds": 0.0025,
+          "AllocatedBytes": 484472
+        },
+        "encoding": {
+          "Count": 60,
+          "Milliseconds": 3.2723000000000004,
+          "MedianMilliseconds": 0.0494,
+          "P95Milliseconds": 0.0667,
+          "AllocatedBytes": 7081912
+        },
+        "legacy_encoding": {
+          "Count": 60,
+          "Milliseconds": 5.657899999999999,
+          "MedianMilliseconds": 0.0878,
+          "P95Milliseconds": 0.1137,
+          "AllocatedBytes": 2600792
+        },
+        "combat_uncached": {
+          "Count": 18,
+          "Milliseconds": 180.22820000000002,
+          "MedianMilliseconds": 7.062,
+          "P95Milliseconds": 27.2689,
+          "AllocatedBytes": 236719584
+        },
+        "combat": {
+          "Count": 18,
+          "Milliseconds": 148.9869,
+          "MedianMilliseconds": 6.5448,
+          "P95Milliseconds": 24.2217,
+          "AllocatedBytes": 147878304
+        }
+      },
+      "late": {
+        "legacy_state_clone": {
+          "Count": 60,
+          "Milliseconds": 4.3255,
+          "MedianMilliseconds": 0.0633,
+          "P95Milliseconds": 0.1091,
+          "AllocatedBytes": 1497192
+        },
+        "state_clone": {
+          "Count": 60,
+          "Milliseconds": 0.1375,
+          "MedianMilliseconds": 0.0019,
+          "P95Milliseconds": 0.0025,
+          "AllocatedBytes": 516552
+        },
+        "encoding": {
+          "Count": 60,
+          "Milliseconds": 4.2486999999999995,
+          "MedianMilliseconds": 0.0665,
+          "P95Milliseconds": 0.1106,
+          "AllocatedBytes": 7959832
+        },
+        "legacy_encoding": {
+          "Count": 60,
+          "Milliseconds": 6.6594999999999995,
+          "MedianMilliseconds": 0.0979,
+          "P95Milliseconds": 0.1541,
+          "AllocatedBytes": 2664952
+        },
+        "combat_uncached": {
+          "Count": 18,
+          "Milliseconds": 167.94709999999998,
+          "MedianMilliseconds": 9.395,
+          "P95Milliseconds": 14.3934,
+          "AllocatedBytes": 261502872
+        },
+        "combat": {
+          "Count": 18,
+          "Milliseconds": 161.00079999999997,
+          "MedianMilliseconds": 8.4025,
+          "P95Milliseconds": 12.9956,
+          "AllocatedBytes": 168227568
+        }
+      },
+      "indexed_opponent_lookup": {
+        "Count": 10,
+        "Milliseconds": 3.5694,
+        "MedianMilliseconds": 0.2725,
+        "P95Milliseconds": 1.1459,
+        "AllocatedBytes": 240296
+      },
+      "legacy_opponent_scan": {
+        "Count": 10,
+        "Milliseconds": 769.9324,
+        "MedianMilliseconds": 76.5991,
+        "P95Milliseconds": 81.1146,
+        "AllocatedBytes": 11059976
+      },
+      "full_runs": {
+        "Runs": 8,
+        "Battles": 87,
+        "Seconds": 0.3645754,
+        "RunsPerSecond": 21.943232309434684,
+        "BattlesPerSecond": 238.63258591047384
+      }
+    }
+  },
+  "limitations": [
+    "Short-budget statistical/forced-finish gates did not pass. Improved playing strength is not established.",
+    "New relational training is slower per decision than legacy in these runs; the 30% training-throughput target was not met.",
+    "First full seed 69 training preceded the overflow-only resolution guard; evaluation used the corrected guard. Subsequent training used it.",
+    "The scenario banks are derived from archived legal states. They do not measure actual captured-game performance."
+  ],
+  "ranking_smoke": {
+    "snapshots": 15,
+    "runs_per_snapshot": 16,
+    "completed": 15,
+    "repeat_cached": 15
+  },
+  "fresh_session": {
+    "output": "work/training",
+    "update": 5,
+    "resumed_successfully": true,
+    "fixed_probe_completed": true
+  }
+}

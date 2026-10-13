@@ -37,7 +37,7 @@ public sealed class HistoryStore : IAsyncDisposable
     {
         if(_failure is not null) throw new IOException("History writer failed.",_failure);
         // Freeze before publishing: running environments never share references with the saved record.
-        var frozen=JsonSerializer.Deserialize<RunRecord>(JsonSerializer.Serialize(record))!;
+        var frozen=StateSnapshots.Copy(record);
         await _pending.Writer.WriteAsync(frozen,token);
         Interlocked.Increment(ref _enqueued);
     }
@@ -45,11 +45,16 @@ public sealed class HistoryStore : IAsyncDisposable
     {
         try
         {
-            await foreach(var record in _pending.Reader.ReadAllAsync())
+            while(await _pending.Reader.WaitToReadAsync())
             {
-                using(var check=Connect())using(var query=check.CreateCommand()){
+                var batch=new List<RunRecord>();while(batch.Count<32&&_pending.Reader.TryRead(out var next))batch.Add(next);
+                using var batchConnection=Connect();using var batchTransaction=batchConnection.BeginTransaction();
+                foreach(var record in batch)
+                {
+                using(var query=batchConnection.CreateCommand()){
+                    query.Transaction=batchTransaction;
                     query.CommandText="SELECT pinned FROM runs WHERE id=$id";query.Parameters.AddWithValue("$id",record.Summary.RunId);
-                    if(query.ExecuteScalar() is long pinned && pinned!=0){Interlocked.Increment(ref _committed);continue;}
+                    if(query.ExecuteScalar() is long pinned && pinned!=0)continue;
                 }
                 var path=RecordPath(record.Summary.RunId); var staged=path+".tmp";
                 try
@@ -58,7 +63,7 @@ public sealed class HistoryStore : IAsyncDisposable
                     await using(var zip=new BrotliStream(file,CompressionLevel.Fastest))
                         await JsonSerializer.SerializeAsync(zip,record);
                     File.Move(staged,path,true);
-                    using var c=Connect(); using var cmd=c.CreateCommand();
+                    using var cmd=batchConnection.CreateCommand();cmd.Transaction=batchTransaction;
                     cmd.CommandText="""
                         INSERT INTO runs(id,generation,policy,trainer,wins,lives,days,success,evaluation,completed,rules_hash,snapshot_update,evaluation_batch,pinned)
                         VALUES($id,$generation,$policy,$trainer,$wins,$lives,$days,$success,$evaluation,$completed,$hash,$snapshot,$batch,0)
@@ -72,9 +77,11 @@ public sealed class HistoryStore : IAsyncDisposable
                         ("wins",s.Wins),("lives",s.Lives),("days",s.Days),("success",s.Success),("evaluation",s.Evaluation),("completed",s.CompletedAt.ToString("O")),("hash",s.RulesHash)})
                         cmd.Parameters.AddWithValue("$"+key,value);
                     cmd.Parameters.AddWithValue("$snapshot",s.SnapshotUpdate);cmd.Parameters.AddWithValue("$batch",(object?)s.EvaluationBatch??DBNull.Value);
-                    cmd.ExecuteNonQuery(); Prune(); Interlocked.Increment(ref _committed);
+                    cmd.ExecuteNonQuery();
                 }
                 finally { if(File.Exists(staged)) File.Delete(staged); }
+                }
+                batchTransaction.Commit();Prune();Interlocked.Add(ref _committed,batch.Count);
             }
         }
         catch(Exception error) { _failure=error; _pending.Writer.TryComplete(error); throw; }

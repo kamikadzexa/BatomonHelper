@@ -3,7 +3,7 @@ namespace BatomonHelper.Simulation;
 /// <summary>Learning feedback, separate from the game's terminal success reward.</summary>
 public static class TrainingObjective
 {
-    public const int Version = 3;
+    public const int Version = 4;
     public const int MaximumShopDecisions = 64;
 
     public static ulong EvaluationOpponentSeed(ulong baseSeed,int environment,long episode,int day) =>
@@ -27,7 +27,7 @@ public static class TrainingObjective
         // Potential differences cancel over an episode (terminal potential is zero).
         // Buying then selling, or moving out and back, cannot farm deployment reward.
         var potentialAfter=result.Terminal?0:DeploymentPotential(after.Units);
-        var reward=result.Reward-.002+potentialAfter-deploymentPotentialBefore;
+        var reward=result.Reward-.0002+potentialAfter-deploymentPotentialBefore;
         if (result.DayRecord is { } day)
         {
             reward += day.Result.PlayerWon ? .1 : -.1;
@@ -39,11 +39,18 @@ public static class TrainingObjective
 
     public static SimAction[] Candidates(GameEnvironment environment, int decisions, int limit)
     {
-        var legal = environment.GetLegalActions();
+        return Candidates(environment.State.Phase,environment.GetLegalActions(),decisions,limit);
+    }
+
+    public static SimAction[] Candidates(Phase phase,SimAction[] legal,int decisions,int limit,bool resolveOverflow=true)
+    {
         // Restrict the published candidate set, so PPO still records the chosen action's
         // actual probability. Never replace a sampled action behind the learner's back.
+        // Ordinary swaps do not resolve overflow and can otherwise loop without spending shop budget.
+        // Sales and merges can free a slot; source-10 moves place the waiting creature.
+        if(resolveOverflow && phase==Phase.Overflow)legal=legal.Where(x=>x.Kind!=Move.Move||x.Source==10).ToArray();
         if (decisions < limit) return legal;
-        return environment.State.Phase switch
+        return phase switch
         {
             Phase.Shop => legal.Where(x => x.Kind == Move.Finish).ToArray(),
             Phase.Overflow => legal.Where(x => x.Source == 10).ToArray(),

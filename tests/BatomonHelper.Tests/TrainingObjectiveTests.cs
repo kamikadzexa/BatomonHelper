@@ -12,9 +12,9 @@ public sealed class TrainingObjectiveTests
         var before=TrainingObjective.DeploymentPotential(env.State.Units);var bought=env.Step(buy);var purchaseReward=TrainingObjective.Reward(before,env.State,bought);
         before=TrainingObjective.DeploymentPotential(env.State.Units);var outStep=env.Step(new(Move.Move,0,6));var outReward=TrainingObjective.Reward(before,env.State,outStep);
         before=TrainingObjective.DeploymentPotential(env.State.Units);var backStep=env.Step(new(Move.Move,6,0));var backReward=TrainingObjective.Reward(before,env.State,backStep);
-        Assert.Equal(-.004,outReward+backReward,10);
+        Assert.Equal(-.0004,outReward+backReward,10);
         before=TrainingObjective.DeploymentPotential(env.State.Units);var sold=env.Step(new(Move.Sell,0));var sellReward=TrainingObjective.Reward(before,env.State,sold);
-        Assert.Equal(-.004,purchaseReward+sellReward,10);
+        Assert.Equal(-.0004,purchaseReward+sellReward,10);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class TrainingObjectiveTests
         var before=TrainingObjective.DeploymentPotential(env.State.Units);
         var step=env.Step(new(Move.Finish),b=>b);
         Assert.Equal(0,step.Reward);Assert.False(step.Terminal);
-        Assert.Equal(.1-.002-.10,TrainingObjective.Reward(before,env.State,step),10);
+        Assert.Equal(.1-.0002-.10,TrainingObjective.Reward(before,env.State,step),10);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public sealed class TrainingObjectiveTests
         var deployFeatures=encoding.Action(observation,deploy);var finishFeatures=encoding.Action(observation,finish);
         Assert.Equal(1,deployFeatures[37]);Assert.Equal(-1,deployFeatures[38]);Assert.Equal(1,finishFeatures[39]);
         var before=TrainingObjective.DeploymentPotential(env.State.Units);var step=env.Step(deploy);
-        Assert.Equal(.118,TrainingObjective.Reward(before,env.State,step),10);
+        Assert.Equal(.1198,TrainingObjective.Reward(before,env.State,step),10);
     }
 
     [Fact]

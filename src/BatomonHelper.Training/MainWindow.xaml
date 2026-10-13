@@ -27,11 +27,11 @@
      <CheckBox x:Name="AutoCalibrate" IsChecked="True" Content="Auto-calibrate new sessions" Foreground="#EAF0F6" VerticalAlignment="Center" Margin="8,18,0,0"/>
     </WrapPanel>
     <TextBlock Text="Output directory"/><TextBox x:Name="Output" Text="{Binding OutputDirectory, Mode=OneWay}"/>
-    <WrapPanel Margin="0,10,0,12"><Button Content="Start" Click="Start"/><Button Content="Pause" Click="Pause"/><Button Content="Resume" Click="Resume"/><Button Content="Stop and save" Click="Stop"/><Button Content="Evaluate current" Click="Evaluate"/><Button Content="Rank generations" Click="RankGenerations"/><Button Content="Export current" Click="Export"/><Button Content="Export selected" Click="ExportSelected"/></WrapPanel>
+    <WrapPanel Margin="0,10,0,12"><Button Content="Start" Click="Start"/><Button Content="Pause" Click="Pause"/><Button Content="Resume" Click="Resume"/><Button Content="Stop and save" Click="Stop"/><CheckBox x:Name="ThoroughEvaluation" Content="Thorough (512 runs)" Foreground="#EAF0F6" VerticalAlignment="Center"/><Button Content="Evaluate current" Click="Evaluate"/><Button Content="Rank generations" Click="RankGenerations"/><Button Content="Export current" Click="Export"/><Button Content="Export selected" Click="ExportSelected"/></WrapPanel>
     <Border Background="#203246" CornerRadius="6" Padding="18"><StackPanel><TextBlock Text="{Binding Progress}" FontSize="18" TextWrapping="Wrap"/><TextBlock Text="{Binding Checkpoint}" Foreground="#A7BBD0" Margin="0,10" TextWrapping="Wrap"/>
-     <Polyline Points="{Binding Curve}" Stroke="#8DDABF" StrokeThickness="2" Height="110" Stretch="Fill" Margin="0,10"/><TextBlock Text="Ten-win success rate over completed updates" Foreground="#A7BBD0"/>
+     <Polyline Points="{Binding Curve}" Stroke="#8DDABF" StrokeThickness="2" Height="110" Stretch="Fill" Margin="0,10"/><TextBlock Text="Episode success over updates (includes curriculum starts)" Foreground="#A7BBD0"/>
     </StackPanel></Border>
-    <TextBlock Text="Generation performance (complete counters, not retained-history samples)" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
+    <TextBlock Text="Training episodes (full and suffix starts; use fixed evaluation to compare strength)" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
     <DataGrid ItemsSource="{Binding GenerationResults}" AutoGenerateColumns="True" MaxHeight="220"/>
     <TextBlock Text="Fixed evaluation leaderboard" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
     <DataGrid x:Name="RankingList" ItemsSource="{Binding RankingResults}" AutoGenerateColumns="True" MaxHeight="260"/>
@@ -74,6 +74,34 @@
      </StackPanel></ScrollViewer>
     </Grid>
    </Grid></TabItem>
+   <TabItem Header="Play Session"><Grid Margin="12"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="390"/></Grid.ColumnDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="4">
+    <WrapPanel><StackPanel Width="200"><TextBlock Text="Trainer"/><ComboBox x:Name="PlayTrainer"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" Foreground="#101D2A"/></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
+     <StackPanel Width="130"><TextBlock Text="Session seed"/><TextBox x:Name="PlaySeed" Text="69"/></StackPanel>
+     <Button Content="New session" Click="NewPlaySession"/><Button Content="Save session" Click="SavePlaySession"/>
+    </WrapPanel>
+    <TextBlock Text="{Binding PlayInfo}" FontSize="18" TextWrapping="Wrap" Margin="4,12" Foreground="#FFCE79"/>
+    <TextBlock Text="{Binding PlayResult}" TextWrapping="Wrap" Margin="4,6"/>
+    <TextBlock Text="TEAM · slots 1–6" FontWeight="SemiBold"/>
+    <ItemsControl ItemsSource="{Binding PlayTeam}" ItemTemplate="{StaticResource Card}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+    <TextBlock Text="BENCH · slots 7–10" FontWeight="SemiBold"/>
+    <ItemsControl ItemsSource="{Binding PlayBench}" ItemTemplate="{StaticResource Card}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+    <TextBlock Text="SHOP" FontWeight="SemiBold"/>
+    <ItemsControl ItemsSource="{Binding PlayShop}" ItemTemplate="{StaticResource Card}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="5"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+    <TextBlock Text="{Binding PlayInventory}" TextWrapping="Wrap" Margin="4,10"/>
+   </StackPanel></ScrollViewer>
+   <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"><StackPanel Margin="12,4,0,4">
+    <TextBlock Text="Legal actions" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8"/>
+    <WrapPanel><ComboBox x:Name="PlayKind" Width="120" SelectionChanged="ChangePlayKind"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="#101D2A"/></DataTemplate></ComboBox.ItemTemplate></ComboBox><Button Content="Execute action" Click="ExecutePlayAction"/></WrapPanel>
+    <DataGrid x:Name="PlayActionList" ItemsSource="{Binding PlayActions}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Height="220"><DataGrid.Columns>
+     <DataGridTextColumn Header="Action" Binding="{Binding Kind}" Width="72"/><DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="270"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
+    </DataGrid.Columns></DataGrid>
+    <TextBlock Text="Your saved sessions · boards are used only as opponents" FontWeight="SemiBold" Margin="0,18,0,8"/>
+    <WrapPanel><Button Content="Resume selected" Click="ResumePlaySession"/><Button Content="Inspect battles" Click="InspectPlaySession"/>
+     <Button Content="Add to opponent pool" Tag="add" Click="ChangePool"/><Button Content="Remove from pool" Tag="remove" Click="ChangePool"/><Button Content="Enable / disable" Tag="toggle" Click="ChangePool"/>
+    </WrapPanel>
+    <DataGrid x:Name="PlaySessionList" ItemsSource="{Binding PlaySessions}" AutoGenerateColumns="True" IsReadOnly="True" Height="220"/>
+   </StackPanel></ScrollViewer></Grid></TabItem>
   </TabControl>
  </Grid>
 </Window>

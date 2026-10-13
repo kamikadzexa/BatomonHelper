@@ -129,7 +129,17 @@ public sealed class RunState
     public Effect[] PendingShopEffects { get; set; } = [];
     public string? CurrentEvent { get; set; }
     public PurchaseBuff[] PendingPurchaseBuffs { get; set; } = [];
-    public RunState Clone() => JsonSerializer.Deserialize<RunState>(JsonSerializer.Serialize(this))!;
+    public RunState Clone() => new() {
+        RunId=RunId,Day=Day,Lives=Lives,Wins=Wins,Gold=Gold,MaxHp=MaxHp,Rank=Rank,Trainer=Trainer,
+        Units=Units.Select(x=>x?.Clone()).ToArray(),Shop=Shop.Select(x=>x is null?null:x with {Creature=x.Creature?.Clone()}).ToArray(),
+        Bag=[..Bag],ExtraTrainers=[..ExtraTrainers],ForeignPool=[..ForeignPool],Counters=new(Counters),
+        Locked=Locked,CarryShop=CarryShop,SecondChanceUsed=SecondChanceUsed,FreeRerolls=FreeRerolls,ItemUses=ItemUses,MaximumItemUses=MaximumItemUses,
+        Phase=Phase,Overflow=Overflow?.Clone(),PendingUnits=PendingUnits.Select(x=>x.Clone()).ToArray(),Choices=Choices.Select(CopyChoice).ToArray(),
+        PendingChoices=PendingChoices.Select(x=>x with {Choices=x.Choices.Select(CopyChoice).ToArray()}).ToArray(),ActiveChoicePhase=ActiveChoicePhase,
+        TakeAllChoices=TakeAllChoices,RandomState=RandomState,NextInstance=NextInstance,NextInventoryInstance=NextInventoryInstance,
+        DayChoices=[..DayChoices],PendingShopStart=PendingShopStart,PendingShopEffects=[..PendingShopEffects],CurrentEvent=CurrentEvent,PendingPurchaseBuffs=[..PendingPurchaseBuffs]
+    };
+    internal static Choice CopyChoice(Choice x)=>x with {Effects=[..x.Effects]};
 }
 public sealed record Observation(int Day, int Lives, int Wins, double Gold, double MaxHp, int Rank,
     string Trainer, Unit?[] Units, Offer?[] Shop, BagEntry[] Bag, string[] ExtraTrainers,
@@ -152,7 +162,7 @@ public sealed record DayRecord(int Day, Observation BeforeBattle, FrozenBoard Op
     int WinsAfter, int LivesAfter, string[] Choices);
 public sealed record RunSummary(string RunId, int Generation, int Policy, string Trainer, int Wins,
     int Lives, int Days, bool Success, bool Evaluation, DateTimeOffset CompletedAt, string RulesHash, bool Pinned = false,
-    int SnapshotUpdate = -1, string? EvaluationBatch = null)
+    int SnapshotUpdate = -1, string? EvaluationBatch = null,long? ScenarioId=null,int StartingRank=1,int StartingWins=0)
 {
     public string Outcome => Success?"Success":"Failure";
 }

@@ -6,7 +6,8 @@ public partial class App : Application
     {
         base.OnStartup(e);
         var window=new MainWindow();
-        if(e.Args is ["--render",var path]) { window.RenderPreview(path); Shutdown(); }
+        if(e.Args is ["--render-play",var playPath]) {window.RenderPlayPreview(playPath);Shutdown();}
+        else if(e.Args is ["--render",var path]) { window.RenderPreview(path); Shutdown(); }
         else if(e.Args is ["--render-history",var imagePath,var recordPath]) {window.RenderHistory(imagePath,recordPath);Shutdown();}
         else {if(e.Args is ["--output",var directory])window.OpenOutput(directory);window.Show();}
     }

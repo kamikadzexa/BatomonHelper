@@ -11,28 +11,37 @@ import re
 import subprocess
 import time
 import uuid
+import hashlib
+import concurrent.futures
+import threading
+import shutil
 
 import numpy as np
 import torch
 from torch import nn
 from torch.distributions import Categorical
 
-PROTOCOL = 1
-ENCODING = 4
+PROTOCOL = 2
+ENCODING = 5
 ACTION_WIDTH = 40
-TOKEN_WIDTH = 12
-MODEL_VERSION = 3
-OBJECTIVE_VERSION = 3
+TOKEN_WIDTH = 64
+MODEL_VERSION = 5
+OBJECTIVE_VERSION = 4
 
 def atomic_json(path, value):
     path = Path(path)
     staged = path.with_name(path.name + '.tmp')
     staged.write_text(json.dumps(value), encoding='utf-8')
-    os.replace(staged, path)
+    for attempt in range(6):
+        try:os.replace(staged,path);break
+        except PermissionError:
+            if attempt==5:raise
+            time.sleep(.01*(attempt+1))
 
 class Host:
     def __init__(self, config, output):
-        self.output = Path(output)
+        self.keep_buffer=config.get('keep_numeric_buffer',False)
+        self.output = Path(output);self.output.mkdir(parents=True,exist_ok=True)
         self.buffer = self.output / 'numeric-batch.bin'
         self.process = subprocess.Popen(['dotnet', config['host'], '--serve', config['rules'], str(self.buffer),
                                          str(config['environments']), str(config['workers']), str(config['seed']),
@@ -40,30 +49,47 @@ class Host:
                                          'tune' if config.get('auto_tune_workers',True) else 'fixed',
                                          'tune-environments' if config.get('auto_tune_environments',True) and not config.get('resume') else 'fixed-environments',config.get('session','legacy'),
                                          str(config.get('shop_decision_limit',64)),str(config.get('snapshot_update',-1)),str(config.get('evaluation_batch','none')),
-                                         str(config.get('snapshot_generation',-1))], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                         str(config.get('snapshot_generation',-1)),str(config.get('encoding',ENCODING)),
+                                         'curriculum' if config.get('curriculum',True) else 'normal',str(config.get('user_pool',Path(config['rules']).parent.parent.parent/'work'/'user-sessions'))], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE, text=True, encoding='utf-8', creationflags=0x08000000 if os.name == 'nt' else 0)
-        self.ready = self._read()
-        if self.ready.get("Encoding")!=ENCODING:raise RuntimeError("Incompatible numeric protocol encoding.")
-        if self.ready.get('TrainingObjective')!=OBJECTIVE_VERSION:raise RuntimeError('Rebuild the training host for the current learning objective.')
-        self.map = np.memmap(self.buffer, mode='r', dtype=np.uint8)
+        self.timeout=float(config.get('host_timeout_seconds',120))
+        self._reader=concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.errors=deque(maxlen=80)
+        def drain_errors():
+            for line in self.process.stderr:self.errors.append(line.rstrip())
+        self._error_thread=threading.Thread(target=drain_errors,daemon=True);self._error_thread.start()
+        try:
+            self.ready=self._read()
+            if self.ready.get("Encoding")!=config.get("encoding",ENCODING):raise RuntimeError("Incompatible numeric protocol encoding.")
+            if self.ready.get('TrainingObjective')!=OBJECTIVE_VERSION:raise RuntimeError('Rebuild the training host for the current learning objective.')
+            self.map=np.memmap(self.buffer,mode='r',dtype=np.uint8)
+        except BaseException:self.close(force=True);raise
     def _read(self):
-        line = self.process.stdout.readline()
-        if not line:
-            raise RuntimeError(self.process.stderr.read() or 'Simulation host terminated.')
-        result = json.loads(line)
-        if 'Error' in result:
+        future=self._reader.submit(self.process.stdout.readline)
+        try:line=future.result(timeout=self.timeout)
+        except concurrent.futures.TimeoutError:
+            self.process.kill();self.process.wait(timeout=10)
+            raise TimeoutError(f'Simulation host timed out after {self.timeout:g}s. '+"\n".join(self.errors))
+        if not line:raise RuntimeError(f'Simulation host exited ({self.process.poll()}). '+"\n".join(self.errors))
+        try:result=json.loads(line)
+        except json.JSONDecodeError:raise RuntimeError('Simulation host returned invalid protocol: '+line.rstrip()+"\n"+"\n".join(self.errors))
+        if 'Error'  in result:
             raise RuntimeError(result['Error'])
         return result
     def request(self, command, **values):
+        if command=='step':values.setdefault('revision',self.revision)
         self.process.stdin.write(json.dumps(dict(command=command, **values)) + '\n')
         self.process.stdin.flush()
         return self._read()
     def batch(self):
-        shape = self.request('batch')
-        count, width = shape['Count'], shape['ObservationWidth']
-        observations = np.frombuffer(self.map, np.float32, count * width).reshape(count, width).copy()
-        counts = np.frombuffer(self.map, np.int32, count, offset=count * width * 4).copy()
-        offset = count * (width + 1) * 4
+        shape = self.request('batch');self.revision=shape['Revision'];self.scenarios=shape.get('ScenarioIds');self.days=shape.get('Days');self.ordinals=shape.get('DecisionOrdinals')
+        count=shape['Count']
+        if shape.get('Layout')!='ragged':raise RuntimeError('Rebuild the host for ragged publication protocol 2.')
+        lengths=np.frombuffer(self.map,np.int32,count).copy();offset=count*4
+        flat_obs=np.frombuffer(self.map,np.float32,int(lengths.sum()),offset=offset).copy();offset+=len(flat_obs)*4
+        observations=[];start=0
+        for n in lengths:observations.append(flat_obs[start:start+n]);start+=n
+        counts=np.frombuffer(self.map,np.int32,count,offset=offset).copy();offset+=count*4
         # Copy the packed publication once; row slices remain zero-copy views of this owned array.
         flat = np.frombuffer(self.map, np.float32, int(counts.sum()) * ACTION_WIDTH, offset=offset).reshape(-1, ACTION_WIDTH).copy()
         actions = []
@@ -72,12 +98,18 @@ class Host:
             actions.append(flat[start:start + n])
             start += n
         return observations, actions
-    def close(self):
-        if self.process.poll() is None:
-            self.request('stop')
-            self.process.wait(timeout=30)
-        if hasattr(self, 'map'):
-            self.map._mmap.close()
+    def close(self,force=False):
+        try:
+            if self.process.poll() is None and not force:
+                self.request('stop');self.process.wait(timeout=10)
+        finally:
+            if self.process.poll() is None:self.process.kill();self.process.wait(timeout=10)
+            if hasattr(self,'map'):self.map._mmap.close()
+            self._reader.shutdown(wait=True,cancel_futures=True)
+            self._error_thread.join(timeout=2)
+            for stream in (self.process.stdin,self.process.stdout,self.process.stderr):stream.close()
+            if not self.keep_buffer and self.buffer.exists():self.buffer.unlink()
+
 
 def pad_observations(rows):
     width=max(map(len,rows));result=np.zeros((len(rows),width),np.float32)
@@ -93,52 +125,8 @@ def padded(actions, device):
     values,mask=padded_arrays(actions)
     return torch.as_tensor(values, device=device), torch.as_tensor(mask, device=device)
 
-class Policy(nn.Module):
-    def __init__(self, width, species):
-        super().__init__()
-        self.core_width=width
-        self.species = nn.Embedding(species + 1, 32)
-        self.entity = nn.Sequential(nn.Linear(49, 64), nn.ReLU())
-        self.state = nn.Sequential(nn.Linear(width - 270 + 15 * 64 + 128, 256), nn.ReLU(), nn.Linear(256, 256), nn.ReLU())
-        self.action = nn.Sequential(nn.Linear(ACTION_WIDTH, 64), nn.ReLU())
-        self.score = nn.Sequential(nn.Linear(320, 128), nn.ReLU(), nn.Linear(128, 1))
-        self.value = nn.Linear(256, 1)
-        self.tokens=nn.Sequential(nn.Linear(TOKEN_WIDTH,64),nn.ReLU())
-        # Score the actual source and destination, rather than requiring the state
-        # MLP to rediscover dynamic slot indexing from scalar action identifiers.
-        self.context=nn.Sequential(nn.Linear(448,128),nn.ReLU(),nn.Linear(128,1))
-        nn.init.zeros_(self.context[-1].weight); nn.init.zeros_(self.context[-1].bias)
-    def forward(self, observations, actions, mask):
-        entities = observations[:, 16:286].reshape(-1, 15, 18)
-        entity_slots = self.entity(torch.cat([self.species(entities[:, :, 0].long()), entities[:, :, 1:]], dim=-1))
-        entity = entity_slots.flatten(1)
-        count=observations[:,self.core_width].long() if observations.shape[1]>self.core_width else torch.zeros(len(observations),device=observations.device,dtype=torch.long)
-        if observations.shape[1]>self.core_width+1:
-            tokens=observations[:,self.core_width+1:].reshape(len(observations),-1,TOKEN_WIDTH)
-            encoded=self.tokens(tokens)
-            valid=torch.arange(tokens.shape[1],device=observations.device)[None,:]<count[:,None]
-            encoded=encoded*valid[:,:,None]
-            pooled=torch.cat([encoded.sum(1)/count.clamp(min=1)[:,None],encoded.amax(1)],dim=-1)
-        else:pooled=torch.zeros(len(observations),128,device=observations.device)
-        state = self.state(torch.cat([observations[:, :16], entity, observations[:, 286:self.core_width],pooled], dim=-1))
-        encoded_actions = self.action(actions)
-        logits = self.score(torch.cat([state[:, None, :].expand(-1, actions.shape[1], -1), encoded_actions], dim=-1)).squeeze(-1)
-        source=(actions[:,:,9]*11).round().long()-1
-        target=(actions[:,:,10]*11).round().long()-1
-        shop=actions[:,:,0]+actions[:,:,1]>0
-        source=torch.where(shop,source+10,source)
-        source_valid=(source>=0)&(source<15)&(shop|(source<10))
-        target_valid=(target>=0)&(target<10)
-        source_context=entity_slots.gather(1,source.clamp(0,14)[:,:,None].expand(-1,-1,64))*source_valid[:,:,None]
-        target_context=entity_slots.gather(1,target.clamp(0,14)[:,:,None].expand(-1,-1,64))*target_valid[:,:,None]
-        logits=logits+self.context(torch.cat([state[:,None,:].expand(-1,actions.shape[1],-1),encoded_actions,source_context,target_context],dim=-1)).squeeze(-1)
-        # 90 equivalent move candidates must not crowd out a single Finish.
-        kinds=actions[:,:,:9]*mask[:,:,None]
-        kind_counts=kinds.sum(1)
-        multiplicity=(kinds*kind_counts[:,None,:]).sum(-1).clamp(min=1)
-        logits=logits-multiplicity.log()
-        logits = logits.masked_fill(~mask, -torch.inf)
-        return Categorical(logits=logits,validate_args=False), self.value(state).squeeze(-1)
+from legacy_policy import LegacyPolicy
+from policy import Policy, greedy_actions
 
 class PopulationInference:
     """One device transfer and batched forward for four independent policies."""
@@ -147,9 +135,10 @@ class PopulationInference:
         params,self.buffers=torch.func.stack_module_state(policies)
         self.params={name:value.detach() for name,value in params.items()}
         self.model=policies[0]
+        self.token_width=12 if isinstance(self.model,LegacyPolicy) else TOKEN_WIDTH
         def forward(params,buffers,obs,features,mask):
             distribution,value=torch.func.functional_call(self.model,(params,buffers),(obs,features,mask))
-            return distribution.logits,value
+            return distribution.logits,value,distribution.kind_logits if hasattr(distribution,'kind_logits') else torch.zeros(len(obs),9,device=obs.device)
         self.forward=torch.vmap(forward,in_dims=(0,0,0,0,0))
 
     def __call__(self,observations,actions):
@@ -157,31 +146,47 @@ class PopulationInference:
         return self.infer(prepared)
 
     def prepare(self,observations,actions):
-        packing_start=time.perf_counter()
-        count=len(observations);groups=(count+3)//4;total=groups*4
-        if total>count:
-            observations=np.pad(observations,((0,total-count),(0,0)))
-            actions=actions+[np.zeros((1,ACTION_WIDTH),np.float32) for _ in range(total-count)]
-        feature_values,mask_values=padded_arrays(actions);maximum=feature_values.shape[1]
-        packing_seconds=time.perf_counter()-packing_start
-        transfer_start=time.perf_counter()
-        obs=torch.as_tensor(observations,device=self.device).reshape(groups,4,-1).transpose(0,1)
-        features=torch.as_tensor(feature_values,device=self.device);mask=torch.as_tensor(mask_values,device=self.device)
-        transfer_seconds=time.perf_counter()-transfer_start
-        features=features.reshape(groups,4,maximum,ACTION_WIDTH).transpose(0,1)
-        mask=mask.reshape(groups,4,maximum).transpose(0,1)
-        return (obs,features,mask,count,total,maximum),packing_seconds,transfer_seconds
+        packing_start=time.perf_counter();count=len(observations);maximum=max(map(len,actions));bins={}
+        core=self.model.core_width
+        for i,row in enumerate(actions):
+            tokens=int(observations[i][core]) if len(observations[i])>core else 0
+            key=(0,0) if count<=128 else (max(1,len(row)).bit_length()//2,max(1,tokens).bit_length()//2)
+            bins.setdefault(key,[]).append(i)
+        batches=[];transfer_seconds=0.
+        for members in bins.values():
+            groups=[[i for i in members if i%4==p] for p in range(4)];size=max(map(len,groups))
+            indices=[groups[p][j] if j<len(groups[p]) else -1 for j in range(size) for p in range(4)]
+            token_count=max((int(observations[i][core]) for i in members),default=0) if len(observations[0])>core else 0
+            width=core+1+token_count*self.token_width if len(observations[0])>core else core
+            rows=np.zeros((size*4,width),np.float32);candidate_rows=[]
+            for j,i in enumerate(indices):
+                if i>=0:rows[j,:min(width,len(observations[i]))]=observations[i][:width];candidate_rows.append(actions[i])
+                else:
+                    dummy=np.zeros((1,ACTION_WIDTH),np.float32);dummy[0,8]=1;candidate_rows.append(dummy)
+                    if width>core+1:rows[j,core]=1
+            features,mask=padded_arrays(candidate_rows);n=features.shape[1];transfer_start=time.perf_counter()
+            obs=torch.as_tensor(rows,device=self.device).reshape(size,4,-1).transpose(0,1)
+            tensor=torch.as_tensor(features,device=self.device).reshape(size,4,n,ACTION_WIDTH).transpose(0,1)
+            valid=torch.as_tensor(mask,device=self.device).reshape(size,4,n).transpose(0,1)
+            transfer_seconds+=time.perf_counter()-transfer_start
+            batches.append((obs,tensor,valid,indices,n))
+        return (batches,count,maximum),time.perf_counter()-packing_start-transfer_seconds,transfer_seconds
 
     def infer(self,prepared):
-        obs,features,mask,count,total,maximum=prepared
-        logits,values=self.forward(self.params,self.buffers,obs,features,mask)
-        logits=logits.transpose(0,1).reshape(total,maximum)[:count]
-        values=values.transpose(0,1).reshape(total)[:count]
-        return Categorical(logits=logits,validate_args=False),values
+        batches,count,maximum=prepared
+        result=torch.full((count,maximum),-torch.inf,device=self.device);values=torch.zeros(count,device=self.device);kind_result=torch.zeros(count,9,device=self.device)
+        for obs,features,mask,indices,n in batches:
+            logits,value,kind=self.forward(self.params,self.buffers,obs,features,mask)
+            logits=logits.transpose(0,1).reshape(-1,n);value=value.transpose(0,1).reshape(-1);kind=kind.transpose(0,1).reshape(-1,9)
+            local=[j for j,i in enumerate(indices) if i>=0];original=[i for i in indices if i>=0]
+            result[original,:n]=logits[local];values[original]=value[local];kind_result[original]=kind[local]
+        distribution=Categorical(logits=result,validate_args=False);distribution.kind_logits=kind_result
+        return distribution,values
+
 
 def load_policy(policy, weights):
     missing, unexpected=policy.load_state_dict(weights,strict=False)
-    allowed={f'context.{layer}.{field}' for layer in (0,2) for field in ('weight','bias')}
+    allowed={f'context.{layer}.{field}' for layer in (0,2) for field in ('weight','bias')} if isinstance(policy,LegacyPolicy) else set()
     if unexpected or set(missing)-allowed:
         raise ValueError(f'Incompatible policy weights: missing={missing}, unexpected={unexpected}')
 
@@ -192,8 +197,25 @@ def configure_compute(config):
     torch.set_num_threads(1)
     torch.set_float32_matmul_precision('high' if config.get('tf32',True) else 'highest')
 
-def pack_rollout(transitions, advantage, returns, policy, environments, device):
+def pack_rollout(transitions, advantage, returns, policy, environments, device,core_width=None):
     examples=[(t,j) for t in range(len(transitions)) for j in range(policy,environments,4)]
+    if core_width is not None:
+        adv=np.array([advantage[t,j] for t,j in examples],np.float32);adv=(adv-adv.mean())/(adv.std()+1e-8)
+        buckets={}
+        for index,(t,j) in enumerate(examples):
+            tokens=int(transitions[t][0][j][core_width]);candidates=len(transitions[t][1][j])
+            buckets.setdefault((max(1,tokens).bit_length()//2,max(1,candidates).bit_length()//2),[]).append(index)
+        packed=[]
+        for members in buckets.values():
+            chosen=[examples[k] for k in members];tokens=max(int(transitions[t][0][j][core_width]) for t,j in chosen)
+            width=core_width+1+tokens*TOKEN_WIDTH
+            obs=torch.as_tensor(pad_observations([transitions[t][0][j][:width] for t,j in chosen]),device=device)
+            features,mask=padded([transitions[t][1][j] for t,j in chosen],device)
+            selected=torch.as_tensor(np.array([transitions[t][2][j] for t,j in chosen]),device=device)
+            old_log=torch.as_tensor(np.array([transitions[t][3][j] for t,j in chosen]),device=device)
+            targets=torch.as_tensor(np.array([returns[t,j] for t,j in chosen],np.float32),device=device)
+            packed.append((obs,features,mask,selected,old_log,torch.as_tensor(adv[members],device=device),targets))
+        return packed
     obs=torch.as_tensor(pad_observations([transitions[t][0][j] for t,j in examples]),device=device)
     features,mask=padded([transitions[t][1][j] for t,j in examples],device)
     selected=torch.as_tensor(np.array([transitions[t][2][j] for t,j in examples]),device=device)
@@ -215,33 +237,38 @@ def exploration_entropy(distribution,features,mask):
     return kind_entropy+.1*conditional
 
 def optimize(policy, optimizer, data, config, entropy):
-    losses=[]; kls=[]; entropies=[]; clips=[]; epochs=0
-    size=len(data[0]); device=data[0].device
+    losses=[];kls=[];entropies=[];clips=[];weights=[];epochs=0
+    buckets=data if isinstance(data,list) else [data];device=buckets[0][0].device
     for _ in range(config.get('epochs',4)):
-        permutation=torch.randperm(size,device=device);epoch_kls=[]
-        for offset in range(0,size,config['minibatch']):
-            indices=permutation[offset:offset+config['minibatch']]
-            obs,features,mask,selected,old_log,adv,target=(x[indices] for x in data)
-            distribution,value=policy(obs,features,mask)
-            log_ratio=distribution.log_prob(selected)-old_log
-            ratio=log_ratio.exp();clip=config.get('clip',.2)
-            actor=-torch.minimum(ratio*adv,ratio.clamp(1-clip,1+clip)*adv).mean()
-            uncertainty=exploration_entropy(distribution,features,mask).mean()
-            loss=actor+.5*(value-target).square().mean()-entropy*uncertainty
-            optimizer.zero_grad(set_to_none=True);loss.backward()
-            nn.utils.clip_grad_norm_(policy.parameters(),.5,error_if_nonfinite=True);optimizer.step()
-            losses.append(loss.detach());entropies.append(uncertainty.detach())
-            epoch_kls.append(((ratio-1)-log_ratio).mean().detach())
-            clips.append(((ratio-1).abs()>clip).float().mean().detach())
+        epoch_kls=[];epoch_weights=[]
+        for bucket_index in torch.randperm(len(buckets)).tolist():
+            bucket=buckets[bucket_index];size=len(bucket[0]);permutation=torch.randperm(size,device=device)
+            for offset in range(0,size,config['minibatch']):
+                indices=permutation[offset:offset+config['minibatch']]
+                obs,features,mask,selected,old_log,adv,target=(x[indices] for x in bucket)
+                distribution,value=policy(obs,features,mask)
+                log_ratio=distribution.log_prob(selected)-old_log
+                ratio=log_ratio.exp();clip=config.get('clip',.2)
+                actor=-torch.minimum(ratio*adv,ratio.clamp(1-clip,1+clip)*adv).mean()
+                uncertainty=exploration_entropy(distribution,features,mask).mean()
+                loss=actor+.5*(value-target).square().mean()-entropy*uncertainty
+                optimizer.zero_grad(set_to_none=True);loss.backward()
+                nn.utils.clip_grad_norm_(policy.parameters(),.5,error_if_nonfinite=True);optimizer.step()
+                losses.append(loss.detach());entropies.append(uncertainty.detach());weights.append(len(indices))
+                epoch_kls.append(((ratio-1)-log_ratio).mean().detach());epoch_weights.append(len(indices))
+                clips.append(((ratio-1).abs()>clip).float().mean().detach())
         epochs+=1
-        epoch_kl=torch.stack(epoch_kls).mean();kls.extend(epoch_kls)
-        # Synchronize once per epoch, not once for every metric of every minibatch.
+        w=torch.tensor(epoch_weights,device=device,dtype=torch.float32)
+        epoch_kl=(torch.stack(epoch_kls)*w).sum()/w.sum();kls.extend(epoch_kls)
         if float(epoch_kl.cpu())>config.get('target_kl',.02):break
-    summary=torch.stack([torch.stack(x).mean() for x in (losses,kls,entropies,clips)]).cpu().numpy()
+    w=torch.tensor(weights,device=device,dtype=torch.float32)
+    summary=torch.stack([(torch.stack(x)*w).sum()/w.sum() for x in (losses,kls,entropies,clips)]).cpu().numpy()
     if not np.isfinite(summary).all():raise RuntimeError('Non-finite PPO metrics; checkpoint retained for diagnosis.')
     return dict(loss=float(summary[0]),kl=float(summary[1]),entropy=float(summary[2]),clip_fraction=float(summary[3]),epochs=epochs)
 
+
 def device_benchmark(model, observation, actions):
+    observation=pad_observations(observation)
     measurements = {}
     for device in ['cpu'] + (['cuda'] if torch.cuda.is_available() else []):
         candidate = copy.deepcopy(model).to(device)
@@ -270,6 +297,7 @@ def device_benchmark(model, observation, actions):
 
 def calibrate_minibatch(model, observation, actions, device, ceiling):
     """Benchmark disposable model copies; never advances training state or RNG."""
+    observation=pad_observations(observation)
     candidates=sorted({n for n in (256,512,1024,2048,ceiling) if 32<=n<=ceiling})
     rows=[]
     for size in candidates:
@@ -314,14 +342,15 @@ def select_calibration(rows, fallback):
 def ranking_key(row):
     return row['score'],row['average_wins'],-row['unused_deployable_bench']
 
-def advantages(rewards, terminals, values, tail, gamma=1., lam=.95):
+def advantages(rewards, terminals, values, tail, gamma=1., lam=.95, battles=None):
     result = np.zeros_like(rewards)
     carry = np.zeros(rewards.shape[1], dtype=np.float32)
     for t in reversed(range(len(rewards))):
         next_value = tail if t == len(rewards) - 1 else values[t + 1]
         live = 1 - terminals[t]
         delta = rewards[t] + gamma * next_value * live - values[t]
-        carry = delta + gamma * lam * live * carry
+        trace=lam if battles is None else np.where(battles[t],lam,1.)
+        carry = delta + gamma * trace * live * carry
         result[t] = carry
     return result, result + values
 
@@ -371,13 +400,16 @@ def run(config):
         raise RuntimeError(f"Training blocked by {len(rules['Issues'])} unresolved game rules. See rules coverage in the UI.")
     random.seed(config['seed']); np.random.seed(config['seed']); torch.manual_seed(config['seed'])
     configure_compute(config)
-    config.setdefault('gae_lambda',.99);config.setdefault('entropy_coefficient',.002)
+    config.setdefault('gae_lambda',.95);config.setdefault('entropy_coefficients',[.005,.01,.02,.04]);config['encoding']=ENCODING;config.setdefault('curriculum',True)
+    config.setdefault('probe_interval',5);config.setdefault('probe_runs',32);config.setdefault('promotion_runs',128)
     config.setdefault('shop_decision_limit',64);config.setdefault('target_kl',.02)
     # A CPU-only startup probe cannot judge GPU batch efficiency. Keep the
     # requested environment budget for CUDA/Auto; CPU may tune it down.
     config.setdefault('auto_calibrate',not config.get('resume',False))
     config.setdefault('auto_tune_environments',config['auto_calibrate'] and not config.get('resume',False))
     saved_checkpoint = checkpoint_data(config) if config.get('resume') else None
+    if saved_checkpoint and (saved_checkpoint[2].get('encoding')!=ENCODING or saved_checkpoint[2].get('model_version')!=MODEL_VERSION):raise ValueError('Legacy models are comparison-only. Start a fresh session.')
+    if not config.get('resume') and (output/'checkpoint.json').exists():raise ValueError('This directory already contains a session. Resume it or choose an empty output directory.')
     if saved_checkpoint:
         saved_config=saved_checkpoint[2]['config']
         config['environments']=resume_environment_count(config['environments'],saved_config)
@@ -432,32 +464,42 @@ def run(config):
         ns=saved['numpy_rng']; np.random.set_state((ns[0],np.array(ns[1],np.uint32),ns[2],ns[3],ns[4])); random.setstate(saved['python_rng'])
         if saved['cuda_rng'] and torch.cuda.is_available(): torch.cuda.set_rng_state_all(saved['cuda_rng'])
         update, metrics = saved['update'], saved['metrics']
+        candidates=[]
         evaluation_path=output/'evaluation.json'
-        if evaluation_path.exists():
-            evaluation=json.loads(evaluation_path.read_text())
-            if evaluation.get('rules_hash')==host.ready['RulesHash'] and evaluation.get('completed'):
-                for score in evaluation['policies']:
-                    if score['runs']>=20 and score['success_rate']>metrics.setdefault('champion_scores',{}).get(str(score['policy']),-1):
-                        host.request('promote',policy=score['policy'],generation=max(0,(evaluation['update']-1)//10))
-                        metrics['champion_scores'][str(score['policy'])]=score['success_rate']
+        if evaluation_path.exists():candidates.append(json.loads(evaluation_path.read_text()))
         ranking_path=output/'generation-ranking.json'
         if ranking_path.exists():
             ranking=json.loads(ranking_path.read_text())
-            if ranking.get('rules_hash')==host.ready['RulesHash'] and ranking.get('best'):
-                champion=ranking['best'];policy=max(champion['policies'],key=lambda row:(row['confidence_interval_95'][0],row['average_wins'],-row['unused_deployable_bench']))
-                host.request('promote',policy=policy['policy'],generation=champion['generation'])
-                metrics['ranked_champion']=dict(generation=champion['generation'],policy=policy['policy'],update=champion['update'],score=policy['confidence_interval_95'][0])
+            if ranking.get('rules_hash')==host.ready['RulesHash'] and ranking.get('best'):candidates.append(dict(ranking['best'],rules_hash=ranking['rules_hash']))
+        for candidate in candidates:
+            if candidate.get('rules_hash')!=host.ready['RulesHash'] or not candidate.get('completed') or candidate.get('baseline'):continue
+            board_path=output/'evaluation-cache'/f"{candidate.get('cache_key','missing')}-boards.json"
+            if not board_path.exists():continue
+            winner=max(candidate['policies'],key=lambda row:(row['confidence_interval_95'][0],row['average_wins'],-row.get('unused_deployable_bench',0)))
+            entries=[entry for entry in json.loads(board_path.read_text()) if entry['Policy']==winner['policy']]
+            if entries:host.request('champion_boards',entries=entries)
+            metrics['ranked_champion']=dict(generation=candidate['generation'],policy=winner['policy'],update=candidate['update'],score=winner['confidence_interval_95'][0])
     atomic_json(output / 'configuration.json', config)
     start = time.monotonic(); checkpoint_at = start; decisions = 0; last_saved = None
     battles=deployed=deployable_bench=limited_turns=deployment_improving=deployment_reversing=finish_with_gap=0
     action_counts={};opponent_mix={};recent=deque(maxlen=2000)
-    stage_totals={key:0. for key in ('batch','python_packing','host_to_device','cuda_inference','device_to_host','inference','step','encoding','buffer','simulation','history')}
+    gpu_start=torch.cuda.Event(enable_timing=True) if device=='cuda' else None
+    gpu_end=torch.cuda.Event(enable_timing=True) if device=='cuda' else None
+    stage_totals={key:0. for key in ('batch','python_packing','host_to_device','cuda_inference','device_to_host','inference','step','encoding','buffer','simulation','history','opponent_lookup','league','synchronization_wait')}
     initial_metrics={key:metrics[key] for key in ('runs','successes','total_wins')}
     try:
         # A failure before the first five-minute save must still leave a valid
         # paired learner/host checkpoint. Do not snapshot a partially failed step.
         last_saved=save_checkpoint(output,host,policies,optimizers,update,config,metrics)
         checkpoint_at=time.monotonic()
+        probe_suite=output/'probe-suite';probe_suite.mkdir(exist_ok=True)
+        if not (probe_suite/'host.json').exists():
+            candidate=config.get('evaluation_suite_checkpoint')
+            if not candidate:
+                archives=config.get('comparison_archives',[])
+                if archives:
+                    archive=Path(archives[0]);pointer=json.loads((archive/'checkpoint.json').read_text());candidate=str(archive/pointer['directory']/'host.json')
+            shutil.copyfile(candidate or output/last_saved/'host.json',probe_suite/'host.json')
         while not config.get('updates') or update < config['updates']:
             control = json.loads((output / 'control.json').read_text()) if (output / 'control.json').exists() else {}
             if control.get('command') == 'stop' or config.get('minutes', 0) > 0 and time.monotonic() - start >= config['minutes'] * 60:
@@ -479,23 +521,36 @@ def run(config):
                 with torch.inference_mode():
                     prepared,packing_seconds,transfer_seconds=population.prepare(observation,actions)
                     stage_totals['python_packing']+=packing_seconds;stage_totals['host_to_device']+=transfer_seconds
-                    forward_start=time.perf_counter();distribution,value=population.infer(prepared);choice=distribution.sample()
+                    forward_start=time.perf_counter()
+                    if gpu_start:gpu_start.record()
+                    distribution,value=population.infer(prepared);choice=distribution.sample()
                     device_numeric=torch.stack([choice.float(),distribution.log_prob(choice),value],dim=1)
-                    stage_totals['cuda_inference']+=time.perf_counter()-forward_start
+                    if gpu_end:gpu_end.record()
+                    enqueue_seconds=time.perf_counter()-forward_start
+                    wait_start=time.perf_counter()
+                    if gpu_end:gpu_end.synchronize()
+                    stage_totals['synchronization_wait']+=time.perf_counter()-wait_start
                     transfer_back_start=time.perf_counter();numeric=device_numeric.cpu().numpy()
-                    stage_totals['device_to_host']+=time.perf_counter()-transfer_back_start
+                    copy_wall=time.perf_counter()-transfer_back_start
+                    gpu_seconds=gpu_start.elapsed_time(gpu_end)/1000 if gpu_start else enqueue_seconds
+                    stage_totals['cuda_inference']+=gpu_seconds
+                    stage_totals['device_to_host']+=copy_wall
                 stage_totals['inference']+=time.perf_counter()-inference_start
                 selected=numeric[:,0].astype(np.int64);log_prob=numeric[:,1];values=numeric[:,2]
                 step_start=time.monotonic()
                 result = host.request('step', actions=selected.tolist())
                 stage_totals['step']+=time.monotonic()-step_start
-                transitions.append((observation, actions, selected, log_prob, values, np.array(result['Rewards'], np.float32), np.array(result['Terminals'], np.float32)))
+                transitions.append((observation, actions, selected, log_prob, values, np.array(result['Rewards'], np.float32), np.array(result['Terminals'], np.float32),np.array(result['BattleBoundaries'],np.bool_)))
                 decisions += config['environments']
                 battles+=result['Battles'];deployed+=result['Deployed'];deployable_bench+=result['DeployableBench'];limited_turns+=result['LimitedTurns']
                 deployment_improving+=result.get('DeploymentImproving',0);deployment_reversing+=result.get('DeploymentReversing',0);finish_with_gap+=result.get('FinishWithDeployableBench',0)
                 for key,value in result.get('ActionCounts',{}).items():action_counts[key]=action_counts.get(key,0)+value
                 for opponent in result.get('Opponents',[]):opponent_mix[opponent['Kind']]=opponent_mix.get(opponent['Kind'],0)+1
-                for key,source in (('encoding','EncodingMilliseconds'),('buffer','BufferMilliseconds'),('simulation','SimulationMilliseconds'),('history','HistoryMilliseconds')):stage_totals[key]+=result.get(source,0)/1000
+                for key,value in result.get('HostStages',{}).items():stage_totals[key]=stage_totals.get(key,0.)+value/1000
+                metrics['rank_bands']=result.get('RankBands',{})
+                metrics['episode_starts']=result.get('EpisodeStarts',[0,0,0])
+                metrics['repeated_states_blocked']=result.get('RepeatedStatesBlocked',0)
+                for key,source in (('opponent_lookup','OpponentLookupMilliseconds'),('league','LeagueMilliseconds'),('encoding','EncodingMilliseconds'),('buffer','BufferMilliseconds'),('simulation','SimulationMilliseconds'),('history','HistoryMilliseconds')):stage_totals[key]+=result.get(source,0)/1000
                 for record in result['Runs']:
                     summary = record['Summary']; metrics['runs'] += 1; metrics['successes'] += int(summary['Success']); metrics['total_wins'] += summary['Wins']
                     recent.append((int(summary['Success']),summary['Wins']))
@@ -507,12 +562,12 @@ def run(config):
             with torch.inference_mode():_,value=population(observation,actions);tail=value.cpu().numpy()
             del population
             rollout_seconds=time.monotonic()-rollout_start;optimization_start=time.monotonic()
-            advantage, returns = advantages(np.stack([x[5] for x in transitions]), np.stack([x[6] for x in transitions]), np.stack([x[4] for x in transitions]), tail,lam=config['gae_lambda'])
+            advantage, returns = advantages(np.stack([x[5] for x in transitions]), np.stack([x[6] for x in transitions]), np.stack([x[4] for x in transitions]), tail,lam=config['gae_lambda'],battles=np.stack([x[7] for x in transitions]))
             optimization=[]
             for i in range(4):
                 if i>=config['environments']:continue
-                data=pack_rollout(transitions,advantage,returns,i,config['environments'],device)
-                optimization.append(optimize(policies[i],optimizers[i],data,config,config['entropy_coefficient']))
+                data=pack_rollout(transitions,advantage,returns,i,config['environments'],device,policies[i].core_width)
+                optimization.append(optimize(policies[i],optimizers[i],data,config,config['entropy_coefficients'][i]))
                 del data
             optimization_seconds=time.monotonic()-optimization_start
             update += 1
@@ -522,6 +577,31 @@ def run(config):
                 torch.save([p.state_dict() for p in policies], output / f'generation-{generation}.pt')
                 for old in output.glob('generation-*.pt'):
                     if re.fullmatch(r'generation-\d+',old.stem) and old.resolve().parent==output and int(old.stem.split('-')[1]) < generation - 19: old.unlink()
+            if config['probe_interval'] and update%config['probe_interval']==0:
+                from evaluation import EvaluationRunner
+                probe_config=dict(config,output=str(output/'probes'),cancel_control=str(output/'control.json'),progress_output=str(output),evaluation_environments=128)
+                torch_state=torch.get_rng_state();cuda_state=torch.cuda.get_rng_state_all() if device=='cuda' else None
+                try:
+                    snapshot=dict(label=f'Probe update {update}',update=update,generation=generation,weights=[p.state_dict() for p in policies],encoding=ENCODING,model_version=MODEL_VERSION)
+                    with EvaluationRunner(probe_config,output/'probes',probe_suite,rules,config['probe_runs']) as runner:
+                        runner.progress_context=dict(status='Evaluating',update=update,completed=0,total=1)
+                        probe=runner.evaluate(snapshot);metrics['fixed_probe']=probe
+                    best_probe=max((p['confidence_interval_95'][0] for p in probe['policies']),default=0.)
+                    if probe['completed'] and best_probe>metrics.get('best_probe_score',-1):
+                        with EvaluationRunner(probe_config,output/'probes',probe_suite,rules,config['promotion_runs']) as runner:
+                            runner.progress_context=dict(status='Evaluating',update=update,completed=0,total=1)
+                            full=runner.evaluate(dict(snapshot,label=f'Promotion evaluation {update}'))
+                            winner=max(full['policies'],key=lambda p:(p['confidence_interval_95'][0],p['average_wins']))
+                            if full['completed'] and winner['confidence_interval_95'][0]>metrics.get('champion_score',0):
+                                entries=[entry for entry in runner.last_boards if entry['Policy']==winner['policy']]
+                                if entries:host.request('champion_boards',entries=entries)
+                                metrics['champion_score']=winner['confidence_interval_95'][0];metrics['champion_update']=update
+                            if full['completed']:metrics['best_probe_score']=best_probe
+                            atomic_json(output/'promotion-evaluation.json',full)
+                finally:
+                    torch.set_rng_state(torch_state)
+                    if cuda_state is not None:torch.cuda.set_rng_state_all(cuda_state)
+                    configure_compute(config)
             if time.monotonic() - checkpoint_at >= 300:
                 last_saved = save_checkpoint(output, host, policies, optimizers, update, config, metrics); checkpoint_at = time.monotonic()
             progress = dict(status='Training', update=update, generation=generation, device=device, device_seconds=timings, decisions=decisions,
@@ -559,8 +639,8 @@ def checkpoint_data(config):
     if directory.parent != output or not directory.name.startswith('checkpoint-'):
         raise ValueError('Invalid checkpoint location.')
     saved = torch.load(directory / 'learner.pt', map_location='cpu', weights_only=True)
-    if saved['protocol'] != PROTOCOL: raise ValueError('Unsupported checkpoint protocol.')
-    if saved.get('encoding')!=ENCODING or saved['policies'][0]['action.0.weight'].shape[1]!=ACTION_WIDTH:raise ValueError('Incompatible observation/action encoding.')
+    if saved['protocol'] not in (1,PROTOCOL): raise ValueError('Unsupported checkpoint protocol.')
+    if saved.get('encoding') not in (4,ENCODING) or saved['policies'][0]['action.0.weight'].shape[1]!=ACTION_WIDTH:raise ValueError('Incompatible observation/action encoding.')
     rules = json.loads(Path(config['rules']).read_text(encoding='utf-8-sig'))
     if rules['Hash'] != saved['rules_hash']:
         raise ValueError('Rules hash differs from checkpoint.')
@@ -571,21 +651,21 @@ def export(config):
     target = output / 'export'
     target.mkdir(exist_ok=True)
     for i, weights in enumerate(saved['policies']): torch.save(weights, target / f'policy-{i}.pt')
-    atomic_json(target / 'metadata.json', dict(protocol=PROTOCOL, encoding=ENCODING,model_version=saved.get('model_version',1),objective_version=saved.get('objective_version',1),action_kind_balancing=saved.get('model_version',1)>=2, rules_hash=rules['Hash'], simulation_revision=rules.get('SimulationRevision',2),species=rules['Species'],
+    atomic_json(target / 'metadata.json', dict(protocol=PROTOCOL, encoding=saved['encoding'],model_version=saved.get('model_version',1),objective_version=saved.get('objective_version',1),action_kind_balancing=saved.get('model_version',1)>=2, rules_hash=rules['Hash'], simulation_revision=rules.get('SimulationRevision',2),species=rules['Species'],
                 items=rules['Items'], trinkets=rules['Trinkets'], trainers=rules['Trainers'], entity_order=[x['Id'] for x in rules['Species']],
                 observation_width=16+270+len(rules['Trinkets'])+len(rules['Trainers']), action_width=ACTION_WIDTH, update=saved['update'],
-                numeric_schema=encoding_metadata(rules),ragged_observations=True,observation_length_formula="observation_width + 1 + token_count * 12",
+                numeric_schema=encoding_metadata(rules,saved['encoding']),ragged_observations=True,observation_length_formula=f"observation_width + 1 + token_count * {12 if saved['encoding']==4 else TOKEN_WIDTH}",
                 parameters=rules['Parameters'],profile=rules.get('Profile'),evidence=rules.get('Evidence'),encounters=rules.get('Encounters'),full_fidelity_ready=rules.get('FullFidelityReady',False),
                 diagnostic_fixture=rules['Build']=='fixture'))
     atomic_json(output / 'progress.json', dict(status='Exported', update=saved['update'], diagnostic_fixture=rules['Build']=='fixture'))
 
-def encoding_metadata(rules):
+def encoding_metadata(rules,version=ENCODING):
     """Describe every existing column, including padding, without claiming missing game inputs are encoded."""
     headers=['day','lives','wins','gold','max_hp','rank','free_rerolls','item_uses','maximum_item_uses',
              'locked','phase','choice_count','overflow_present','next_battle_start_repeat','next_victory_gold','next_copy_enemy']
     entity=['species_id','level','shiny','copies','base_cooldown','damage','heal','shield','burn','poison','shock',
             'speed','multicast','sell_value','rarity','added_types_bitmask','shop_item_id','shop_price']
-    return dict(headers=headers,header_divisors=[20,10,10,100,1000,14,10,5,5,1,6,10,1,1,100,1],
+    metadata=dict(headers=headers,header_divisors=[20,10,10,100,1000,14,10,5,5,1,6,10,1,1,100,1],
                 entities=dict(offset=16,count=15,width=18,order=['team:0..5','bench:0..3','shop:0..4'],fields=entity,
                               divisors=[1,4,1,3,10,100,100,100,100,100,100,10,10,10,5,1,1,100]),
                 trinket_counts=dict(offset=286,order=[x['Id'] for x in rules['Trinkets']]),
@@ -600,146 +680,98 @@ def encoding_metadata(rules):
                                      23:'granted_species_id',24:'granted_level/4',25:'granted_shiny',26:'grant_stat_bonus',27:'grant_stat',
                                      28:'resolves_at_shop_start',29:'choice_requires_target'},
                              choice_fingerprint_limbs=[30,31,32,33],extra_fields={34:'choice_effect_count',35:'source_species_id',36:'target_species_id',37:'deployed_delta',38:'deployable_bench_delta',39:'finish_with_deployable_bench'},selection='Index into the complete ordered legal candidate list.'),
-                state_tokens=dict(offset=16+270+len(rules['Trinkets'])+len(rules['Trainers']),width=TOKEN_WIDTH,
+                state_tokens=dict(offset=16+270+len(rules['Trinkets'])+len(rules['Trainers']),width=12 if version==4 else TOKEN_WIDTH,
                     fields=['json_kind/8','path_fingerprint_0..3','string_fingerprint_0..3','signed_log_numeric_or_species_id','depth/16','ordinal/1000'],
                     fingerprint='FNV-1a 64-bit UTF-16 code units split into four exact 16-bit limbs divided by 65535',
                     contents='Ordered bag and trainer entries, every visible counter, added types, stored discounts, stored devoured creatures, complete choice/effect parameters, overflow, foreign pools and visible pending effects. Ragged batches are padded without truncation.'),
                 limitations=['Hidden randomness, pending future choice batches and future opponent boards are excluded.'])
+    if version==5:
+        effects=[effect for species in rules['Species'] for level in species['Normal']+species['Shiny'] for effect in level['Effects']]
+        metadata['state_tokens']=dict(offset=16+270+len(rules['Trinkets'])+len(rules['Trainers']),width=64,
+            fields=['kind','owner','definition_or_counter_key','value']+[f'effect:{key}' for key in effects[0]] if effects else [],
+            kinds={1:'unit',2:'type',3:'counter',4:'item',5:'trinket',6:'effect',7:'trainer',8:'choice',9:'target_rule',10:'decision_budget_and_history',11:'visible_flags',12:'devoured_boundary',13:'foreign_species',14:'pending_purchase'},
+            counter_keys='FNV-1a 64-bit UTF-16 key in columns 2,5,6,7 as four 16-bit limbs / 65535; definition symbols use sorted manifest vocabulary.',
+            effect_fields=list(effects[0]) if effects else [],numeric_transform='signed log1p / 10; effect enums / 64; symbols / 4096; nullable effect fields use -1',
+            contents='All player-visible persistent state, compiled effects and pending effects; no RNG or future opponents.')
+        metadata['actions']['choice_fingerprint_limbs']=[]
+        metadata['actions']['fields'].update({30:'choice: weighted effect amounts; other: column delta',31:'choice: weighted operation/target descriptors; other: row delta',32:'choice: definition symbol; other: physical adjacency',33:'choice: target nonshiny; other: source role (team=0,bench=1,shop=2)'})
+        metadata['state_tokens']['unit_fields']={2:'species_id',3:'signed_log_stored_discount',4:'level/4',5:'shiny',6:'copies/3',7:'devoured_depth',8:'cooldown/10',9:'rarity/5',10:'stats: damage..sell_value, nine signed-log values',19:'signed_log_instance'}
+        metadata['state_tokens']['effect_offset']=4
+        metadata['state_tokens']['effect_prefix']=['kind=6','owner','devoured_depth','reserved']
+        metadata['state_tokens']['global_history']={0:'kind=10',3:'remaining_decisions/limit',4:'last_action_kind/8',5:'repeated_kind/64'}
+        metadata['action_selection']='Choose kind argmax then conditional candidate argmax; sampling uses the joint kind/candidate distribution.'
+    return metadata
 
-def evaluate(config, runs=128, initial=False):
-    output, directory, saved, rules = checkpoint_data(config)
-    evaluation_config = dict(config, session=uuid.uuid4().hex[:12],evaluation=True, initial_evaluation=initial,seed=config['seed']+1000000007, environments=4,history=str(output/'history'))
-    torch.manual_seed(evaluation_config['seed']); configure_compute(config)
-    host = Host(evaluation_config, output / 'evaluation')
-    # Evaluation histories share the viewer's index, while buffers and control files remain separate.
-    try:
-        host.request('league_restore', path=str(directory / 'host.json'))
-        width = host.ready['ObservationWidth']
-        device = 'cuda' if config['device'] != 'cpu' and torch.cuda.is_available() else 'cpu'
-        if initial:torch.manual_seed(config['seed'])
-        policies = [Policy(width,len(rules['Species'])).to(device) for _ in range(4)]
-        for i in range(4):
-            if not initial:load_policy(policies[i],saved['policies'][i])
-            policies[i].eval()
-        torch.manual_seed(evaluation_config['seed'])
-        with torch.inference_mode():population=PopulationInference(policies)
-        results=[];opponent_results={}; decisions=0; start=time.monotonic(); quota=max(1,(runs+3)//4);counts=[0]*4
-        battles=deployed=deployable_bench=limited_turns=0
-        atomic_json(output/'control.json',dict(command='evaluate'))
-        decision_limit=config.get('evaluation_decision_limit',max(100000,runs*4000))
-        while min(counts)<quota and decisions<decision_limit:
-            if (output/'control.json').exists() and json.loads((output/'control.json').read_text()).get('command')=='stop':break
-            observation,actions=host.batch()
-            with torch.inference_mode():
-                distribution,_=population(observation,actions)
-                selected=(distribution.sample() if config.get('evaluation_sampling',False) else distribution.probs.argmax(-1)).cpu().tolist()
-            result=host.request('step',actions=selected); decisions+=4
-            battles+=result['Battles'];deployed+=result['Deployed'];deployable_bench+=result['DeployableBench'];limited_turns+=result['LimitedTurns']
-            for opponent in result.get('Opponents',[]):
-                if counts[opponent['Policy']]>=quota:continue
-                key=f"{opponent['Kind']}:generation-{opponent['Generation']}"
-                row=opponent_results.setdefault(key,dict(battles=0,wins=0));row['battles']+=1;row['wins']+=int(opponent['Won'])
-            for completed in result['Runs']:
-                summary=completed['Summary'];policy=summary['Policy']
-                if counts[policy]<quota: results.append(summary);counts[policy]+=1
-            if decisions%1000==0: atomic_json(output/'progress.json',dict(status='Evaluating',runs=len(results),target=runs,diagnostic_fixture=rules['Build']=='fixture'))
-        score=sum(x['Success'] for x in results)/max(1,len(results))
-        policy_results=[]
-        for i in range(4):
-            subset=[x for x in results if x['Policy']==i]
-            policy_results.append(dict(policy=i,runs=len(subset),success_rate=sum(x['Success'] for x in subset)/max(1,len(subset)),
-                                       average_wins=sum(x['Wins'] for x in subset)/max(1,len(subset))))
-        trainer_results={}
-        for summary in results:
-            row=trainer_results.setdefault(summary['Trainer'],dict(runs=0,successes=0,wins=0));row['runs']+=1;row['successes']+=int(summary['Success']);row['wins']+=summary['Wins']
-        report=dict(opponents=opponent_results,trainers=trainer_results,status='Evaluated' ,update=0 if initial else saved['update'],initial_policy=initial,rules_hash=rules['Hash'],runs=len(results),success_rate=score,
-                    average_wins=sum(x['Wins'] for x in results)/max(1,len(results)),confidence_interval_95=wilson(sum(x['Success'] for x in results),len(results)),policies=policy_results,
-                    completed=min(counts)>=quota,decisions=decisions,seconds=time.monotonic()-start,diagnostic_fixture=rules['Build']=='fixture',
-                    selection='sample' if config.get('evaluation_sampling',False) else 'greedy',average_deployed=deployed/max(1,battles),
-                    unused_deployable_bench=deployable_bench/max(1,battles),limited_turn_rate=limited_turns/max(1,battles))
-        atomic_json(output/('evaluation-initial.json' if initial else 'evaluation.json'),report); atomic_json(output/'progress.json',report)
-    finally: host.close()
 
-def available_snapshots(output, saved, seed):
-    snapshots=[dict(label='Initial',update=0,generation=0,weights=None)]
+def evaluate(config,runs=128,initial=False):
+    from evaluation import EvaluationRunner
+    output,directory,saved,rules=checkpoint_data(config)
+    snapshot=dict(label='Initial' if initial else f"Current update {saved['update']}",update=0 if initial else saved['update'],
+                  generation=0 if initial else saved['update']//10,weights=None if initial else saved['policies'],encoding=saved['encoding'],model_version=saved.get('model_version',3))
+    with EvaluationRunner(config,output,Path(config.get('evaluation_suite_checkpoint',directory/'host.json')).parent,rules,runs) as runner:
+        runner.progress_context=dict(status='Evaluating',completed=0,total=1)
+        report=runner.evaluate(snapshot)
+        if report['completed'] and not runner.cancelled:
+            runner.progress_context=dict(status='Evaluating',completed=1,total=2)
+            report['baselines']={'strongest-shop':runner.evaluate(dict(label='Strongest-shop baseline',update=-1,generation=-1,weights=None,encoding=5,model_version=MODEL_VERSION,baseline=True))}
+        report.update(status='Evaluated' if report['completed'] else 'Cancelled' if runner.cancelled else 'Incomplete',initial_policy=initial,rules_hash=rules['Hash'])
+        atomic_json(output/('evaluation-initial.json' if initial else 'evaluation.json'),report);atomic_json(output/'progress.json',report)
+
+def available_snapshots(output,saved,seed):
+    snapshots=[dict(label='Initial',update=0,generation=0,weights=None,encoding=saved['encoding'],model_version=saved.get('model_version',3))]
     for path in sorted(output.glob('generation-*.pt'),key=lambda p:int(p.stem.split('-')[1])):
         generation=int(path.stem.split('-')[1]);snapshots.append(dict(label=f'Generation {generation}',update=generation*10,generation=generation,
-                                                                       weights=torch.load(path,map_location='cpu',weights_only=True)))
-    if not any(row['update']==saved['update'] for row in snapshots):
-        snapshots.append(dict(label=f"Current update {saved['update']}",update=saved['update'],generation=saved['update']//10,weights=saved['policies']))
+            weights=torch.load(path,map_location='cpu',weights_only=True),encoding=saved['encoding'],model_version=saved.get('model_version',3)))
+    if not any(row['update']==saved['update'] for row in snapshots):snapshots.append(dict(label=f"Current update {saved['update']}",update=saved['update'],generation=saved['update']//10,weights=saved['policies'],encoding=saved['encoding'],model_version=saved.get('model_version',3)))
     return snapshots
 
-def evaluate_snapshot(config, output, checkpoint_directory, rules, snapshot, runs, batch_id):
-    evaluation_seed=config['seed']+1000000007
-    evaluation_config=dict(config,session=f"rank-{batch_id}-{snapshot['update']}",evaluation=True,initial_evaluation=snapshot['weights'] is None,
-                           seed=evaluation_seed,environments=4,history=str(output/'history'),auto_calibrate=False,auto_tune_environments=False,
-                           snapshot_update=snapshot['update'],snapshot_generation=snapshot['generation'],evaluation_batch=batch_id)
-    target=output/'ranking'/f"update-{snapshot['update']}";target.mkdir(parents=True,exist_ok=True)
-    torch.manual_seed(config['seed'] if snapshot['weights'] is None else evaluation_seed);host=Host(evaluation_config,target)
-    try:
-        host.request('league_restore',path=str(checkpoint_directory/'host.json'));device='cuda' if config['device']!='cpu' and torch.cuda.is_available() else 'cpu'
-        width=host.ready['ObservationWidth'];policies=[Policy(width,len(rules['Species'])).to(device) for _ in range(4)]
-        if snapshot['weights'] is not None:
-            for policy,weights in zip(policies,snapshot['weights']):load_policy(policy,weights)
-        for policy in policies:policy.eval()
-        torch.manual_seed(evaluation_seed);population=PopulationInference(policies)
-        quota=max(1,(runs+3)//4);counts=[0]*4;results=[];decisions=0;start=time.monotonic()
-        policy_battles=[0]*4;policy_deployed=[0]*4;policy_bench=[0]*4;policy_limited=[0]*4
-        opponent_results={};decision_limit=config.get('evaluation_decision_limit',max(100000,runs*4000))
-        while min(counts)<quota and decisions<decision_limit:
-            observation,actions=host.batch()
-            with torch.inference_mode():distribution,_=population(observation,actions);selected=distribution.probs.argmax(-1).cpu().tolist()
-            step=host.request('step',actions=selected);decisions+=4
-            for row in step.get('PolicyBattleStats',[]):
-                i=row['Policy'];policy_battles[i]+=row['Battles'];policy_deployed[i]+=row['Deployed'];policy_bench[i]+=row['DeployableBench'];policy_limited[i]+=row['LimitedTurns']
-            for opponent in step.get('Opponents',[]):
-                key=f"{opponent['Kind']}:generation-{opponent['Generation']}";row=opponent_results.setdefault(key,dict(battles=0,wins=0));row['battles']+=1;row['wins']+=int(opponent['Won'])
-            for completed in step['Runs']:
-                summary=completed['Summary'];policy=summary['Policy']
-                if counts[policy]<quota:results.append(summary);counts[policy]+=1
-        policies_report=[]
-        for i in range(4):
-            subset=[row for row in results if row['Policy']==i];successes=sum(int(row['Success']) for row in subset);battle_count=max(1,policy_battles[i])
-            policies_report.append(dict(policy=i,runs=len(subset),success_rate=successes/max(1,len(subset)),confidence_interval_95=wilson(successes,len(subset)),
-                                        average_wins=sum(row['Wins'] for row in subset)/max(1,len(subset)),average_deployed=policy_deployed[i]/battle_count,
-                                        unused_deployable_bench=policy_bench[i]/battle_count,limited_turn_rate=policy_limited[i]/battle_count))
-        successes=sum(int(row['Success']) for row in results);total_battles=max(1,sum(policy_battles));interval=wilson(successes,len(results))
-        return dict(label=snapshot['label'],update=snapshot['update'],generation=snapshot['generation'],runs=len(results),success_rate=successes/max(1,len(results)),
-                    confidence_interval_95=interval,score=interval[0],average_wins=sum(row['Wins'] for row in results)/max(1,len(results)),
-                    average_deployed=sum(policy_deployed)/total_battles,unused_deployable_bench=sum(policy_bench)/total_battles,
-                    limited_turn_rate=sum(policy_limited)/total_battles,seconds=time.monotonic()-start,completed=min(counts)>=quota,
-                    policies=policies_report,opponents=opponent_results)
-    finally:host.close()
-
-def rank_generations(config, runs=128):
-    output,directory,saved,rules=checkpoint_data(config);batch_id=uuid.uuid4().hex[:12]
-    snapshots=available_snapshots(output,saved,config['seed']);rows=[]
-    for index,snapshot in enumerate(snapshots):
-        atomic_json(output/'progress.json',dict(status='Ranking generations',snapshot=snapshot['label'],completed=index,total=len(snapshots)))
-        rows.append(evaluate_snapshot(config,output,directory,rules,snapshot,runs,batch_id))
-    ordered=sorted(rows,key=ranking_key,reverse=True)
-    for rank,row in enumerate(ordered,1):row['rank']=rank
-    report=dict(status='Ranked',evaluation_batch=batch_id,rules_hash=rules['Hash'],runs_per_snapshot=runs,selection='greedy',snapshots=ordered,best=ordered[0])
-    atomic_json(output/'generation-ranking.json',report);atomic_json(output/'progress.json',report)
+def rank_generations(config,runs=128):
+    from evaluation import EvaluationRunner
+    output,directory,saved,rules=checkpoint_data(config);snapshots=available_snapshots(output,saved,config['seed']);rows=[]
+    for archive in config.get('comparison_archives',[]):
+        archived_output,_,archived,archived_rules=checkpoint_data(dict(config,output=archive,rules=str(Path(archive)/'rules.json')))
+        if archived_rules['Hash']!=rules['Hash']:continue
+        for snapshot in available_snapshots(archived_output,archived,archived['config']['seed']):
+            snapshot['label']='Archived '+snapshot['label'];snapshot['initial_seed']=archived['config']['seed'];snapshot['archive']=str(archived_output);rows.append(snapshot)
+    snapshots+=rows;rows=[]
+    snapshots.append(dict(label="Strongest-shop baseline",update=-1,generation=-1,weights=None,encoding=5,model_version=MODEL_VERSION,baseline=True))
+    report=dict(status='Cancelled',snapshots=[],best=None,rules_hash=rules['Hash'],completed=0,total=len(snapshots))
+    with EvaluationRunner(config,output,Path(config.get('evaluation_suite_checkpoint',directory/'host.json')).parent,rules,runs) as runner:
+        atomic_json(output/'generation-ranking.json',dict(report,evaluation_batch=runner.batch_id,suite_hash=runner.suite_hash,status='Ranking generations'))
+        for index,snapshot in enumerate(snapshots):
+            if runner.cancelled:break
+            runner.progress_context=dict(status='Ranking generations',completed=index,total=len(snapshots),snapshots=sorted(rows,key=ranking_key,reverse=True))
+            rows.append(runner.evaluate(snapshot))
+            ordered=sorted(rows,key=lambda r:(r['completed'],*ranking_key(r)),reverse=True)
+            for rank,row in enumerate(ordered,1):row['rank']=rank
+            complete=[row for row in ordered if row['completed'] and not row.get('baseline')]
+            report=dict(status='Ranking generations',evaluation_batch=runner.batch_id,suite_hash=runner.suite_hash,rules_hash=rules['Hash'],runs_per_snapshot=runs,selection='greedy',snapshots=ordered,best=complete[0] if complete else None,completed=index+1,total=len(snapshots))
+            atomic_json(output/'generation-ranking.json',report);atomic_json(output/'progress.json',report)
+            if not rows[-1]['completed']:break
+        report['status']='Ranked' if len(rows)==len(snapshots) and all(r['completed'] for r in rows) else 'Cancelled' if runner.cancelled else 'Incomplete'
+        atomic_json(output/'generation-ranking.json',report);atomic_json(output/'progress.json',report)
 
 def export_snapshot(config, requested_update=None):
     output,directory,saved,rules=checkpoint_data(config);weights=saved['policies'];update=saved['update']
     if requested_update is not None and requested_update!=update:
         if requested_update==0:
-            torch.manual_seed(config['seed']);weights=[policy.state_dict() for policy in [Policy(saved['policies'][0]['state.0.weight'].shape[1]-128+270-15*64,len(rules['Species'])) for _ in range(4)]]
+            torch.manual_seed(saved['config']['seed']);cls=LegacyPolicy if saved['encoding']==4 else Policy
+            width=16+270+len(rules['Trinkets'])+len(rules['Trainers'])
+            weights=[(cls(width,len(rules['Species'])) if saved['encoding']==4 else cls(width,len(rules['Species']),saved.get('model_version',5))).state_dict() for _ in range(4)]
         else:
             path=output/f'generation-{requested_update//10}.pt'
             if requested_update%10 or not path.exists():raise ValueError('Requested ranked snapshot is unavailable.')
             weights=torch.load(path,map_location='cpu',weights_only=True)
         update=requested_update
-    target=output/'export';target.mkdir(exist_ok=True)
+    target=Path(config.get('export_output',output))/('export-archived-'+str(update) if config.get('export_output') else 'export');target.mkdir(parents=True,exist_ok=True)
     for i,state in enumerate(weights):torch.save(state,target/f'policy-{i}.pt')
-    atomic_json(target/'metadata.json',dict(protocol=PROTOCOL,encoding=ENCODING,model_version=MODEL_VERSION,objective_version=OBJECTIVE_VERSION,action_kind_balancing=True,
+    atomic_json(target/'metadata.json',dict(protocol=PROTOCOL,encoding=saved['encoding'],model_version=saved.get('model_version',3),objective_version=saved.get('objective_version',3),action_kind_balancing=True,
                 rules_hash=rules['Hash'],simulation_revision=rules.get('SimulationRevision',2),species=rules['Species'],items=rules['Items'],trinkets=rules['Trinkets'],trainers=rules['Trainers'],
                 entity_order=[x['Id'] for x in rules['Species']],observation_width=16+270+len(rules['Trinkets'])+len(rules['Trainers']),action_width=ACTION_WIDTH,update=update,
-                numeric_schema=encoding_metadata(rules),ragged_observations=True,observation_length_formula='observation_width + 1 + token_count * 12',parameters=rules['Parameters'],
+                numeric_schema=encoding_metadata(rules,saved['encoding']),ragged_observations=True,observation_length_formula=f"observation_width + 1 + token_count * {12 if saved['encoding']==4 else TOKEN_WIDTH}",parameters=rules['Parameters'],
                 profile=rules.get('Profile'),evidence=rules.get('Evidence'),encounters=rules.get('Encounters'),full_fidelity_ready=rules.get('FullFidelityReady',False),diagnostic_fixture=rules['Build']=='fixture'))
-    atomic_json(output/'progress.json',dict(status='Exported',update=update,diagnostic_fixture=rules['Build']=='fixture'))
+    atomic_json(Path(config.get('export_output',output))/'progress.json',dict(status='Exported',update=update,diagnostic_fixture=rules['Build']=='fixture'))
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -750,14 +782,22 @@ def main():
     parser.add_argument('--initial',action='store_true')
     parser.add_argument('--rank-generations',action='store_true')
     parser.add_argument('--export-update',type=int)
+    parser.add_argument('--export-archive')
+    parser.add_argument('--suite',choices=['development','final'],default='development')
+    parser.add_argument('--scenario-bank')
     args = parser.parse_args()
     config = json.loads(Path(args.config).read_text(encoding='utf-8-sig'))
+    if args.scenario_bank:config['evaluation_states']=args.scenario_bank
+    if args.suite=='final':config['evaluation_seed']=config['seed']+2000000033
     try:
         if args.rank_generations:rank_generations(config,args.runs)
         elif args.evaluate:
             Path(config['output'],'evaluation').mkdir(parents=True,exist_ok=True)
             evaluate(config,args.runs,args.initial)
-        elif args.export: export_snapshot(config,args.export_update)
+        elif args.export:
+            if args.export_archive:
+                config=dict(config,export_output=config['output'],output=args.export_archive,rules=str(Path(args.export_archive)/'rules.json'))
+            export_snapshot(config,args.export_update)
         else: run(config)
     except Exception as error:
         atomic_json(Path(config['output']) / 'progress.json', dict(status='Failed', error=str(error)))

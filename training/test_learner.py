@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from learner import Policy, padded, pad_observations, ACTION_WIDTH, resume_environment_count, advantages, wilson, training_device, load_policy, optimizer_for, pack_rollout, optimize, PopulationInference, exploration_entropy, select_calibration, ranking_key
+from learner import LegacyPolicy as Policy, padded, pad_observations, ACTION_WIDTH, resume_environment_count, advantages, wilson, training_device, load_policy, optimizer_for, pack_rollout, optimize, PopulationInference, exploration_entropy, select_calibration, ranking_key
 
 class LearnerTests(unittest.TestCase):
     def test_calibration_rejects_unsafe_candidates_and_ranking_uses_stable_tiebreaks(self):
