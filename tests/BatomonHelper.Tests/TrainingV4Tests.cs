@@ -111,6 +111,25 @@ public sealed class TrainingV4Tests
             if(Directory.Exists(full))Directory.Delete(full,true);}
     }
     [Fact]
+    public void Historical_completed_user_sessions_can_supply_opponent_boards()
+    {
+        var rules=RuleCompiler.Fixture();var directory=Path.Combine(Path.GetTempPath(),Guid.NewGuid().ToString("N"));
+        try
+        {
+            var original=new UserSessionStore(directory,rules);var play=new PlaySession(rules,69,"fixture");
+            play.Apply(play.Environment.GetLegalActions().First(x=>x.Kind==Move.Buy));play.Apply(new(Move.Finish));original.Save(play.Session);
+            var updated=rules with {Hash="updated-rules"};var store=new UserSessionStore(directory,updated);
+            var changed=store.SetPool(play.Session.Id,true,true);
+            Assert.True(changed.InOpponentPool);Assert.Single(store.Opponents());
+        }
+        finally
+        {
+            var full=Path.GetFullPath(directory);var tempRoot=Path.GetFullPath(Path.GetTempPath());
+            if(!full.StartsWith(tempRoot,StringComparison.OrdinalIgnoreCase)||!System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(full),"^[a-f0-9]{32}$"))throw new InvalidOperationException("Unsafe test cleanup path.");
+            if(Directory.Exists(full))Directory.Delete(full,true);
+        }
+    }
+    [Fact]
     public void Typed_encoding_covers_effect_fields_and_budget_without_hidden_rng()
     {
         var rules=RuleCompiler.Fixture();var env=new GameEnvironment(rules);env.Reset(69,"fixture");var encoder=new PolicyEncoding(rules);

@@ -51,7 +51,10 @@ public sealed class ItemSimulationTests
         foreach(var item in fixture.Items)
         {
             var environment=Ready();var result=Buy(environment,item.Id);
-            Assert.False(result.Terminal);Assert.Null(environment.State.Shop[4]?.ItemId);Assert.NotNull(environment.State.Shop[4]?.Creature);
+            Assert.False(result.Terminal);
+            Assert.True(environment.State.ItemUses>0
+                ? environment.State.Shop[4]?.ItemId is not null
+                : environment.State.Shop[4]?.Creature is not null);
             Assert.Equal(1,environment.State.Counters["items-used"]);
             Assert.False(ItemRules.TryCompile(item.Id,item.Description+" Changed by a patch.",out _));
             var restored=new GameEnvironment(fixture);restored.Restore(environment.State);

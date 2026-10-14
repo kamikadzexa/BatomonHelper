@@ -606,7 +606,7 @@ def run(config):
                 last_saved = save_checkpoint(output, host, policies, optimizers, update, config, metrics); checkpoint_at = time.monotonic()
             progress = dict(status='Training', update=update, generation=generation, device=device, device_seconds=timings, decisions=decisions,
                             decisions_per_second=decisions / max(.01, time.monotonic() - start), loss=float(np.mean([x['loss'] for x in optimization])), checkpoint=last_saved,
-                            ppo=optimization,rollout_seconds=rollout_seconds,optimization_seconds=optimization_seconds,model_version=MODEL_VERSION,objective_version=OBJECTIVE_VERSION,
+                            ppo=optimization,rollout_seconds=rollout_seconds,rollout_decisions_per_second=config['environments']*config['rollout']/max(.01,rollout_seconds),optimization_seconds=optimization_seconds,model_version=MODEL_VERSION,objective_version=OBJECTIVE_VERSION,
                             average_deployed=deployed/max(1,battles),unused_deployable_bench=deployable_bench/max(1,battles),limited_turn_rate=limited_turns/max(1,battles),
                             session_runs=metrics['runs']-initial_metrics['runs'],session_success_rate=(metrics['successes']-initial_metrics['successes'])/max(1,metrics['runs']-initial_metrics['runs']),
                             session_average_wins=(metrics['total_wins']-initial_metrics['total_wins'])/max(1,metrics['runs']-initial_metrics['runs']),

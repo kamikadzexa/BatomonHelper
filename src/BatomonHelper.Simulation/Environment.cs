@@ -36,6 +36,19 @@ public sealed partial class GameEnvironment(RulesManifest rules)
         [..State.Bag],[..State.ExtraTrainers],State.Locked,State.FreeRerolls,State.ItemUses,State.MaximumItemUses,State.Phase,
         State.Choices.Select(x=>x with { Effects=[..x.Effects] }).ToArray(),State.Overflow?.Clone(),new(State.Counters),VisibleState());
     }
+    /// <summary>
+    /// Produces a read-only view for the training encoder without cloning the complete run
+    /// state. The view is valid only until this environment is stepped or reset. Training
+    /// publishes and encodes it synchronously, before it can be mutated again.
+    /// </summary>
+    public Observation GetTrainingObservation()
+    {
+        if(!State.PendingShopStart)RefreshShop();
+        return new(State.Day,TurnsRemaining(),State.Wins,State.Gold,State.MaxHp,State.Rank,
+            State.Trainer,State.Units,State.PendingShopStart?new Offer?[5]:State.Shop,
+            State.Bag,State.ExtraTrainers,State.Locked,State.FreeRerolls,State.ItemUses,State.MaximumItemUses,State.Phase,
+            State.Choices,State.Overflow,State.Counters,VisibleState());
+    }
     public SimAction[] GetLegalActions()
     {
         using var legalTiming=Timings.Legal();
@@ -126,9 +139,10 @@ public sealed partial class GameEnvironment(RulesManifest rules)
             case Move.BuyItem:
                 var item=State.Shop[action.Source]!; State.Gold-=item.Price; State.ItemUses--; State.Shop[action.Source]=null;
                 UseItem(item.ItemId!,item.Price);
-                // A consumed item offer is immediately replaced by a Batomon. Effects such as
-                // tickets may have already replaced the slot with their own fresh shop roll.
-                if(State.Shop[action.Source] is null) RollCreatureOffer(action.Source);
+                // Refill a consumed offer using the normal slot rule. In particular, the fifth
+                // slot remains an Item slot while an Item use (including one just refunded by
+                // the Item) and an eligible Item are available.
+                if(State.Shop[action.Source] is null) RefillShopOffer(action.Source);
                 break;
             case Move.Sell:
                 var sold=action.Source==10?State.Overflow!:State.Units[action.Source]!;
@@ -262,11 +276,39 @@ public sealed partial class GameEnvironment(RulesManifest rules)
         RefreshShop();FinishAdvancedShop();
         State.RandomState=_random.State;
     }
-    private void RollCreatureOffer(int slot)
+    private void RefillShopOffer(int slot)
     {
-        var definition=RollSpecies(RarityRoll(GetShopOdds()));
+        var tier=RarityRoll(GetShopOdds());
+        var noItems=TraitSum(ShopTrait.NoItems)>0;
+        if(slot==4&&State.ItemUses>0&&!noItems)
+        {
+            var itemTier=Math.Min(5,tier+(int)TraitSum(ShopTrait.ItemTierBonus));
+            var mythicalChance=TraitSum(ShopTrait.MythicalItemChance);
+            if(mythicalChance>0&&_random.Uniform()<Math.Min(1,mythicalChance))itemTier=5;
+            var items=rules.Items.Where(x=>x.Rarity==itemTier&&ItemEligible(x)).ToArray();
+            var forcedBerry=State.Counters.GetValueOrDefault("forced-berries")>0;
+            if(forcedBerry)
+            {
+                var berries=rules.Items.Where(x=>x.Id.EndsWith("-berry",StringComparison.Ordinal)&&ItemEligible(x)).ToArray();
+                if(berries.Length>0)
+                {
+                    var berryTier=berries.Where(x=>x.Rarity<=itemTier).Select(x=>x.Rarity).DefaultIfEmpty(berries.Min(x=>x.Rarity)).Max();
+                    items=berries.Where(x=>x.Rarity==berryTier).ToArray();
+                }
+                else forcedBerry=false;
+            }
+            if(items.Length>0)
+            {
+                var item=items[_random.Index(items.Length)];
+                State.Shop[slot]=new(null,item.Id,item.Cost,item.Cost);
+                if(forcedBerry)AddCounter("forced-berries",-1);
+                RefreshShop();State.RandomState=_random.State;return;
+            }
+        }
+        var definition=RollSpecies(tier);
         State.Shop[slot]=new(Create(definition,chance:Math.Min(1,.005*TraitProduct(ShopTrait.ShinyMultiplier))),null,definition.Cost);
         RefreshShop();
+        State.RandomState=_random.State;
     }
     /// <summary>Targeted consumables are only stocked when they can affect an owned creature.
     /// This includes both the table and bench, while targetless effects stay available.</summary>

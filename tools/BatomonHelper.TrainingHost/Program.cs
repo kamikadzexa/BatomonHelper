@@ -313,7 +313,9 @@ void Publish()
     // JSON token encoding and candidate encoding are substantial CPU work. Each
     // worker owns its environment; the encoder's definition dictionaries are read-only.
     Parallel.For(0,count,new ParallelOptions {MaxDegreeOfParallelism=workers},i=>{
-        var observation=environments[i].GetObservation();values[i]=encodingVersion==4?legacyEncoder.Observation(observation):encoder.Observation(observation,shopDecisions[i],shopDecisionLimit,memories[i]);
+        // The encoder consumes this before the environment can be stepped, so avoid
+        // snapshotting/cloning every unit, offer and counter on every decision.
+        var observation=environments[i].GetTrainingObservation();values[i]=encodingVersion==4?legacyEncoder.Observation(observation):encoder.Observation(observation,shopDecisions[i],shopDecisionLimit,memories[i]);
         if(active[i]){publications[i]=environments[i].PublishActions(legal=>{
             var limited=TrainingObjective.Candidates(environments[i].State.Phase,legal,shopDecisions[i],shopDecisionLimit,encodingVersion!=4);
             if(encodingVersion==4)return limited;

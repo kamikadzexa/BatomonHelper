@@ -225,8 +225,9 @@ public partial class MainWindow : Window,INotifyPropertyChanged
                     $"Snapshots {Number("completed"):N0}/{Number("total"):N0} · {Number("elapsed_seconds"):N0}s elapsed · {Number("runs_per_second"):F2} runs/s{eta}";
                 return;
             }
+            var throughput=p.TryGetProperty("rollout_decisions_per_second",out var rolloutThroughput)?rolloutThroughput.GetDouble():Number("decisions_per_second");
             Progress=$"{status} · update {Number("update"):N0} · {Number("runs"):N0} completed runs\n"+
-                $"Recent ({Number("recent_runs"):N0}) success {Number("recent_success_rate"):P1} · wins {Number("recent_average_wins"):F2} · {Number("decisions_per_second"):N0} decisions/s";
+                $"Recent ({Number("recent_runs"):N0}) success {Number("recent_success_rate"):P1} · wins {Number("recent_average_wins"):F2} · {throughput:N0} rollout decisions/s";
             if(p.TryGetProperty("device",out var device) && p.TryGetProperty("actual_workers",out _))Progress+=$"\nDevice {device.GetString()} · workers {Number("actual_workers"):N0} · environments {Number("actual_environments"):N0}";
             if(p.TryGetProperty("episode_starts",out var starts))Progress+=$"\nEpisode starts: full {starts[0].GetInt64():N0} · middle {starts[1].GetInt64():N0} · late {starts[2].GetInt64():N0}";
             if(p.TryGetProperty("average_deployed",out _))Progress+=$"\nDeployed {Number("average_deployed"):F2}/6 · unused bench {Number("unused_deployable_bench"):F2} · turn limit {Number("limited_turn_rate"):P1}";

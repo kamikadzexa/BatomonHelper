@@ -115,6 +115,20 @@ public sealed class ShopSimulationTests
     }
 
     [Fact]
+    public void Buying_an_item_refills_the_fifth_slot_with_another_eligible_item_before_a_creature()
+    {
+        var environment=Ready();
+        environment.State.MaximumItemUses=2;environment.State.ItemUses=2;
+        environment.State.Shop[4]=new(null,"fake-coin",0);
+        environment.Step(new(Move.BuyItem,4));
+        Assert.NotNull(environment.State.Shop[4]!.ItemId);
+        environment.State.ItemUses=0;environment.State.Shop[4]=new(null,"fake-coin",0);
+        // The forced setup is consumed without an available use, so there is no eligible item refill.
+        environment.State.ItemUses=1;environment.Step(new(Move.BuyItem,4));
+        Assert.NotNull(environment.State.Shop[4]!.Creature);
+    }
+
+    [Fact]
     public void Cosmivore_uses_only_discarded_offers_and_ticket_repeats_each_read_their_own_shelf()
     {
         var rules=Fixture();var effects=RuleCompiler.CompileText("When rerolling the shop, gain 20% of the total stats of the monsters remaining in the shop (excluding Multicast and Cooldown).",Trigger.Ongoing,out var understood);Assert.True(understood);

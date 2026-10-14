@@ -42,11 +42,35 @@ public sealed class UserSessionStore(string directory,RulesManifest rules)
         if(JsonSerializer.Serialize(env.State)!=JsonSerializer.Serialize(session.Current)||JsonSerializer.Serialize(days)!=JsonSerializer.Serialize(session.Days))
             throw new InvalidDataException("User session final state or battle history differs.");
     }
+    /// <summary>Validates boards used as opponents. Historical sessions remain useful as
+    /// immutable board snapshots even after the active simulation rules change.</summary>
+    public void ValidateOpponentPool(UserSession session)
+    {
+        if(session.Version!=2)throw new InvalidDataException("Unsupported user session version.");
+        if(session.Days.Length==0)throw new InvalidDataException("Complete at least one battle before adding boards.");
+        if(session.RulesHash==rules.Hash) { Validate(session); return; }
+        foreach(var day in session.Days)
+        {
+            if(day.BeforeBattle.Day!=day.Day||day.BeforeBattle.Units.Length!=10)
+                throw new InvalidDataException("Historical user session has an invalid battle board.");
+            if(day.BeforeBattle.Units.OfType<Unit>().Any(unit=>!rules.Species.Any(species=>species.Id==unit.SpeciesId)))
+                throw new InvalidDataException("Historical user session uses creatures unavailable in the current rules.");
+        }
+    }
+    public UserSession SetPool(string id,bool inOpponentPool,bool enabled)
+    {
+        var session=List().Single(x=>x.Id==id);
+        var changed=session with {InOpponentPool=inOpponentPool,Enabled=enabled};
+        if(inOpponentPool)ValidateOpponentPool(changed);
+        Directory.CreateDirectory(DirectoryPath);var path=PathFor(id);
+        File.WriteAllText(path+".tmp",JsonSerializer.Serialize(changed));File.Move(path+".tmp",path,true);
+        return changed;
+    }
     public LeagueEntry[] Opponents()
     {
         var result=new List<LeagueEntry>();var seen=new HashSet<string>();
-        foreach(var session in List().Where(x=>x.Version==2&&x.InOpponentPool&&x.Enabled&&x.RulesHash==rules.Hash)){
-            Validate(session);
+        foreach(var session in List().Where(x=>x.Version==2&&x.InOpponentPool&&x.Enabled)){
+            ValidateOpponentPool(session);
             foreach(var group in session.Days.GroupBy(x=>x.Day))foreach(var day in group.Take(32)){
                 var o=day.BeforeBattle;var board=new FrozenBoard(day.Day,o.MaxHp,o.Trainer,o.Units.Take(6).Select(x=>x?.Clone()).ToArray(),[..o.Bag],[..o.ExtraTrainers],
                     o.Counters is null?null:new(o.Counters),o.Rank,o.VisibleState?.ForeignPool,o.Wins);

@@ -212,8 +212,8 @@ public partial class MainWindow
         if(_playBusy||PlaySessionList.SelectedItem is not PlaySessionRow row)return;
         try{var store=SessionStore;var session=store.List().Single(x=>x.Id==row.Id);var command=((Button)sender).Tag?.ToString();
             var changed=command switch {"add"=>session with {InOpponentPool=true},"remove"=>session with {InOpponentPool=false},_=>session with {Enabled=!session.Enabled}};
-            if(changed.InOpponentPool){if(changed.Days.Length==0)throw new InvalidOperationException("Complete at least one battle before adding boards.");store.Validate(changed);}
-            store.Save(changed);if(_play?.Session.Id==changed.Id)_play.SetPool(changed.InOpponentPool,changed.Enabled);RefreshPlaySessions();
+            changed=store.SetPool(changed.Id,changed.InOpponentPool,changed.Enabled);
+            if(_play?.Session.Id==changed.Id)_play.SetPool(changed.InOpponentPool,changed.Enabled);RefreshPlaySessions();
             Status="Opponent pool updated. Training and evaluation load it at the next launch.";
         }catch(Exception error){Status=error.Message;}
     }
