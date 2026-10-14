@@ -51,7 +51,7 @@ public sealed class ItemSimulationTests
         foreach(var item in fixture.Items)
         {
             var environment=Ready();var result=Buy(environment,item.Id);
-            Assert.False(result.Terminal);Assert.Null(environment.State.Shop[4]?.ItemId);
+            Assert.False(result.Terminal);Assert.Null(environment.State.Shop[4]?.ItemId);Assert.NotNull(environment.State.Shop[4]?.Creature);
             Assert.Equal(1,environment.State.Counters["items-used"]);
             Assert.False(ItemRules.TryCompile(item.Id,item.Description+" Changed by a patch.",out _));
             var restored=new GameEnvironment(fixture);restored.Restore(environment.State);
@@ -156,5 +156,18 @@ public sealed class ItemSimulationTests
         var grant=environment.State.Units.OfType<Unit>().Single(x=>x.SpeciesId=="unit-1");
         Assert.Equal(2,grant.Level);Assert.True(grant.Shiny);Assert.Equal(3,grant.Bonuses[0]);Assert.Equal(["dragon"],grant.AddedTypes);
         Assert.NotEqual(copied.Instance,grant.Instance);Assert.Equal(saved,JsonSerializer.Serialize(enemy));
+    }
+
+    [Fact]
+    public void Consuming_an_item_refills_its_slot_with_a_creature_but_ticket_rolls_stay_intact()
+    {
+        var environment=Ready();
+        Buy(environment,"gray-chip");
+        Assert.NotNull(environment.State.Shop[4]!.Creature);
+        Assert.Null(environment.State.Shop[4]!.ItemId);
+
+        environment.State.ItemUses=1;Buy(environment,"gray-ticket");
+        Assert.All(environment.State.Shop,offer=>Assert.NotNull(offer!.Creature));
+        Assert.All(environment.State.Shop,offer=>Assert.Equal(0,int.Parse(offer!.Creature!.SpeciesId[5..])%6));
     }
 }

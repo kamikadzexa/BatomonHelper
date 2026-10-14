@@ -90070,7 +90070,7 @@
       "Name": "Gray Chip",
       "Rarity": 0,
       "Unique": false,
-      "Cost": 15,
+      "Cost": 0,
       "Effects": [
         {
           "Trigger": 3,

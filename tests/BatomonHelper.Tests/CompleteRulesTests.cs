@@ -8,6 +8,12 @@ public sealed class CompleteRulesTests
         var root=new DirectoryInfo(AppContext.BaseDirectory);while(root is not null && !File.Exists(Path.Combine(root.FullName,"assets/simulation/rules.json")))root=root.Parent;
         return JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(Path.Combine(root!.FullName,"assets/simulation/rules.json")))!;
     });
+
+    [Fact]
+    public void Gray_chip_is_free()
+    {
+        Assert.Equal(0,Imported.Value.Items.Single(item=>item.Id=="gray-chip").Cost);
+    }
     public static IEnumerable<object[]> Trinkets=>Imported.Value.Trinkets.Select(x=>new object[]{x.Id});
     public static IEnumerable<object[]> Trainers=>Imported.Value.Trainers.Select(x=>new object[]{x.Id});
     private static void Play(GameEnvironment env)

@@ -125,7 +125,11 @@ public sealed partial class GameEnvironment(RulesManifest rules)
                 break;
             case Move.BuyItem:
                 var item=State.Shop[action.Source]!; State.Gold-=item.Price; State.ItemUses--; State.Shop[action.Source]=null;
-                UseItem(item.ItemId!,item.Price); break;
+                UseItem(item.ItemId!,item.Price);
+                // A consumed item offer is immediately replaced by a Batomon. Effects such as
+                // tickets may have already replaced the slot with their own fresh shop roll.
+                if(State.Shop[action.Source] is null) RollCreatureOffer(action.Source);
+                break;
             case Move.Sell:
                 var sold=action.Source==10?State.Overflow!:State.Units[action.Source]!;
                 State.Gold+=SellValue(sold);
@@ -257,6 +261,12 @@ public sealed partial class GameEnvironment(RulesManifest rules)
         }
         RefreshShop();FinishAdvancedShop();
         State.RandomState=_random.State;
+    }
+    private void RollCreatureOffer(int slot)
+    {
+        var definition=RollSpecies(RarityRoll(GetShopOdds()));
+        State.Shop[slot]=new(Create(definition,chance:Math.Min(1,.005*TraitProduct(ShopTrait.ShinyMultiplier))),null,definition.Cost);
+        RefreshShop();
     }
     /// <summary>Targeted consumables are only stocked when they can affect an owned creature.
     /// This includes both the table and bench, while targetless effects stay available.</summary>
