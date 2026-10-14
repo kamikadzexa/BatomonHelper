@@ -11,7 +11,7 @@ dotnet build BatomonHelper.sln -c Release
 dotnet run --project src/BatomonHelper.Training -c Release --no-build
 ```
 
-Start, Pause, Resume, Stop and Save, Evaluate and Export operate the separate Python learner and headless .NET simulation host. Training runs until stopped or until the optional duration expires. Evaluation and export require a saved, stopped session. Device, seed, output directory and worker/environment limits are editable before starting.
+Start, Pause, Resume, Stop and Save, Evaluate and Export operate the separate Python learner and headless .NET simulation host. Training runs until stopped or until the optional duration expires; each game run ends on the win target, when all lives are lost, or at the hard final turn, 16. Evaluation and export require a saved, stopped session. Device, seed, output directory and worker/environment limits are editable before starting.
 
 The isolated environment is installed here. For another checkout, run `./training/Setup.ps1 -Python C:/path/to/python.exe`; add `-Cpu` for CPU wheels. Python 3.12, PyTorch 2.7.1 and NumPy 2.2.6 are pinned. Output defaults to `work/training`, which is ignored by Git.
 

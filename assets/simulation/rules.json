@@ -2,7 +2,7 @@
   "Build": "25738032",
   "Balance": "25",
   "Version": "1.3.0",
-  "Hash": "F89988BBFA12ACEA18E7C5A8A1759698817BEE1C4CECEC4E5D40D0AF113F1B8C",
+  "Hash": "232B6D82F56209CF9660AC3D99322EEF65B88DAB7C020852AC8329486F950185",
   "Species": [
     {
       "Id": "aegistruct",
@@ -90070,7 +90070,7 @@
       "Name": "Gray Chip",
       "Rarity": 0,
       "Unique": false,
-      "Cost": 0,
+      "Cost": 15,
       "Effects": [
         {
           "Trigger": 3,
@@ -99603,55 +99603,7 @@
       90,
       95,
       100,
-      105,
-      110,
-      115,
-      120,
-      125,
-      130,
-      135,
-      140,
-      145,
-      150,
-      155,
-      160,
-      165,
-      170,
-      175,
-      180,
-      185,
-      190,
-      195,
-      200,
-      205,
-      210,
-      215,
-      220,
-      225,
-      230,
-      235,
-      240,
-      245,
-      250,
-      255,
-      260,
-      265,
-      270,
-      275,
-      280,
-      285,
-      290,
-      295,
-      300,
-      305,
-      310,
-      315,
-      320,
-      325,
-      330,
-      335,
-      340,
-      345
+      105
     ],
     "DailyHp": [
       300,
@@ -99669,57 +99621,9 @@
       52300,
       68000,
       87400,
-      106800,
-      126200,
-      145600,
-      165000,
-      184400,
-      203800,
-      223200,
-      242600,
-      262000,
-      281400,
-      300800,
-      320200,
-      339600,
-      359000,
-      378400,
-      397800,
-      417200,
-      436600,
-      456000,
-      475400,
-      494800,
-      514200,
-      533600,
-      553000,
-      572400,
-      591800,
-      611200,
-      630600,
-      650000,
-      669400,
-      688800,
-      708200,
-      727600,
-      747000,
-      766400,
-      785800,
-      805200,
-      824600,
-      844000,
-      863400,
-      882800,
-      902200,
-      921600,
-      941000,
-      960400,
-      979800,
-      999200,
-      1018600,
-      1038000
+      106800
     ],
-    "InitialLives": 10,
+    "TurnCap": 16,
     "WinTarget": 10,
     "Verified": false,
     "AllowGuesses": true,
@@ -99817,294 +99721,6 @@
       {
         "Day": 16,
         "Value": 106800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 17,
-        "Value": 126200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 18,
-        "Value": 145600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 19,
-        "Value": 165000,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 20,
-        "Value": 184400,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 21,
-        "Value": 203800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 22,
-        "Value": 223200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 23,
-        "Value": 242600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 24,
-        "Value": 262000,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 25,
-        "Value": 281400,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 26,
-        "Value": 300800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 27,
-        "Value": 320200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 28,
-        "Value": 339600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 29,
-        "Value": 359000,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 30,
-        "Value": 378400,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 31,
-        "Value": 397800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 32,
-        "Value": 417200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 33,
-        "Value": 436600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 34,
-        "Value": 456000,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 35,
-        "Value": 475400,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 36,
-        "Value": 494800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 37,
-        "Value": 514200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 38,
-        "Value": 533600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 39,
-        "Value": 553000,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 40,
-        "Value": 572400,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 41,
-        "Value": 591800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 42,
-        "Value": 611200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 43,
-        "Value": 630600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 44,
-        "Value": 650000,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 45,
-        "Value": 669400,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 46,
-        "Value": 688800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 47,
-        "Value": 708200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 48,
-        "Value": 727600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 49,
-        "Value": 747000,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 50,
-        "Value": 766400,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 51,
-        "Value": 785800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 52,
-        "Value": 805200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 53,
-        "Value": 824600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 54,
-        "Value": 844000,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 55,
-        "Value": 863400,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 56,
-        "Value": 882800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 57,
-        "Value": 902200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 58,
-        "Value": 921600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 59,
-        "Value": 941000,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 60,
-        "Value": 960400,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 61,
-        "Value": 979800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 62,
-        "Value": 999200,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 63,
-        "Value": 1018600,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
-      },
-      {
-        "Day": 64,
-        "Value": 1038000,
         "Kind": "Guessed",
         "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
       }
@@ -100205,305 +99821,18 @@
         "Value": 105,
         "Kind": "UserProvided",
         "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 17,
-        "Value": 110,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 18,
-        "Value": 115,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 19,
-        "Value": 120,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 20,
-        "Value": 125,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 21,
-        "Value": 130,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 22,
-        "Value": 135,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 23,
-        "Value": 140,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 24,
-        "Value": 145,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 25,
-        "Value": 150,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 26,
-        "Value": 155,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 27,
-        "Value": 160,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 28,
-        "Value": 165,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 29,
-        "Value": 170,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 30,
-        "Value": 175,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 31,
-        "Value": 180,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 32,
-        "Value": 185,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 33,
-        "Value": 190,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 34,
-        "Value": 195,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 35,
-        "Value": 200,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 36,
-        "Value": 205,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 37,
-        "Value": 210,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 38,
-        "Value": 215,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 39,
-        "Value": 220,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 40,
-        "Value": 225,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 41,
-        "Value": 230,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 42,
-        "Value": 235,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 43,
-        "Value": 240,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 44,
-        "Value": 245,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 45,
-        "Value": 250,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 46,
-        "Value": 255,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 47,
-        "Value": 260,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 48,
-        "Value": 265,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 49,
-        "Value": 270,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 50,
-        "Value": 275,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 51,
-        "Value": 280,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 52,
-        "Value": 285,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 53,
-        "Value": 290,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 54,
-        "Value": 295,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 55,
-        "Value": 300,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 56,
-        "Value": 305,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 57,
-        "Value": 310,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 58,
-        "Value": 315,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 59,
-        "Value": 320,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 60,
-        "Value": 325,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 61,
-        "Value": 330,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 62,
-        "Value": 335,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 63,
-        "Value": 340,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
-      },
-      {
-        "Day": 64,
-        "Value": 345,
-        "Kind": "UserProvided",
-        "Explanation": "Latest user correction: base gold starts at 30 and increases by 5 each turn, superseding earlier income observations."
       }
     ],
+    "EffectiveTurnCap": 16,
     "Usable": true
   },
   "SimulationRevision": 8,
   "Evidence": [
     {
-      "Id": "starting-hp",
+      "Id": "turn-cap",
       "Kind": "UserProvided",
-      "Value": "300",
-      "Explanation": "Starting life in the user\u0027s table is interpreted as shared team HP; run lives remain 10.",
+      "Value": "16",
+      "Explanation": "Runs end when they reach the win target, lose all lives, or reach turn 16.",
       "Source": "User message"
     },
     {
@@ -100571,10 +99900,10 @@
     },
     {
       "Id": "item-eligibility",
-      "Kind": "Guessed",
-      "Value": "allow rarity-eligible items even when no target is present",
-      "Explanation": "Explicit shop effects can suppress items. A targetless item effect can resolve without changing a creature.",
-      "Source": "Authorized guess"
+      "Kind": "UserProvided",
+      "Value": "offer only items with an eligible current table or bench target",
+      "Explanation": "Targeted items are excluded when no qualifying creature is owned; targetless items remain eligible.",
+      "Source": "User message"
     },
     {
       "Id": "price-rounding",
@@ -103698,7 +103027,7 @@
         "Tier": 3
       }
     ],
-    "ScheduleDays": 64,
+    "ScheduleDays": 16,
     "AllowGuesses": true,
     "CombatTickSeconds": 0.01,
     "PriceRounding": "floor",
@@ -103706,7 +103035,7 @@
     "FullyUnlocked": true,
     "EvidenceOverrides": null
   },
-  "GuessedRules": 31,
+  "GuessedRules": 30,
   "Ready": true,
   "FullFidelityReady": false
 }

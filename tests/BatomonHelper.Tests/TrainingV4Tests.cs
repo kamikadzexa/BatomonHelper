@@ -94,6 +94,31 @@ public sealed class TrainingV4Tests
         Assert.Equal(0,env.GetObservation().TurnsRemaining);
     }
     [Fact]
+    public void Win_target_ends_the_run_before_the_turn_cap()
+    {
+        var rules=RuleCompiler.Fixture();var env=new GameEnvironment(rules);env.Reset(9,"fixture");
+        env.State.Wins=rules.Parameters.WinTarget-1;
+        var result=env.Step(new(Move.Finish),board=>board);
+        Assert.True(result.Battle!.PlayerWon);Assert.True(result.Terminal);Assert.Equal(Phase.Complete,env.State.Phase);
+        Assert.True(env.State.Day<rules.Parameters.EffectiveTurnCap);Assert.Equal(0,env.GetObservation().TurnsRemaining);
+    }
+    [Fact]
+    public void Maxed_creatures_only_leave_future_rolls_and_existing_shop_copies_stay_buyable()
+    {
+        var rules=RuleCompiler.Fixture();var env=new GameEnvironment(rules);env.Reset(9,"fixture");env.State.Gold=100;
+        env.State.Units[0]=new(){SpeciesId="striker",Instance=1,Level=2,Copies=1};
+        env.State.Units[1]=new(){SpeciesId="striker",Instance=2,Level=2,Copies=1};
+        env.State.Shop[0]=new(new(){SpeciesId="striker",Instance=3,Level=1,Copies=1},null,10,10);
+        env.Step(new(Move.Move,0,1));
+        Assert.Equal(3,env.State.Units[0]!.Level);Assert.Equal("striker",env.State.Shop[0]!.Creature!.SpeciesId);
+        env.Step(new(Move.Buy,0,1));
+        Assert.Equal("striker",env.State.Units[1]!.SpeciesId);Assert.Equal(1,env.State.Units[1]!.Level);
+        for(var i=0;i<5;i++){env.Step(new(Move.Reroll));Assert.DoesNotContain(env.State.Shop,x=>x?.Creature?.SpeciesId=="striker");}
+        env.Step(new(Move.Sell,0));
+        var returned=false;for(var i=0;i<20&&!returned;i++){env.Step(new(Move.Reroll));returned=env.State.Shop.Any(x=>x?.Creature?.SpeciesId=="striker");}
+        Assert.True(returned);
+    }
+    [Fact]
     public void User_session_replays_resumes_deduplicates_and_rejects_tampering()
     {
         var rules=RuleCompiler.Fixture();var directory=Path.Combine(Path.GetTempPath(),Guid.NewGuid().ToString("N"));

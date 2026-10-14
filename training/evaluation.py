@@ -67,7 +67,7 @@ class EvaluationRunner:
         model_hash=weights_hash(snapshot,self.config['seed'])
         key=dict(model=model_hash,suite=self.suite_hash,rules=self.rules['Hash'],runs=self.runs,
             sampling=self.config.get('evaluation_sampling',False),decision_limit=self.config.get('evaluation_decision_limit',self.runs*4000),
-            shop_limit=self.config.get('shop_decision_limit',64),device=self.device,tf32=self.config.get('evaluation_tf32',False),runner_version=2)
+            shop_limit=self.config.get('shop_decision_limit',64),device=self.device,tf32=self.config.get('evaluation_tf32',False),runner_version=3)
         cache_key=hashlib.sha256(json.dumps(key,sort_keys=True).encode()).hexdigest();path=self.cache/(cache_key+'.json')
         start=time.monotonic();self.progress(snapshot,0,0,start,True)
         if path.exists() and not self.cancelled:
@@ -85,7 +85,7 @@ class EvaluationRunner:
         for model in policies:model.eval()
         torch.manual_seed(seed)
         with torch.inference_mode():population=PopulationInference(policies)
-        results=[];decisions=0;stats=[dict(battles=0,deployed=0,bench=0,limited=0) for _ in range(4)];opponents={};step={}
+        results=[];decisions=0;stats=[dict(battles=0,deployed=0,bench=0,limited=0) for _ in range(4)];opponents={};user_session_fights={};step={}
         limit=key['decision_limit'];active=np.arange(self.host.ready['Count'])<self.runs
         while len(results)<self.runs and decisions<limit and not self.cancelled:
             observation,actions=self.host.batch()
@@ -104,6 +104,9 @@ class EvaluationRunner:
                 for a,b in (('battles','Battles'),('deployed','Deployed'),('bench','DeployableBench'),('limited','LimitedTurns')):target[a]+=row[b]
             for row in step.get('Opponents',[]):
                 target=opponents.setdefault(f"{row['Kind']}:generation-{row['Generation']}",dict(battles=0,wins=0));target['battles']+=1;target['wins']+=int(row['Won'])
+                if row['Kind']=='user':
+                    session=row.get('SessionId') or 'unknown-session'
+                    target=user_session_fights.setdefault(session,dict(battles=0,wins=0));target['battles']+=1;target['wins']+=int(row['Won'])
             self.progress(snapshot,len(results),decisions,start)
         scores=[]
         for i in range(4):
@@ -123,6 +126,7 @@ class EvaluationRunner:
             limited_turn_rate=sum(x['limited'] for x in stats)/battles,policies=scores,opponents=opponents,trainers=trainers,
             user_session_comparison=dict(battles=sum(x['battles'] for key,x in opponents.items() if key.startswith('user:')),
                 wins=sum(x['wins'] for key,x in opponents.items() if key.startswith('user:'))),
+            user_session_fights=[dict(session_id=session,battles=row['battles'],wins=row['wins']) for session,row in sorted(user_session_fights.items())],
             rank_bands=step.get('RankBands',{}),average_additional_wins=sum(x['Wins']-x.get('StartingWins',0) for x in results)/max(1,n),seconds=time.monotonic()-start,decisions=decisions,cache_key=cache_key,model_hash=model_hash,
             suite_hash=self.suite_hash,evaluation_batch=self.batch_id,cached=False,selection='sample' if key['sampling'] else 'greedy',
             diagnostic_fixture=self.rules['Build']=='fixture',reason='cancelled' if self.cancelled else 'decision_limit' if n<self.runs else None)

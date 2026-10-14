@@ -273,7 +273,14 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         using var json=JsonDocument.Parse(File.ReadAllText(path));var root=json.RootElement;
         if(!root.TryGetProperty("user_session_comparison",out var comparison))return;
         var battles=NumberOrZero(comparison,"battles");var wins=NumberOrZero(comparison,"wins");
-        UserSessionComparisons.Clear();UserSessionComparisons.Add(new("Current evaluation",battles,wins,battles==0?0:wins/(double)battles));
+        UserSessionComparisons.Clear();
+        if(root.TryGetProperty("user_session_fights",out var fights))foreach(var fight in fights.EnumerateArray())
+        {
+            var session=fight.GetProperty("session_id").GetString()??"Unknown session";
+            var sessionBattles=NumberOrZero(fight,"battles");var sessionWins=NumberOrZero(fight,"wins");
+            UserSessionComparisons.Add(new($"Session {session}",sessionBattles,sessionWins,sessionBattles==0?0:sessionWins/(double)sessionBattles));
+        }
+        if(UserSessionComparisons.Count==0)UserSessionComparisons.Add(new("Current evaluation",battles,wins,battles==0?0:wins/(double)battles));
     }
     private async void RefreshHistory(object sender,RoutedEventArgs e)
     {

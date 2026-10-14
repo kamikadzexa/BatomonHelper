@@ -173,7 +173,7 @@ public sealed class Combat(RulesManifest rules)
             teams[side].Units.Select((x,i)=>(x,i)).Where(x=>x.x is {Alive:true} && (effect.Scale!=EffectScale.AlliedStat ||
                 x.i!=slot && x.x.Unit.SpeciesId!=effect.ScaleExcludeSpecies && TargetSlots(slot,effect.ScaleTarget,Linked(side)).Contains(x.i))).Select(x=>x.x!.Unit),teams[side].Bag,_species,
             unit=>ScaleStats(side,unit,effect.Trigger==Trigger.Ongoing?excludedDynamicStats | StatBit(side,slot,effect.Stat):excludedDynamicStats),
-            teams[1-side].Status,teams[side].Counters.GetValueOrDefault("losses"),_trinkets,eventStats,teams[side].Wins,
+            teams[1-side].Status,teams[side].Counters.GetValueOrDefault("lives-lost"),_trinkets,eventStats,teams[side].Wins,
             teams[side].Counters.GetValueOrDefault("items-used-rarity-"+effect.ScaleRarity));
         double[] ScaleStats(int side,Unit unit,UInt128 excludedDynamicStats)
         {

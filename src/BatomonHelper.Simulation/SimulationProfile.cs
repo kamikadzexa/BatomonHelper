@@ -9,7 +9,7 @@ public sealed record EventSchedule(int Day,int Tier);
 public sealed record EvidenceOverride(string Id,[property:JsonConverter(typeof(JsonStringEnumConverter<EvidenceKind>))] EvidenceKind Kind,string Source,string Explanation);
 
 /// <summary>Editable observations and explicitly provisional choices. Unknown handlers are still coverage failures.</summary>
-public sealed record SimulationProfile(ProgressionPoint[] Observations,EventSchedule[] Events,int ScheduleDays=64,
+public sealed record SimulationProfile(ProgressionPoint[] Observations,EventSchedule[] Events,int ScheduleDays=16,
     bool AllowGuesses=true,double CombatTickSeconds=.01,string PriceRounding="floor",bool SharedRarityOdds=true,
     bool FullyUnlocked=true,EvidenceOverride[]? EvidenceOverrides=null)
 {
@@ -45,7 +45,7 @@ public sealed record SimulationProfile(ProgressionPoint[] Observations,EventSche
             Verified:hp.All(x=>x.Kind!=EvidenceKind.Guessed) && income.All(x=>x.Kind!=EvidenceKind.Guessed),
             AllowGuesses:AllowGuesses,HpEvidence:hp,IncomeEvidence:income);
         var evidence=new List<RuleEvidence>{
-            new("turn-cap",EvidenceKind.UserProvided,ScheduleDays.ToString(System.Globalization.CultureInfo.InvariantCulture),"Runs always simulate through the configured turn cap; battle losses do not end a run.","User message"),
+            new("turn-cap",EvidenceKind.UserProvided,ScheduleDays.ToString(System.Globalization.CultureInfo.InvariantCulture),"Runs end when they reach the win target, lose all lives, or reach turn 16.","User message"),
             new("starting-gold",EvidenceKind.UserProvided,points[0].Income.ToString(System.Globalization.CultureInfo.InvariantCulture),"Starting gold is granted once; later daily values are added to unspent gold.","User message"),
             new("event-schedule",EvidenceKind.UserProvided,string.Join(", ",Events.Select(x=>$"day {x.Day}: tier {x.Tier}")),"Normal scheduled events are distinct from Second Chance.","User message"),
             new("shared-rarity-odds",EvidenceKind.UserProvided,SharedRarityOdds.ToString(),"Ordinary item and trinket rarity draws use the same final shop odds as creatures; explicit reward rarities stay explicit.","User message"),

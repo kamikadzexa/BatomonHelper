@@ -59,7 +59,7 @@ public partial class MainWindow
     private void DisplayPlay()
     {
         if(_play is null)return;var s=_play.Environment.State;
-        PlayInfo=$"Turn {s.Day}/{_rules.Parameters.EffectiveTurnCap} · {RemainingTurns(s)} turns remaining · rank {s.Rank} · ${s.Gold:0.##} · {s.Wins}/10 wins · HP {s.MaxHp:0} · {s.Phase}\n"+
+        PlayInfo=$"Turn {s.Day}/{_rules.Parameters.EffectiveTurnCap} · {RemainingTurns(s)} turns remaining · {s.Lives} lives · rank {s.Rank} · ${s.Gold:0.##} · {s.Wins}/10 wins · HP {s.MaxHp:0} · {s.Phase}\n"+
             $"{s.Trainer} · item uses {s.ItemUses}/{s.MaximumItemUses} · free rerolls {s.FreeRerolls} · {(s.Locked?"shop locked":"shop unlocked")}";
         PlayTeam.Clear();PlayBench.Clear();PlayShop.Clear();
         for(var i=0;i<6;i++)PlayTeam.Add(PlayCard(s.Units[i],i,"board"));

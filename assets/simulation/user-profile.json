@@ -75,7 +75,7 @@
       "Tier": 3
     }
   ],
-  "ScheduleDays": 64,
+  "ScheduleDays": 16,
   "AllowGuesses": true,
   "CombatTickSeconds": 0.01,
   "PriceRounding": "floor",

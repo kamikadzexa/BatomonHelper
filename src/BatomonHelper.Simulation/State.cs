@@ -98,8 +98,7 @@ public sealed class RunState
 {
     public string RunId { get; set; } = "";
     public int Day { get; set; } = 1;
-    [JsonIgnore]
-    public int Lives { get => 0; set { } }
+    public int Lives { get; set; } = 10;
     public int Wins { get; set; }
     public double Gold { get; set; }
     public double MaxHp { get; set; }
@@ -133,7 +132,7 @@ public sealed class RunState
     public string? CurrentEvent { get; set; }
     public PurchaseBuff[] PendingPurchaseBuffs { get; set; } = [];
     public RunState Clone() => new() {
-        RunId=RunId,Day=Day,Wins=Wins,Gold=Gold,MaxHp=MaxHp,Rank=Rank,Trainer=Trainer,
+        RunId=RunId,Day=Day,Lives=Lives,Wins=Wins,Gold=Gold,MaxHp=MaxHp,Rank=Rank,Trainer=Trainer,
         Units=Units.Select(x=>x?.Clone()).ToArray(),Shop=Shop.Select(x=>x is null?null:x with {Creature=x.Creature?.Clone()}).ToArray(),
         Bag=[..Bag],ExtraTrainers=[..ExtraTrainers],ForeignPool=[..ForeignPool],Counters=new(Counters),
         Locked=Locked,CarryShop=CarryShop,SecondChanceUsed=SecondChanceUsed,FreeRerolls=FreeRerolls,ItemUses=ItemUses,MaximumItemUses=MaximumItemUses,
@@ -149,8 +148,7 @@ public sealed record Observation(int Day, int TurnsRemaining, int Wins, double G
     bool Locked, int FreeRerolls, int ItemUses, int MaximumItemUses, Phase Phase, Choice[] Choices, Unit? Overflow,
     Dictionary<string, double>? Counters = null, VisibleRunState? VisibleState = null)
 {
-    [JsonIgnore]
-    public int Lives => 0;
+    public int Lives { get; init; }
 }
 public sealed record VisibleRunState(string[] ForeignPool,bool CarryShop,bool SecondChanceUsed,Unit[] PendingUnits,
     bool TakeAllChoices,Effect[] PendingShopEffects,PurchaseBuff[] PendingPurchaseBuffs,bool PendingShopStart,Phase ActiveChoicePhase,string? CurrentEvent);

@@ -53,7 +53,7 @@
     <DataGrid ItemsSource="{Binding GenerationResults}" AutoGenerateColumns="True" MaxHeight="220"/>
     <TextBlock Text="Fixed evaluation leaderboard" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
     <DataGrid x:Name="RankingList" ItemsSource="{Binding RankingResults}" AutoGenerateColumns="True" MaxHeight="260"/>
-    <TextBlock Text="Current policy vs saved user-session boards" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
+    <TextBlock Text="User-session fights — separate evaluation results (sampled first when available)" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
     <DataGrid ItemsSource="{Binding UserSessionComparisons}" AutoGenerateColumns="True" MaxHeight="110"/>
     <TextBlock Text="Trainer results" FontWeight="SemiBold" FontSize="17" Margin="0,18,0,8"/>
     <DataGrid ItemsSource="{Binding TrainerResults}" AutoGenerateColumns="True" MaxHeight="250"/>
@@ -119,7 +119,7 @@
    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"><StackPanel Margin="12,4,0,4">
     <TextBlock Text="Play session" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8"/>
     <Border Background="#182B3B" BorderBrush="#3D5A70" BorderThickness="1" CornerRadius="7" Padding="10" Margin="0,0,0,12">
-     <StackPanel><TextBlock Text="How to play" FontWeight="SemiBold"/><TextBlock Text="Click a shop card to buy it; if several slots are open, click the empty destination. Drag a team or bench card onto another slot to move or swap it. Merging is automatic when the required matching creatures are on the team or bench. Event and reward buttons explain their effects before you choose. Every session runs to the turn cap—losses do not remove lives." TextWrapping="Wrap" Foreground="#A7BBD0" Margin="0,6,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="How to play" FontWeight="SemiBold"/><TextBlock Text="Click a shop card to buy it; if several slots are open, click the empty destination. Drag a team or bench card onto another slot to move or swap it. Merging is automatic when the required matching creatures are on the team or bench. Event and reward buttons explain their effects before you choose. A session ends when you reach the win target, lose all lives, or reach turn 16." TextWrapping="Wrap" Foreground="#A7BBD0" Margin="0,6,0,0"/></StackPanel>
     </Border>
     <TextBlock Text="Battle result" FontWeight="SemiBold" Margin="0,2,0,4"/><TextBlock Text="{Binding PlayResult}" TextWrapping="Wrap" Foreground="#8DDABF" Margin="0,0,0,14"/>
     <TextBlock Text="Your saved sessions · boards are used only as opponents" FontWeight="SemiBold" Margin="0,18,0,8"/>

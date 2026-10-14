@@ -5,6 +5,7 @@ public sealed record LeagueEntry(int Generation,int Policy,string Kind,FrozenBoa
 /// <summary>Single-writer league; immutable during parallel simulation steps.</summary>
 public sealed class OpponentLeague
 {
+    public const double UserOpponentSamplingWeight=.60;
     private readonly LinkedList<LeagueEntry> _entries=[];
     private readonly Dictionary<LeagueEntry,LinkedListNode<LeagueEntry>> _nodes=new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<(int,int,string,int,string,int,string?),List<LeagueEntry>> _detail=[];
@@ -63,9 +64,11 @@ public sealed class OpponentLeague
     {
         var rng=new SeedStream(seed^0xAE61UL);var roll=rng.Uniform();
         var user=Candidates(day,"user");
-        // Recorded human boards are scarce and more representative than generated ones, so give
-        // them a modest but meaningful sampling priority whenever a same-day board exists.
-        var category=user.Count>0&&roll<.20?"user":roll<.50?"current":roll<.70?"recent":roll<.85?"champion":"baseline";
+        // Recorded human boards are scarce and more representative than generated ones, so make
+        // them the primary training opponent whenever a same-day board exists.
+        var category=user.Count>0
+            ?roll<UserOpponentSamplingWeight?"user":roll<.75?"current":roll<.85?"recent":roll<.925?"champion":"baseline"
+            :roll<.50?"current":roll<.70?"recent":roll<.85?"champion":"baseline";
         var pool=Candidates(day,category);if(pool.Count==0)pool=Candidates(day,"baseline");if(pool.Count==0)pool=Candidates(day,"all");
         if(pool.Count==0 && evaluation)throw new InvalidOperationException("Independent same-day opponent archive missing for day "+day);
         return pool.Count==0?null:pool[rng.Index(pool.Count)];

@@ -27,7 +27,7 @@ public sealed class SimulationTests
         Assert.Equal(5,Combat.Targets(1,Target.Adjacent,true).Length);
     }
     [Fact]
-    public void Negative_speed_is_preserved_and_maxed_evolutions_exclude_the_base_pool()
+    public void Negative_speed_is_preserved_and_maxed_evolutions_do_not_exclude_the_base_pool()
     {
         var basis=RuleCompiler.Fixture();var environment=new GameEnvironment(basis);environment.Reset(3,"fixture");
         var unit=new Unit {SpeciesId="striker"};unit.Bonuses[(int)Stat.Speed]=-.5;
@@ -40,7 +40,7 @@ public sealed class SimulationTests
         var run=new GameEnvironment(rules);run.Reset(5,"fixture");
         run.State.Units[0]=new() {SpeciesId="evolved",Level=3};
         run.State.Gold=100;
-        for(var i=0;i<10;i++) {run.Step(new(Move.Reroll));Assert.DoesNotContain(run.State.Shop,x=>x?.Creature?.SpeciesId=="striker");}
+        run.Step(new(Move.Reroll));Assert.Contains(run.State.Shop,x=>x?.Creature?.SpeciesId=="striker");
         Assert.Equal(run.SellValue(new() {SpeciesId=baseSpecies.Id,Level=3}),run.SellValue(new() {SpeciesId=baseSpecies.Id,Level=4}));
     }
     [Fact]

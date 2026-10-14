@@ -213,7 +213,7 @@ while(await Console.In.ReadLineAsync() is { } line)
                 var historyMilliseconds=historyWatch.Elapsed.TotalMilliseconds;
                 var opponentResults=results.Select((result,i)=>(result,i)).Where(x=>x.result.DayRecord is not null).Select(x=>{
                     var day=x.result.DayRecord!;var entry=pickedEntries[x.i];
-                    return new {Policy=x.i%4,Kind=entry?.Kind??"bootstrap",Generation=entry?.Generation??-1,Won=day.Result.PlayerWon};
+                    return new {Policy=x.i%4,Kind=entry?.Kind??"bootstrap",Generation=entry?.Generation??-1,SessionId=entry?.SessionId,Won=day.Result.PlayerWon};
                 }).ToArray();
                 Emit(new { Rewards=rewards,Terminals=results.Select(x=>x.Terminal),Runs=saved.OfType<RunRecord>().Select(x=>new {x.Summary}),Opponents=opponentResults,
                     Battles=results.Count(x=>x.DayRecord is not null),Deployed=boards.OfType<FrozenBoard>().Sum(x=>x.Team.Count(u=>u is not null)),

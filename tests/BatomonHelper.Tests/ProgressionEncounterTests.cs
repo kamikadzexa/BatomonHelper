@@ -62,7 +62,8 @@ public sealed class ProgressionEncounterTests
             Assert.Equal(EvidenceKind.Guessed, parameters.HpEvidence![day - 1].Kind);
             Assert.Equal(EvidenceKind.UserProvided, parameters.IncomeEvidence![day - 1].Kind);
         }
-        Assert.Equal(31, evidence.Count(x => x.Kind == EvidenceKind.Guessed));
+        Assert.Equal(16, parameters.EffectiveTurnCap);
+        Assert.Equal(30, evidence.Count(x => x.Kind == EvidenceKind.Guessed));
         Assert.True(parameters.Usable); Assert.False(parameters.Verified);
         Assert.Contains("\"Guessed\"", JsonSerializer.Serialize(evidence));
     }
