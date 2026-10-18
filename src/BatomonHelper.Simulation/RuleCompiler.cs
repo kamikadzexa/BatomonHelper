@@ -77,12 +77,13 @@ public static class RuleCompiler
             if (!supported) issues.Add(new(id, category, text ?? "No complete effect text was imported.", url));
             return new(id, name, rarity, unique, cost, effects, url, text ?? "Missing effect description");
         }
-        var items = catalog.Items.Select(x => Inventory(x.Id, x.Name, (int)x.Rarity, false, x.Price ?? 0, x.RuleText, "items")).ToArray();
+        // Repair cached catalogs imported before labelled costs were parsed. Verified for Balance 25.
+        var items = catalog.Items.Select(x => Inventory(x.Id, x.Name, (int)x.Rarity, false, x.Id=="gray-chip"?0:x.Price ?? 0, x.RuleText, "items")).ToArray();
         var trinkets = catalog.Trinkets.Select(x => Inventory(x.Id, x.Name, (int)x.Rarity, x.IsUnique, 0, x.RuleText, "trinkets")).ToArray();
         var trainers = catalog.Trainers.Where(x => x.Id != "mysterious-trainer").Select(x => Inventory(x.Id, x.Name, 0, false, 0, x.RuleText, "trainers")).ToArray();
         var manifest = new RulesManifest(catalog.DeclaredSteamBuild, catalog.Balance ?? "unknown", catalog.WikiVersion ?? "unknown", "",
             species, items, trinkets, trainers, issues.Distinct().ToArray(),settings.Parameters,
-            Evidence:settings.Evidence,Encounters:encounters,Profile:profile);
+            Evidence:[..settings.Evidence,new("gray-chip-price",EvidenceKind.Wiki,"0","Cost is $0; $15 is the conditional victory payout. Repairs the earlier first-dollar-amount importer.","https://batomon.com/items/gray-chip")],Encounters:encounters,Profile:profile);
         return manifest with { Hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(manifest)+"/encoding:"+PolicyEncoding.Version))) };
     }
 

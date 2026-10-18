@@ -1,10 +1,14 @@
 namespace BatomonHelper.Simulation;
 
+public sealed record ShopPolicyMemory(int Day,int Rerolls,int Decisions);
+
 /// <summary>Independent, bounded shopping baseline. Used for opponents and comparisons, never imitation.</summary>
 public sealed class StrongestShopPolicy(RulesManifest rules)
 {
     private readonly Dictionary<string,Species> _species=rules.Species.ToDictionary(x=>x.Id);
     private int _day=-1,_rerolls,_decisions;
+    public ShopPolicyMemory Snapshot()=>new(_day,_rerolls,_decisions);
+    public void Restore(ShopPolicyMemory memory){_day=memory.Day;_rerolls=memory.Rerolls;_decisions=memory.Decisions;}
     public double Strength(Unit u)
     {
         var l=LevelRules.Resolve(_species[u.SpeciesId],u.Level,u.Shiny);var s=l.Stats.Zip(u.Bonuses,(a,b)=>a+b).ToArray();

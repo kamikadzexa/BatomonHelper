@@ -34,7 +34,16 @@ public sealed class BoardUiTests
                 typeof(OverlayViewModel).GetMethod("RenderBoard", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(viewModel, [result.Snapshot]);
                 Assert.Equal(6, viewModel.TeamRows.Count); Assert.Equal(4, viewModel.BenchRows.Count); Assert.Equal(5, viewModel.OfferRows.Count);
                 Assert.Contains("Lv. 2", viewModel.TeamRows[5].Level); Assert.Contains("Damage 15", viewModel.TeamRows[5].Stats);
+                typeof(OverlayViewModel).GetProperty(nameof(OverlayViewModel.DamageSummary))!.SetValue(viewModel, "Next opponent HP (est.): 38,600  ·  HP dealt at 60.7%");
+                viewModel.DamageRows.Add(new("DPS", "120.0", "240.0", "360.0", "480.0", "600.0", ""));
+                viewModel.DamageRows.Add(new("Poison /s", "8.0", "12.0", "16.0", "20.0", "24.0", ""));
+                viewModel.DamageRows.Add(new("Electricity /s", "5.0", "10.0", "15.0", "20.0", "25.0", ""));
+                viewModel.DamageRows.Add(new("Shield /s", "100.0", "150.0", "200.0", "250.0", "300.0", ""));
                 Render((FrameworkElement)window.Content, 1300, 1000, "board-ui.png");
+                var tabs = (TabControl)window.FindName("BoardTabs");
+                tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(tab => Equals(tab.Header, "DPS"));
+                Render((FrameworkElement)window.Content, 1300, 1000, "board-dps-ui.png");
+                tabs.SelectedIndex = 0;
                 var review = new CaptureReviewWindow(result, catalog);
                 var correction = (CaptureReviewViewModel)review.DataContext;
                 var empty = correction.Fields.Single(field => field.Name == "Team[0].Occupant");

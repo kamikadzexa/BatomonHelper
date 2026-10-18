@@ -5,6 +5,16 @@ using System.Text.Json;
 using System.Diagnostics;
 
 var json=new JsonSerializerOptions { PropertyNameCaseInsensitive=true };
+if(args.Length>0 && args[0]=="--strategy")return await StrategyProtocol.Run(args);
+if(args.Length>0 && args[0]=="--refresh-knowledge")
+{
+    var catalog=await new SnapshotRepository(Path.Combine(args[1],"catalog.db"),true).GetLatestAsync()??throw new InvalidDataException("Missing local catalog.");
+    using var http=new HttpClient {Timeout=TimeSpan.FromSeconds(60)};http.DefaultRequestHeaders.UserAgent.ParseAdd("BatomonHelper strategy importer");
+    var knowledge=await new StrategyKnowledgeImporter(new BatomonWikiSource(http)).ImportAsync(catalog);
+    var path=Path.Combine(args[1],"strategy-knowledge.json");
+    await File.WriteAllTextAsync(path+".tmp",JsonSerializer.Serialize(knowledge,new JsonSerializerOptions {WriteIndented=true}));File.Move(path+".tmp",path,true);
+    Console.WriteLine(JsonSerializer.Serialize(new {knowledge.Balance,Pairs=knowledge.Pairs.Length,Compositions=knowledge.Compositions.Length}));return 0;
+}
 if(args.Length>0 && args[0]=="--write-profile")
 {
     await File.WriteAllTextAsync(args[1],JsonSerializer.Serialize(SimulationProfile.UserPantra(),new JsonSerializerOptions {WriteIndented=true}));return 0;

@@ -1,5 +1,7 @@
 # Pantra Training Lab
 
+**Current default:** strategic search and expert iteration, with shared board DPS/stacking analysis. See [strategic training, usage and validation gates](strategic-training.md). New strategic sessions use `work/strategy-training`; existing PPO sessions remain under `work/training` and are available as legacy comparisons. The PPO-specific details below describe that retained implementation.
+
 The LLM route and F10 advice wiring have been removed. This separate WPF application learns through simulated normal Pantra runs without gameplay capture. The helper's catalog, capture and odds features remain available.
 
 **Executable coverage is complete for the imported rules:** 1,164 normal/shiny creature level variants, 40 items, 93 trinkets, 23 normally selectable trainers, and imported normal Pantra encounter choices. The build-25738032 / Balance-25 / 1.3.0 audit has zero missing handlers and permits training with 31 explicitly labelled groups of assumptions. `FullFidelityReady` remains false because those assumptions are not independently verified game behavior.

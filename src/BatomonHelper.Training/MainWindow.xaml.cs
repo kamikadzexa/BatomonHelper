@@ -59,7 +59,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         _root=FindRoot();
         var path=Path.Combine(_root,"assets","simulation","rules.json");
         _rules=File.Exists(path)?JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(path))!:RuleCompiler.Fixture() with {Issues=[new("rules-file","Source","Refresh the simulation rules first.","https://batomon.com/status")]};
-        OutputDirectory=Path.Combine(_root,"work","training");
+        OutputDirectory=Path.Combine(_root,"work","strategy-training");
         InitializeComponent(); DataContext=this;InitializePlay();
         LoadConfiguration(OutputDirectory);
         foreach(var issue in _rules.Issues) Issues.Add(issue);
@@ -71,6 +71,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         var timer=new DispatcherTimer {Interval=TimeSpan.FromSeconds(2)}; timer.Tick+=async(_,_)=>await UpdateProgress(); timer.Start();
         Closing+=async(_,e)=>
         {
+            _analysisCancellation?.Cancel();_adviceCancellation?.Cancel();
             if(_closing) return;
             if(_process is {HasExited:false})
             {
@@ -91,6 +92,10 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         var configuration=Path.Combine(directory,"configuration.json");
         if(File.Exists(configuration)){
             using var json=JsonDocument.Parse(File.ReadAllText(configuration));var c=json.RootElement;
+            TrainingEngine.SelectedIndex=c.TryGetProperty("engine",out var engine)&&engine.GetString()=="strategy"?0:1;
+            if(c.TryGetProperty("warmup_runs",out var warmup))WarmupRuns.Text=warmup.ToString();
+            if(c.TryGetProperty("search_seconds",out var searchSeconds))SearchSeconds.Text=searchSeconds.ToString();
+            if(c.TryGetProperty("evaluation_search_seconds",out var evaluationSeconds))EvaluationSeconds.Text=evaluationSeconds.ToString();
             Seed.Text=c.GetProperty("seed").ToString();Workers.Text=c.GetProperty("workers").ToString();
             Environments.Text=(c.TryGetProperty("requested_environments",out var requested)?requested:c.GetProperty("environments")).ToString();
             Minibatch.Text=c.TryGetProperty("minibatch",out var batch)?batch.ToString():"512";
@@ -125,13 +130,26 @@ public partial class MainWindow : Window,INotifyPropertyChanged
                 Directory.CreateDirectory(CurrentOutput); File.WriteAllText(rulesPath,JsonSerializer.Serialize(_rules));
             }
             else { _rules=JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(rulesPath))!; _rules.RequireReady(); }
+            if(TrainingEngine.SelectedIndex==1&&File.Exists(Path.Combine(CurrentOutput,"strategy-checkpoint.pt")))throw new InvalidOperationException("This output contains strategic training. Choose a separate directory for legacy PPO.");
             var config=new Dictionary<string,object> { ["output"]=CurrentOutput,["rules"]=rulesPath,
                 ["host"]=Path.Combine(_root,"tools","BatomonHelper.TrainingHost","bin","Release","net10.0","BatomonHelper.TrainingHost.dll"),
                 ["workers"]=int.Parse(Workers.Text),["environments"]=int.Parse(Environments.Text),["seed"]=int.Parse(Seed.Text),
                 ["minutes"]=double.Parse(Minutes.Text,System.Globalization.CultureInfo.InvariantCulture),["device"]=((ComboBoxItem)Device.SelectedItem).Content.ToString()!,
                 ["rollout"]=128,["user_pool"]=Path.Combine(_root,"work","user-sessions"),["comparison_archives"]=Directory.Exists(Path.Combine(_root,"work","archives"))?Directory.GetDirectories(Path.Combine(_root,"work","archives")).Where(x=>File.Exists(Path.Combine(x,"checkpoint.json"))).ToArray():Array.Empty<string>(),["minibatch"]=int.Parse(Minibatch.Text),["updates"]=0,["resume"]=resume,["auto_calibrate"]=AutoCalibrate.IsChecked==true&&!resume };
-            if((int)config["environments"]<4 || (int)config["workers"]<1) throw new ArgumentException("Use at least four environments and one worker.");
-            if((int)config["minibatch"]<32)throw new ArgumentException("Use a PPO batch of at least 32.");
+            if(TrainingEngine.SelectedIndex==0){
+                config["engine"]="strategy";config["knowledge"]=Path.Combine(_root,"assets","simulation","strategy-knowledge.json");
+                config["batch"]=32;config["search_seconds"]=double.Parse(SearchSeconds.Text,System.Globalization.CultureInfo.InvariantCulture);config["search_simulations"]=32;
+                config["warmup_runs"]=int.Parse(WarmupRuns.Text);config["evaluation_search_seconds"]=double.Parse(EvaluationSeconds.Text,System.Globalization.CultureInfo.InvariantCulture);
+                if((double)config["search_seconds"]<=0||(double)config["search_seconds"]>30||(double)config["evaluation_search_seconds"]<=0||(double)config["evaluation_search_seconds"]>30||(int)config["warmup_runs"]<0)throw new ArgumentException("Search times must be positive and at most 30 seconds; warmup runs cannot be negative.");
+                var previous=Path.Combine(CurrentOutput,"configuration.json");
+                if(resume&&File.Exists(previous)){
+                    using var saved=JsonDocument.Parse(File.ReadAllText(previous));
+                    foreach(var property in saved.RootElement.EnumerateObject())if(property.Name is not ("resume" or "minutes"))config[property.Name]=property.Value.Clone();
+                }
+                if(File.Exists(Path.Combine(CurrentOutput,"checkpoint.json"))&&!File.Exists(Path.Combine(CurrentOutput,"strategy-checkpoint.pt")))throw new InvalidOperationException("This directory contains legacy training. Choose a separate directory for strategic training.");
+            }
+            if(int.Parse(config["environments"].ToString()!)<4 || int.Parse(config["workers"].ToString()!)<1) throw new ArgumentException("Use at least four environments and one worker.");
+            if(int.Parse(config["minibatch"].ToString()!)<32)throw new ArgumentException("Use a training batch of at least 32.");
             Directory.CreateDirectory(CurrentOutput); Control("run"); Atomic(Path.Combine(CurrentOutput,"launch.json"),JsonSerializer.Serialize(config));
             StartPython("--config",Path.Combine(CurrentOutput,"launch.json"));
             Status=Diagnostic.IsChecked==true?"Synthetic diagnostic training — results are not Batomon performance.":$"Starting Pantra training with {_rules.GuessedRules} labelled guesses…";
@@ -145,7 +163,12 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         var python=Path.Combine(_root,"training",".venv","Scripts","python.exe");
         if(!File.Exists(python)) throw new FileNotFoundException("Run training/Setup.ps1 to install the isolated learner.");
         var start=new ProcessStartInfo(python) {WorkingDirectory=_root,UseShellExecute=false,CreateNoWindow=true,RedirectStandardError=true,RedirectStandardOutput=true};
-        start.ArgumentList.Add(Path.Combine(_root,"training","learner.py")); foreach(var arg in arguments) start.ArgumentList.Add(arg);
+        var configIndex=Array.IndexOf(arguments,"--config");var strategic=TrainingEngine.SelectedIndex==0;
+        if(configIndex>=0&&File.Exists(arguments[configIndex+1])){
+            using var settings=JsonDocument.Parse(File.ReadAllText(arguments[configIndex+1]));
+            strategic=settings.RootElement.TryGetProperty("engine",out var engine)&&engine.GetString()=="strategy";
+        }
+        start.ArgumentList.Add(Path.Combine(_root,"training",strategic?"strategy.py":"learner.py")); foreach(var arg in arguments) start.ArgumentList.Add(arg);
         _process=Process.Start(start)!;
         SessionFields(false);
         var launched=_process;var processOutput=CurrentOutput;launched.EnableRaisingEvents=true;
@@ -163,15 +186,15 @@ public partial class MainWindow : Window,INotifyPropertyChanged
     }
     private void SessionFields(bool enabled)
     {
-        foreach(var control in new Control[]{Device,Workers,Environments,Minibatch,Seed,Minutes,Output,Diagnostic,AutoCalibrate})control.IsEnabled=enabled;
+        foreach(var control in new Control[]{Device,Workers,Environments,Minibatch,Seed,Minutes,Output,Diagnostic,AutoCalibrate,TrainingEngine,WarmupRuns,SearchSeconds,EvaluationSeconds})control.IsEnabled=enabled;
     }
-    private void Pause(object sender,RoutedEventArgs e) { if(_process is {HasExited:false}) {Control("pause");Status="Pausing after the current PPO update…";} }
+    private void Pause(object sender,RoutedEventArgs e) { if(_process is {HasExited:false}) {Control("pause");Status="Pausing and saving after the current decision…";} }
     private async void Resume(object sender,RoutedEventArgs e)
     {
         if(_process is {HasExited:false}) {Control("run");Status="Resuming training…";}
         else await Launch(true);
     }
-    private void Stop(object sender,RoutedEventArgs e) { if(_process is {HasExited:false}) {Control("stop");Status="Stopping after the current PPO update and saving…";} }
+    private void Stop(object sender,RoutedEventArgs e) { if(_process is {HasExited:false}) {Control("stop");Status="Stopping and saving after the current decision…";} }
     private void Evaluate(object sender,RoutedEventArgs e)
     {
         try { if(_process is {HasExited:false}) throw new InvalidOperationException("Stop and save before evaluation."); StartPython("--config",Path.Combine(CurrentOutput,"configuration.json"),"--evaluate","--runs",ThoroughEvaluation.IsChecked==true?"512":"128"); Status="Evaluating frozen policies on separate seeds…"; }
@@ -231,6 +254,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
             if(p.TryGetProperty("device",out var device) && p.TryGetProperty("actual_workers",out _))Progress+=$"\nDevice {device.GetString()} · workers {Number("actual_workers"):N0} · environments {Number("actual_environments"):N0}";
             if(p.TryGetProperty("episode_starts",out var starts))Progress+=$"\nEpisode starts: full {starts[0].GetInt64():N0} · middle {starts[1].GetInt64():N0} · late {starts[2].GetInt64():N0}";
             if(p.TryGetProperty("average_deployed",out _))Progress+=$"\nDeployed {Number("average_deployed"):F2}/6 · unused bench {Number("unused_deployable_bench"):F2} · turn limit {Number("limited_turn_rate"):P1}";
+            if(p.TryGetProperty("engine",out var trainingEngine)&&trainingEngine.GetString()=="strategy")Progress+=$"\nFull-run training · replay {Number("replay"):N0} · turn limit {Number("limited_turn_rate"):P1}";
             if(p.TryGetProperty("rollout_seconds",out _))Progress+=$"\nSimulation/inference {Number("rollout_seconds"):F2}s · PPO {Number("optimization_seconds"):F2}s per update";
             if(p.TryGetProperty("finish_with_deployable_bench",out _))Progress+=$"\nFinish with usable bench {Number("finish_with_deployable_bench"):N0} · improving moves {Number("deployment_improving"):N0} · reversing moves {Number("deployment_reversing"):N0}";
             if(Number("session_runs")>0)Progress+=$"\nThis launch: {Number("session_runs"):N0} runs · success {Number("session_success_rate"):P1} · average wins {Number("session_average_wins"):F2}";
@@ -246,7 +270,9 @@ public partial class MainWindow : Window,INotifyPropertyChanged
             if(File.Exists(metricsPath))
             {
                 var points=new List<Point>(); var index=0;
-                foreach(var line in File.ReadLines(metricsPath).TakeLast(200)) {using var entry=JsonDocument.Parse(line);points.Add(new(index++,100*(1-entry.RootElement.GetProperty("success_rate").GetDouble())));}
+                using var metricsStream=new FileStream(metricsPath,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete);
+                using var metricsReader=new StreamReader(metricsStream);
+                foreach(var line in metricsReader.ReadToEnd().Split('\n',StringSplitOptions.RemoveEmptyEntries).TakeLast(200)) {using var entry=JsonDocument.Parse(line);points.Add(new(index++,100*(1-entry.RootElement.GetProperty("success_rate").GetDouble())));}
                 if(points.Count==1) points.Add(new(1,points[0].Y)); Curve=new(points);
             }
         }
@@ -345,6 +371,7 @@ public partial class MainWindow : Window,INotifyPropertyChanged
         var bag=enemy?d.Opponent.Bag:o.Bag;
         Inventory="Trinkets: "+(bag.Length==0?"none":string.Join(" · ",bag.Select(x=>$"{(_historyRules??_rules).Trinkets.FirstOrDefault(t=>t.Id==x.Id)?.Name??x.Id} ×{x.Quantity}")));
         Decisions=d.Choices.Length==0?"No event or reward selections recorded this day.":string.Join("\n",d.Choices);
+        AnalyzeBoard(enemy?d.Opponent:StateSnapshots.Board(o),_historyRules??_rules);
     }
     private HistoryCard Card(Unit? unit,int slot)
     {

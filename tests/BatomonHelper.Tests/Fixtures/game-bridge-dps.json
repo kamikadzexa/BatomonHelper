@@ -1,0 +1,199 @@
+{
+	"board": {
+		"bench": [
+			{
+				"index": 0,
+				"occupancy": "Empty",
+				"stats": []
+			},
+			{
+				"index": 1,
+				"occupancy": "Empty",
+				"stats": []
+			},
+			{
+				"index": 2,
+				"occupancy": "Empty",
+				"stats": []
+			},
+			{
+				"definitionId": "dribblet",
+				"index": 3,
+				"level": 1,
+				"occupancy": "Creature",
+				"stats": [
+					{
+						"kind": "Heal",
+						"value": 15
+					}
+				],
+				"variant": "Normal"
+			}
+		],
+		"capturedAt": "2026-10-18T19:56:30Z",
+		"day": 5,
+		"freeRerolls": 2,
+		"gold": 10,
+		"itemUsesCounterVisible": true,
+		"itemUsesMaximum": 3,
+		"itemUsesRemaining": 2,
+		"lives": 10,
+		"rarityOdds": [
+			{
+				"probability": 0.55,
+				"rarity": "Common"
+			},
+			{
+				"probability": 0.3,
+				"rarity": "Uncommon"
+			},
+			{
+				"probability": 0.15,
+				"rarity": "Rare"
+			},
+			{
+				"probability": 0.0,
+				"rarity": "SuperRare"
+			},
+			{
+				"probability": 0.0,
+				"rarity": "Legendary"
+			}
+		],
+		"rerollCost": null,
+		"shop": [
+			{
+				"affordable": false,
+				"definitionId": "joltail",
+				"index": 0,
+				"level": 1,
+				"occupancy": "Creature",
+				"price": 13,
+				"stats": [
+					{
+						"kind": "Damage",
+						"value": 1
+					},
+					{
+						"kind": "Shock",
+						"value": 4
+					}
+				],
+				"variant": "Normal"
+			},
+			{
+				"index": 1,
+				"occupancy": "Empty",
+				"stats": []
+			},
+			{
+				"affordable": true,
+				"definitionId": "scorchimp",
+				"index": 2,
+				"level": 1,
+				"occupancy": "Creature",
+				"price": 10,
+				"stats": [
+					{
+						"kind": "Damage",
+						"value": 23
+					},
+					{
+						"kind": "Burn",
+						"value": 6
+					}
+				],
+				"variant": "Shiny"
+			},
+			{
+				"index": 3,
+				"occupancy": "Empty",
+				"stats": []
+			},
+			{
+				"affordable": true,
+				"definitionId": "cake",
+				"index": 4,
+				"occupancy": "Item",
+				"price": 7,
+				"stats": []
+			}
+		],
+		"shopLocked": true,
+		"shopRank": 5,
+		"team": [
+			{
+				"definitionId": "scorchimp",
+				"index": 0,
+				"level": 1,
+				"occupancy": "Creature",
+				"stats": [
+					{
+						"kind": "Damage",
+						"value": 23
+					},
+					{
+						"kind": "Burn",
+						"value": 6
+					}
+				],
+				"variant": "Shiny"
+			},
+			{
+				"index": 1,
+				"occupancy": "Empty",
+				"stats": []
+			},
+			{
+				"index": 2,
+				"occupancy": "Empty",
+				"stats": []
+			},
+			{
+				"index": 3,
+				"occupancy": "Empty",
+				"stats": []
+			},
+			{
+				"index": 4,
+				"occupancy": "Empty",
+				"stats": []
+			},
+			{
+				"index": 5,
+				"occupancy": "Empty",
+				"stats": []
+			}
+		],
+		"teamHp": 2400,
+		"trainerId": "redhead",
+		"winTarget": 10,
+		"wins": 3
+	},
+	"combat": {
+		"team": [
+			{
+				"addedTypes": [],
+				"baseCooldown": 5.5,
+				"permanentStats": [
+					23.0,
+					0.0,
+					0.0,
+					6.0,
+					0.0,
+					0.0,
+					0.0,
+					1.0,
+					0.0
+				],
+				"slot": 0
+			}
+		],
+		"trinkets": []
+	},
+	"phase": "shop",
+	"processId": 25460,
+	"protocolVersion": 1,
+	"sequence": 1,
+	"updatedAt": "2026-10-18T19:56:30Z"
+}

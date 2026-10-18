@@ -2,7 +2,7 @@
   "Build": "25738032",
   "Balance": "25",
   "Version": "1.3.0",
-  "Hash": "232B6D82F56209CF9660AC3D99322EEF65B88DAB7C020852AC8329486F950185",
+  "Hash": "920646B749EAA6D597ABB368EDF8A9252C8ABCA280C61618AAA918AA0C8E50A9",
   "Species": [
     {
       "Id": "aegistruct",
@@ -90070,7 +90070,7 @@
       "Name": "Gray Chip",
       "Rarity": 0,
       "Unique": false,
-      "Cost": 15,
+      "Cost": 0,
       "Effects": [
         {
           "Trigger": 3,
@@ -100100,6 +100100,13 @@
       "Value": "devour at the next shop; summon temporary exact copies into empty bottom-row slots",
       "Explanation": "Copies trigger only with their parent\u0027s casts, expire after battle and preserve stored creature state. Knocked-out occupied slots are not refilled; merges keep the target\u0027s payload when both have one.",
       "Source": "Authorized guess"
+    },
+    {
+      "Id": "gray-chip-price",
+      "Kind": "Wiki",
+      "Value": "0",
+      "Explanation": "Cost is $0; $15 is the conditional victory payout. Repairs the earlier first-dollar-amount importer.",
+      "Source": "https://batomon.com/items/gray-chip"
     }
   ],
   "Encounters": [

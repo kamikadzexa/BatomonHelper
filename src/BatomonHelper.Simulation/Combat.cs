@@ -34,7 +34,7 @@ public sealed class Combat(RulesManifest rules)
         Target.TopMiddle => [1], Target.LeftColumn => [0,3], Target.RightColumn => [2,5],
         _ => [0,1,2,3,4,5]
     };
-    public BattleResult ResolveBattle(FrozenBoard player, FrozenBoard opponent, ulong seed, bool trace = false, bool reference = false,bool cacheStats=true)
+    public BattleResult ResolveBattle(FrozenBoard player, FrozenBoard opponent, ulong seed, bool trace = false, bool reference = false,bool cacheStats=true, CombatProbe? probe=null)
     {
         rules.RequireReady();
         if (player.Day != opponent.Day) throw new ArgumentException("Opponent must be from the same day.");
@@ -45,7 +45,47 @@ public sealed class Combat(RulesManifest rules)
         var queue = new PriorityQueue<(int Side,int Slot,long Epoch), (long Tick,long Order)>();
         var log = new List<string>(); long order = 0; long now = 0; long operations = 0;
         var tickSeconds = rules.Profile?.CombatTickSeconds??.01;
+        if(probe is not null&&(!double.IsFinite(probe.Duration)||probe.Duration<tickSeconds||probe.Duration>120))throw new ArgumentOutOfRangeException(nameof(probe),"Analysis duration must be between one tick and 120 seconds.");
         long Tick(double seconds) => (long)Math.Round(seconds/tickSeconds,MidpointRounding.AwayFromZero);
+        void Output(int side,string kind,double amount)
+        {
+            if(side==0 && probe is not null && amount>0)probe.Output.Add(new(now*tickSeconds,kind,amount));
+        }
+        void Damage(int side,double amount,string kind,bool status)
+        {
+            var dealt=Absorb(amount,ref teams[side].Shield,status);teams[side].Hp-=dealt;
+            if(side==1 && probe is not null && dealt>0)probe.Damage.Add(new(now*tickSeconds,kind,dealt));
+        }
+        void Snapshot()
+        {
+            if(probe is null)return;
+            probe.Cancellation.ThrowIfCancellationRequested();
+            var units=new List<CombatUnitSnapshot>();
+            for(var slot=0;slot<6;slot++)if(teams[0].Units[slot] is {} u){
+                var stats=Stats(0,slot).ToArray();
+                var counters=new Dictionary<string,double>(u.Unit.Counters);
+                foreach(var pair in u.Activations)counters["effect:"+pair.Key]=pair.Value;
+                foreach(var pair in u.Growth)counters[$"growth:{pair.Key.Trigger}/{pair.Key.Operation}/{pair.Key.Target}/{pair.Key.Stat}"]=pair.Value;
+                units.Add(new(slot,u.Unit.SpeciesId,u.Alive,stats,Definition(u).Cooldown is {} cd?EffectiveCooldown(cd,stats[(int)Stat.Speed],u.AddedCooldown+OngoingCooldown(0,slot)):null,counters));
+            }
+            double CastRate(int slot)
+            {
+                if(teams[0].Units[slot] is not {Alive:true,Disabled:false} unit)return 0;
+                var repeats=(int)Stats(0,slot)[(int)Stat.Multicast];
+                if(unit.ParentSlot is {} parent)return repeats*CastRate(parent);
+                return Definition(unit).Cooldown is {} basis
+                    ? repeats/EffectiveCooldown(basis,Stats(0,slot)[(int)Stat.Speed],unit.AddedCooldown+OngoingCooldown(0,slot)) : 0;
+            }
+            var outputRates=new Dictionary<string,double>{{"Burn",0},{"Poison",0},{"Shock",0},{"Heal",0},{"Shield",0}};
+            foreach(var unit in units){
+                var rate=CastRate(unit.Slot);
+                foreach(var (kind,stat) in new[]{("Burn",Stat.Burn),("Poison",Stat.Poison),("Shock",Stat.Shock),("Heal",Stat.Heal),("Shield",Stat.Shield)}){
+                    var multiplier=kind=="Heal"?1+.25*BagCount(0,"sapphire-amulet"):kind=="Shield"?1+.25*BagCount(0,"topaz-amulet"):1;
+                    outputRates[kind]+=Math.Max(0,unit.Stats[(int)stat])*rate*multiplier;
+                }
+            }
+            probe.Frames.Add(new(now*tickSeconds,[..teams[1].Status],units.ToArray()){OutputRates=outputRates});
+        }
         for (var side=0; side<2; side++)
         {
             teams[side].MaxHp = side == 0 ? player.MaxHp : opponent.MaxHp;
@@ -73,7 +113,8 @@ public sealed class Combat(RulesManifest rules)
                 if (teams[side].Units[slot] is { } unit)
                     for(var repeat=0;repeat<=startRepeats;repeat++)Activate(side,slot,Trigger.BattleStart);
         }
-        long nextBurn=Tick(.5),nextPoison=Tick(1),nextStorm=Tick(30.5);
+        long nextBurn=Tick(.5),nextPoison=Tick(1),nextStorm=probe is null?Tick(30.5):long.MaxValue;
+        Snapshot();long nextSnapshot=Tick(.5);
         while (true)
         {
             Invalidate();
@@ -94,6 +135,7 @@ public sealed class Combat(RulesManifest rules)
                         next=Math.Min(next,now+Math.Max(1,(long)Math.Ceiling((effect.IntervalSeconds-u.Timers.GetValueOrDefault(effect)-1e-9)/tickSeconds)));
                 next=Math.Max(now+1,next);
             }
+            if(probe is not null)next=Math.Min(next,Math.Min(nextSnapshot,Tick(probe.Duration)));
             var elapsed=(next-now)*tickSeconds;
             foreach(var team in teams) foreach(var u in team.Units) if(u is { Alive:true })
             {
@@ -123,38 +165,48 @@ public sealed class Combat(RulesManifest rules)
             }
             // All casts on this tick share the published Shield -> Damage -> Status -> Heal phases.
             foreach(var cast in casts)
-            {teams[cast.Side].Shield+=Math.Max(0,cast.Stats[(int)Stat.Shield])*(1+.25*BagCount(cast.Side,"topaz-amulet"));if(cast.Stats[(int)Stat.Shield]>0)
+            {var shield=Math.Max(0,cast.Stats[(int)Stat.Shield])*(1+.25*BagCount(cast.Side,"topaz-amulet"));teams[cast.Side].Shield+=shield;Output(cast.Side,"Shield",shield);if(cast.Stats[(int)Stat.Shield]>0)
                 {NotifyAllies(cast.Side,cast.Slot,Trigger.AllyShield,cast.Stats);NotifyAllies(cast.Side,cast.Slot,Trigger.TeamShield,cast.Stats,true);}}
             foreach(var cast in casts)
             {
                 var enemy=teams[1-cast.Side]; var direct=Math.Max(0,cast.Stats[(int)Stat.Damage]);
-                if(direct>0) { enemy.Hp-=Absorb(enemy.Status[2],ref enemy.Shield,true); enemy.Hp-=Absorb(direct,ref enemy.Shield,false);
+                if(direct>0) { Damage(1-cast.Side,enemy.Status[2],"Shock",true); Damage(1-cast.Side,direct,"Direct",false);
                     NotifyAllies(cast.Side,cast.Slot,Trigger.TeamDamage,cast.Stats,true);}
             }
             foreach(var cast in casts) for(var status=0;status<3;status++)
             {
                 var amount=Math.Max(0,cast.Stats[(int)Stat.Burn+status]);teams[1-cast.Side].Status[status]+=amount;
+                Output(cast.Side,new[]{"Burn","Poison","Shock"}[status],amount);
                 if(amount>0) {NotifyAllies(cast.Side,cast.Slot,new[]{Trigger.AllyBurn,Trigger.AllyPoison,Trigger.AllyShock}[status],cast.Stats);
                     if(status==0)NotifyAllies(cast.Side,cast.Slot,Trigger.TeamBurn,cast.Stats,true);}
             }
-            foreach(var cast in casts) teams[cast.Side].Hp=Math.Min(teams[cast.Side].MaxHp,teams[cast.Side].Hp+Math.Max(0,cast.Stats[(int)Stat.Heal])*(1+.25*BagCount(cast.Side,"sapphire-amulet")));
+            foreach(var cast in casts) {
+                var healing=Math.Max(0,cast.Stats[(int)Stat.Heal])*(1+.25*BagCount(cast.Side,"sapphire-amulet"));
+                Output(cast.Side,"Heal",healing);
+                teams[cast.Side].Hp=Math.Min(teams[cast.Side].MaxHp,teams[cast.Side].Hp+healing);
+            }
             if(now>=nextBurn)
             {
-                foreach(var team in teams) { team.Hp-=Absorb(team.Status[0],ref team.Shield,true); team.Status[0]=Math.Max(0,team.Status[0]-1); }
+                for(var side=0;side<2;side++) { Damage(side,teams[side].Status[0],"Burn",true); teams[side].Status[0]=Math.Max(0,teams[side].Status[0]-1); }
                 nextBurn+=Tick(.5);
             }
-            if(now>=nextPoison) { foreach(var team in teams) team.Hp-=Absorb(team.Status[1],ref team.Shield,true); nextPoison+=Tick(1); }
-            if(now>=nextStorm)
+            if(now>=nextPoison) { for(var side=0;side<2;side++)Damage(side,teams[side].Status[1],"Poison",true); nextPoison+=Tick(1); }
+            if(probe is null && now>=nextStorm)
             {
                 var damage=8*Math.Pow(2,(now*tickSeconds-30)/3);
                 foreach(var team in teams) team.Hp-=Absorb(damage,ref team.Shield,false);
                 nextStorm+=Tick(.5);
             }
-            if(teams.Any(x=>x.Hp<=0)) break;
+            if(probe is not null){
+                if(now>=nextSnapshot){Snapshot();nextSnapshot+=Tick(.5);}
+                if(now>=Tick(probe.Duration))break;
+            }else if(teams.Any(x=>x.Hp<=0)) break;
         }
         var won=teams[1].Hp<=0;
-        for(var slot=0;slot<6;slot++) if(teams[0].Units[slot] is not null) Activate(0,slot,won?Trigger.Victory:Trigger.Defeat);
-        Inventory(0,1,won?Trigger.Victory:Trigger.Defeat);
+        if(probe is null){
+            for(var slot=0;slot<6;slot++) if(teams[0].Units[slot] is not null) Activate(0,slot,won?Trigger.Victory:Trigger.Defeat);
+            Inventory(0,1,won?Trigger.Victory:Trigger.Defeat);
+        }
         return new(won,teams.All(x=>x.Hp<=0),now*tickSeconds,teams[0].Hp,teams[1].Hp,
             teams[0].Units.Select(x=>x is {TemporarySpawn:false}?x.PersistentUnit.Clone():null).ToArray(),[..teams[0].Bag],teams[0].Gold,[..log],new(teams[0].Counters),[..teams[0].PendingPurchaseBuffs]);
 
@@ -308,6 +360,10 @@ public sealed class Combat(RulesManifest rules)
             if(effect.Target==Target.BothTeams)
             {Apply(side,slot,effect with {Target=Target.All},eventStats);Apply(side,slot,effect with {Target=Target.Enemies},eventStats);return;}
             if(effect.OncePerBattle && (teams[side].Units[slot] is not { } owner || !owner.ConsumedEffects.Add(effect)))return;
+            if(probe is not null && side==0 && teams[side].Units[slot] is {} observed){
+                var key=$"{effect.Trigger}/{effect.Operation}/{effect.Target}/{effect.Stat}";
+                observed.Activations[key]=observed.Activations.GetValueOrDefault(key)+1;
+            }
             if(effect.GrowthPerTrigger!=0 && teams[side].Units[slot] is { } grower)
             {
                 var growth=grower.Growth.GetValueOrDefault(effect);grower.Growth[effect]=growth+effect.GrowthPerTrigger;
@@ -506,6 +562,7 @@ public sealed class Combat(RulesManifest rules)
         public HashSet<Effect> ConsumedEffects=[];
         public Dictionary<Effect,double> Growth=[];
         public Dictionary<Effect,double> Timers=[];
+        public Dictionary<string,double> Activations=[];
         public int? ParentSlot;public bool TemporarySpawn;
     }
     private sealed class Side(FrozenBoard board)

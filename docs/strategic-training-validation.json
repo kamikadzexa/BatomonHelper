@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-18",
+  "build": {
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0
+  },
+  "tests": {
+    "dotnet_passed": 458,
+    "python_passed": 30
+  },
+  "model_version": 6,
+  "encoding": 5,
+  "analysis_version": 1,
+  "pipeline_smoke_passed": true,
+  "learning_acceptance_passed": false,
+  "human_strength_measured": false,
+  "scope": "CUDA smoke, not an equal-budget multi-seed learning comparison. Four completed run updates; one warmup run; two evaluation episodes per variant; 0.06-second / 8-simulation search. Long strength gates have not passed.",
+  "checked": [
+    "checkpoint resume",
+    "strategic export",
+    "legacy export with frozen rules",
+    "four archived policy comparisons on current rules with validated identity mapping",
+    "legal learned advisor recommendation",
+    "independent development/final archives",
+    "shared history directory",
+    "board-analysis and Play Session visual rendering"
+  ],
+  "checkpoint_updates": [
+    3,
+    4
+  ],
+  "rules_hash": "920646B749EAA6D597ABB368EDF8A9252C8ABCA280C61618AAA918AA0C8E50A9",
+  "host_code_hash": "5342E0B33C57049DF74C9511B1406022E9A0F1BFC14EC4DA89D2FE79F00B609C",
+  "learner_code_hash": "4f3daa5bdd7df7c689bf186f7f5742b5676405b42ddff0cbd41f1806102b5943",
+  "development": {
+    "baseline": {
+      "runs": 2,
+      "success_rate": 0.5,
+      "average_wins": 8.0,
+      "limited_turn_rate": 0.0
+    },
+    "policy": {
+      "runs": 2,
+      "success_rate": 0.0,
+      "average_wins": 1.5,
+      "limited_turn_rate": 0.0
+    },
+    "search": {
+      "runs": 2,
+      "success_rate": 0.0,
+      "average_wins": 2.0,
+      "limited_turn_rate": 0.47058823529411764
+    },
+    "legacy-0": {
+      "runs": 2,
+      "success_rate": 0.0,
+      "average_wins": 5.5,
+      "limited_turn_rate": 0.9130434782608695
+    },
+    "legacy-1": {
+      "runs": 2,
+      "success_rate": 0.0,
+      "average_wins": 3.0,
+      "limited_turn_rate": 1.0
+    },
+    "legacy-2": {
+      "runs": 2,
+      "success_rate": 0.0,
+      "average_wins": 5.5,
+      "limited_turn_rate": 0.9090909090909091
+    },
+    "legacy-3": {
+      "runs": 2,
+      "success_rate": 1.0,
+      "average_wins": 10.0,
+      "limited_turn_rate": 0.8846153846153846
+    }
+  },
+  "final_smoke": {
+    "runs": 2,
+    "success_rate": 0.0,
+    "average_wins": 0.5,
+    "limited_turn_rate": 0.42857142857142855
+  },
+  "artifacts": "work\\strategy-validation-acceptance-smoke-2026-10-18\\validation.json"
+}

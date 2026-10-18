@@ -14,7 +14,6 @@ public partial class MainWindow : Window
     private WindowState _windowedState;
     private WindowStyle _windowedStyle;
     private ResizeMode _windowedResizeMode;
-    public bool ExcludedFromCapture { get; private set; }
 
     public static readonly DependencyProperty IsFullscreenProperty = DependencyProperty.Register(
         nameof(IsFullscreen), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
@@ -46,14 +45,11 @@ public partial class MainWindow : Window
         SourceInitialized += (_, _) =>
         {
             _source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
-            // Keep the helper visible while desktop captures see the game behind it.
-            // WPF per-pixel layered windows (AllowsTransparency) cannot use this affinity.
-            ExcludedFromCapture = NativeOverlay.ExcludeFromCapture(_source!.Handle);
             _source?.AddHook(WndProc);
             var visibilityKey = NativeOverlay.RegisterHotKey(_source!.Handle, HotkeyId, 0x4000, 0x77); // F8
             var captureKey = NativeOverlay.RegisterHotKey(_source.Handle, CaptureHotkeyId, 0x4000, 0x78); // F9
             if ((!visibilityKey || !captureKey) && DataContext is OverlayViewModel keyModel)
-                keyModel.ReportHotkeyConflict($"Could not register {(!visibilityKey ? "F8 visibility " : "")}{(!captureKey ? "F9 capture" : "")}: another application owns the shortcut.");
+                keyModel.ReportHotkeyConflict($"Could not register {(!visibilityKey ? "F8 visibility " : "")}{(!captureKey ? "F9 refresh" : "")}: another application owns the shortcut.");
         };
         Closed += (_, _) => { if (DataContext is OverlayViewModel viewModel) viewModel.StopCaptures(); if (_source is not null) { NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId); } };
     }

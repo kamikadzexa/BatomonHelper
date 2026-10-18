@@ -51,11 +51,18 @@ class Policy(nn.Module):
         self.action=nn.Sequential(nn.Linear(ACTION_WIDTH,64),nn.GELU())
         self.score=nn.Sequential(nn.Linear(448,128),nn.GELU(),nn.Linear(128,1))
         self.kind=nn.Linear(128,9);self.value=nn.Linear(128,1)
-    def forward(self,observations,actions,mask):
+        if version>=6:
+            self.identity=nn.Embedding(15*256,128)
+            self.effect_identity=nn.Embedding(3*128,128)
+            self.analysis=nn.Linear(29,128)
+            self.analysis_head=nn.Linear(128,28)
+            self.battle_head=nn.Linear(128,1)
+    def forward(self,observations,actions,mask,analysis=None):
         batch=len(observations)
         entities=observations[:,16:286].reshape(batch,15,18)
         slots=self.entity(torch.cat([self.species(entities[:,:,0].long()),entities[:,:,1:]],-1))
         global_state=self.header(torch.cat([observations[:,:16],observations[:,286:self.core_width]],-1))
+        if self.version>=6 and analysis is not None:global_state=global_state+self.analysis(analysis)
         nodes=torch.cat([slots,global_state[:,None,:]],1)+self.positions(torch.arange(16,device=observations.device))[None,:,:]
         if self.version>=5:nodes=nodes+self.spatial(self.geometry)[None,:,:]
         if observations.shape[1]>self.core_width+1:
@@ -73,6 +80,16 @@ class Policy(nn.Module):
             numeric[:,:,2]=torch.where(species_token,raw[:,:,2]/max(1,self.species_count),raw[:,:,2]/reference_scale)
             encoded=self.tokens(numeric)+self.token_species(self.species(ids))*species_token[:,:,None]
         else:encoded=self.tokens(raw)
+        if self.version>=6:
+            category=raw[:,:,0].long().clamp(0,14)
+            categorical=(category==2)|(category==4)|(category==5)|(category==7)
+            identities=(category*256+raw[:,:,2].long().clamp(0,255)).clamp(0,15*256-1)
+            encoded=encoded+self.identity(identities)*categorical[:,:,None]
+            effect_kind=(category==6)[:,:,None]
+            trigger_ids=(raw[:,:,4]*64).round().long().clamp(0,127)
+            operation_ids=(raw[:,:,5]*64).round().long().clamp(0,127)+128
+            target_ids=(raw[:,:,6]*64).round().long().clamp(0,127)+256
+            encoded=encoded+(self.effect_identity(trigger_ids)+self.effect_identity(operation_ids)+self.effect_identity(target_ids))*effect_kind
         for layer in self.layers:nodes=layer(nodes,encoded,valid)
         state=nodes[:,15,:];slots=nodes[:,:15,:]
         source=(actions[:,:,9]*11).round().long()-1;target=(actions[:,:,10]*11).round().long()-1
@@ -91,8 +108,12 @@ class Policy(nn.Module):
         # One reduction over candidates for all nine kinds; avoid nine separate CUDA reductions.
         normalizers=candidate[:,:,None].expand(-1,-1,9).masked_fill(~membership,-1e9).logsumexp(1)
         joint=kind_log.gather(1,kinds)+candidate-normalizers.gather(1,kinds)
+        if self.version>=6:joint=candidate+kind_logits.gather(1,kinds)
         joint=joint.masked_fill(~mask,-torch.inf)
         distribution=Categorical(logits=joint,validate_args=False);distribution.kind_logits=kind_logits
+        if self.version>=6:
+            self.predicted_analysis=self.analysis_head(state)
+            self.predicted_battle=self.battle_head(state).squeeze(-1)
         return distribution,self.value(state).squeeze(-1)
 
 def greedy_actions(distribution,features,mask,legacy=False):

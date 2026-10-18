@@ -58,6 +58,7 @@ public partial class MainWindow
     }
     private void DisplayPlay()
     {
+        _adviceCancellation?.Cancel();_recommendedAction=null;
         if(_play is null)return;var s=_play.Environment.State;
         PlayInfo=$"Turn {s.Day}/{_rules.Parameters.EffectiveTurnCap} · {RemainingTurns(s)} turns remaining · {s.Lives} lives · rank {s.Rank} · ${s.Gold:0.##} · {s.Wins}/10 wins · HP {s.MaxHp:0} · {s.Phase}\n"+
             $"{s.Trainer} · item uses {s.ItemUses}/{s.MaximumItemUses} · free rerolls {s.FreeRerolls} · {(s.Locked?"shop locked":"shop unlocked")}";
@@ -76,6 +77,7 @@ public partial class MainWindow
             (s.CurrentEvent is {} current?$"\nEncounter: {current}":"");
         if(_selectedShopSource>=0 && !_play.Environment.GetLegalActions().Any(x=>(x.Kind is Move.Buy or Move.BuyItem) && x.Source==_selectedShopSource))_selectedShopSource=-1;
         RefreshPlayActions();
+        AnalyzeBoard(FrozenBoard.From(s),_rules);
     }
     private HistoryCard PlayCard(Unit? unit,int slot,string zone)
     {

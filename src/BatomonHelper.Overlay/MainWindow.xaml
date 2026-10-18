@@ -55,6 +55,35 @@
 
     </Style>
     <Style TargetType="ComboBoxItem"><Setter Property="Foreground" Value="#F7FAFF" /><Setter Property="Background" Value="#1B2D40" /><Setter Property="Padding" Value="8,6" /><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem"><Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><ContentPresenter /></Border><ControlTemplate.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#42627F" /></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#2C755F" /></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+    <DataTemplate x:Key="DamagePanel">
+      <StackPanel>
+        <TextBlock Text="{Binding DamageSummary}" FontWeight="SemiBold" Foreground="#78E2B8" FontSize="15" Margin="0,0,0,10" TextWrapping="Wrap" />
+        <Grid Margin="8,0,8,5">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+          <TextBlock Text="PER SECOND" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="1" Text="0%" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="2" Text="25%" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="3" Text="50%" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="4" Text="75%" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="5" Text="100%" TextAlignment="Center" Foreground="#AAB7CA" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding DamageRows}" HorizontalContentAlignment="Stretch">
+          <ItemsControl.ItemTemplate><DataTemplate>
+            <Border BorderBrush="#34516A" BorderThickness="0,1,0,0" Padding="8,9">
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Metric}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Start}" FontSize="18" TextAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding Quarter}" FontSize="18" TextAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding Half}" FontSize="18" TextAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="{Binding ThreeQuarters}" FontSize="18" TextAlignment="Center" />
+                <TextBlock Grid.Column="5" Text="{Binding End}" FontSize="18" TextAlignment="Center" Foreground="#78E2B8" />
+              </Grid>
+            </Border>
+          </DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </DataTemplate>
   </Window.Resources>
   <Border Margin="3" Background="{StaticResource PanelBackground}" BorderBrush="#34516A" BorderThickness="1" CornerRadius="8" Padding="14" SnapsToDevicePixels="True">
     <Grid>
@@ -65,10 +94,12 @@
         <StackPanel x:Name="DragSurface" Background="Transparent" MouseLeftButtonDown="DragWindow">
           <TextBlock FontWeight="Bold" FontSize="21" Text="Batomon Helper" />
           <TextBlock x:Name="VersionLabel" Margin="0,1,0,0" FontSize="10" Foreground="#8495A9" />
-          <TextBlock FontSize="12" Foreground="#AAB7CA" Text="F8 visibility · F9 capture · F11 fullscreen" />
+          <TextBlock FontSize="12" Foreground="#AAB7CA" Text="F8 visibility · F9 refresh · F11 fullscreen" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-          <Button Style="{StaticResource OverlayButton}" Content="Capture Board (F9)" Command="{Binding CaptureShopCommand}" />
+          <CheckBox VerticalAlignment="Center" Margin="4,0,8,0" Foreground="#F4F8FF" Content="Auto update" IsChecked="{Binding AutoUpdate, Mode=TwoWay}" ToolTip="Refresh the live game state every half second. Manual F9 refresh stays available when this is off." />
+          <CheckBox VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#F4F8FF" Content="Capture run" IsChecked="{Binding CaptureRun, Mode=TwoWay}" IsEnabled="{Binding CanToggleRunCapture}" ToolTip="Records each changed live board to one training-run JSON file. It can start only with Auto update on from the clean, unlocked Day 1 opening state." />
+          <Button Style="{StaticResource OverlayButton}" Content="Refresh Game State (F9)" Command="{Binding CaptureShopCommand}" />
           <Button x:Name="ExpandButton" Style="{StaticResource OverlayButton}" Content="Expand" Click="ToggleExpanded" ToolTip="Toggle a roomy second-screen layout" />
           <Button x:Name="FullscreenButton" Style="{StaticResource OverlayButton}" Content="Fullscreen" Click="ToggleFullscreen" ToolTip="Toggle fullscreen (F11; Escape to exit)" />
           <Button Style="{StaticResource OverlayButton}" Content="×" Click="CloseWindow" ToolTip="Close" />
@@ -79,7 +110,7 @@
       <Grid Grid.Row="2" Margin="0,8,0,8">
         <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="150"/><ColumnDefinition Width="150"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <TextBox Grid.Column="0" Margin="0,0,8,0" Padding="7,4" Style="{StaticResource FilterTextBox}" ToolTip="Search creature name" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
-        <ComboBox Grid.Column="1" Margin="0,0,8,0" Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RegionFilters}" SelectedItem="{Binding SelectedRegionFilter}" DisplayMemberPath="Name" />
+        <ComboBox Grid.Column="1" Margin="0,0,8,0" Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RegionFilters}" SelectedItem="{Binding SelectedRegionFilter}" DisplayMemberPath="Name" ToolTip="Uses the region reported by the game when available. Select a region here for game builds that do not expose it." />
         <ComboBox Grid.Column="2" Margin="0,0,8,0" Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RarityFilters}" SelectedItem="{Binding SelectedRarityFilter}" DisplayMemberPath="Name" />
         <TextBlock Grid.Column="3" VerticalAlignment="Center" Foreground="#AAB7CA" Text="{Binding CreatureCount}" />
         <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="10,0,0,0">
@@ -116,7 +147,7 @@
       </Border>
       <Grid Grid.Row="4">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <StackPanel><TextBlock FontWeight="SemiBold" Text="{Binding Status}" /><TextBlock FontSize="11" Foreground="#AAB7CA" TextWrapping="Wrap" Text="{Binding RunSummary}" /></StackPanel>
+        <StackPanel><TextBlock FontWeight="SemiBold" Text="{Binding Status}" /><TextBlock FontSize="11" Foreground="#AAB7CA" TextWrapping="Wrap" Text="{Binding RunSummary}" /><TextBlock FontSize="11" Foreground="#78E2B8" TextWrapping="Wrap" Text="{Binding RunCaptureStatus}" /></StackPanel>
         <TabControl x:Name="BoardTabs" SelectedIndex="0" Grid.Row="1" Margin="0,8,0,0" Style="{StaticResource BrowserTabs}">
           <TabControl.Resources>
             <DataTemplate x:Key="BoardCard">
@@ -140,6 +171,9 @@
                   <Image Source="{Binding TrainerSpritePath}" Height="64" Width="88" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,12,0" />
                   <TextBlock Grid.Column="1" Text="{Binding BoardSummary}" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" />
                 </Grid>
+                <Border Margin="3,6" Padding="10" Background="#162638" BorderBrush="#34516A" BorderThickness="1" CornerRadius="5">
+                  <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DamagePanel}" HorizontalContentAlignment="Stretch" />
+                </Border>
                 <TextBlock Text="MY TEAM" FontWeight="Bold" Margin="3,10,3,3" Foreground="#FFCE79" />
                 <ItemsControl ItemsSource="{Binding TeamRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
                 <TextBlock Text="BENCH" FontWeight="Bold" Margin="3,10,3,3" Foreground="#FFCE79" />
@@ -147,6 +181,11 @@
                 <TextBlock Text="SHOP" FontWeight="Bold" Margin="3,10,3,3" Foreground="#FFCE79" />
                 <ItemsControl ItemsSource="{Binding OfferRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
               </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+          <TabItem Header="DPS">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+              <ContentControl Margin="10" Content="{Binding}" ContentTemplate="{StaticResource DamagePanel}" HorizontalContentAlignment="Stretch" />
             </ScrollViewer>
           </TabItem>
           <TabItem Header="Creatures">

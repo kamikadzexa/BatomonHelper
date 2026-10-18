@@ -44,7 +44,7 @@ public sealed class WikiImporterTests
             ["/batomon/regions/pantra"] = "",
             ["/batomon/alpha"] = "<h1>Alpha</h1><p>Common Starter</p>",
             ["/trainers/black-belt"] = "<h1>Black Belt</h1><h2>Trainer ability</h2><p>Test trainer rule.</p>",
-            ["/items/gray-chip"] = "<h1>Gray Chip</h1><h2>Item effect</h2><p>Test item rule.</p>"
+            ["/items/gray-chip"] = "<h1>Gray Chip</h1><p>Potential reward $15</p><h2>Item effect</h2><p>Test item rule.</p><dl><dt>Cost</dt><dd>$0</dd></dl>"
         };
         var result = await new WikiImporter(new FakeSource(pages)).ImportAsync(CancellationToken.None);
 
@@ -55,6 +55,7 @@ public sealed class WikiImporterTests
         Assert.Equal("Black Belt", Assert.Single(result.Snapshot.Trainers).Name);
         Assert.Equal("Gray Chip", Assert.Single(result.Snapshot.Items).Name);
         Assert.Equal("Test item rule.", Assert.Single(result.Snapshot.Items).RuleText);
+        Assert.Equal(0,Assert.Single(result.Snapshot.Items).Price);
     }
 
     [Theory]

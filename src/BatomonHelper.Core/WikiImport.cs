@@ -251,7 +251,10 @@ public sealed partial class WikiImporter(IWikiSource source)
     }
     private static int? ParsePrice(string html)
     {
-        var match = PriceRegex().Match(StripTags(WebUtility.HtmlDecode(html)));
+        var text=TagRegex().Replace(WebUtility.HtmlDecode(html)," ");
+        // A payout in the effect description can precede the actual cost (Gray Chip: gain $15, cost $0).
+        var match=Regex.Match(text,@"\bCost\s*\$\s*(?<price>\d+)",RegexOptions.IgnoreCase);
+        if(!match.Success)match=PriceRegex().Match(text);
         return match.Success && int.TryParse(match.Groups["price"].Value, out var price) ? price : null;
     }
 

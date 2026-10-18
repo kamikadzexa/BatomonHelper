@@ -617,7 +617,8 @@ def run(config):
                             success_rate=metrics['successes'] / max(1, metrics['runs']), average_wins=metrics['total_wins'] / max(1, metrics['runs']),
                             diagnostic_fixture=rules['Build'] == 'fixture', **metrics)
             atomic_json(output / 'progress.json', progress)
-            with (output / 'metrics.jsonl').open('a', encoding='utf-8') as file: file.write(json.dumps(progress) + '\n')
+            from persistence import append_metrics
+            append_metrics(output,progress)
         last_saved = save_checkpoint(output, host, policies, optimizers, update, config, metrics)
         atomic_json(output / 'progress.json', dict(status='Stopped', update=update, checkpoint=last_saved, device=device, device_seconds=timings,
                     actual_workers=host.ready['Workers'],worker_milliseconds=host.ready['WorkerMilliseconds'],actual_environments=host.ready['Count'],environment_milliseconds_per_run=host.ready.get('EnvironmentMillisecondsPerRun',{}),
@@ -643,7 +644,11 @@ def checkpoint_data(config):
     if saved.get('encoding') not in (4,ENCODING) or saved['policies'][0]['action.0.weight'].shape[1]!=ACTION_WIDTH:raise ValueError('Incompatible observation/action encoding.')
     rules = json.loads(Path(config['rules']).read_text(encoding='utf-8-sig'))
     if rules['Hash'] != saved['rules_hash']:
-        raise ValueError('Rules hash differs from checkpoint.')
+        archived=output/'history'/f"rules-{saved['rules_hash']}.json"
+        if not config.get('_comparison_only') or not re.fullmatch('[A-Fa-f0-9]+',saved['rules_hash']) or not archived.exists():raise ValueError('Rules hash differs from checkpoint.')
+        rules=json.loads(archived.read_text(encoding='utf-8-sig'))
+        if rules['Hash']!=saved['rules_hash']:raise ValueError('Archived rules hash differs from checkpoint.')
+        config['rules']=str(archived)
     return output, directory, saved, rules
 
 def export(config):
@@ -787,6 +792,7 @@ def main():
     parser.add_argument('--scenario-bank')
     args = parser.parse_args()
     config = json.loads(Path(args.config).read_text(encoding='utf-8-sig'))
+    if args.evaluate or args.export or args.rank_generations:config['_comparison_only']=True
     if args.scenario_bank:config['evaluation_states']=args.scenario_bank
     if args.suite=='final':config['evaluation_seed']=config['seed']+2000000033
     try:
@@ -803,4 +809,11 @@ def main():
         atomic_json(Path(config['output']) / 'progress.json', dict(status='Failed', error=str(error)))
         raise
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    from persistence import output_writer
+    # All CLI operations write progress/cache files, so ownership covers evaluations too.
+    import sys
+    config_index=sys.argv.index('--config')+1 if '--config' in sys.argv else None
+    if config_index is None:main()
+    else:
+        with output_writer(json.loads(Path(sys.argv[config_index]).read_text(encoding='utf-8-sig'))['output']):main()

@@ -12,15 +12,13 @@ public sealed record BoardCardRow(string Name, string? SpritePath, string Level,
 public sealed partial class OverlayViewModel : INotifyPropertyChanged
 {
     private readonly SnapshotRepository _repository;
-    private readonly IBoardScreenReader _screenReader = new WindowsBoardScreenReader();
+    private readonly GameStateBridge _bridge = new();
     private readonly CaptureRefreshQueue _captureQueue;
-    private readonly BoardCaptureState _boardState = new();
     private readonly CancellationTokenSource _captureCancellation = new();
-    private Task _historyTail = Task.CompletedTask;
-    private string? _lastHistorySignature;
-    private string _boardSummary = "Press F9 in the shopping screen to capture your board.";
+    private string? _lastBoardSignature;
+    private bool _manualScenario;
+    private string _boardSummary = "Waiting for the BatomonHelper bridge mod.";
     private string? _trainerSpritePath;
-    private readonly CaptureHistoryStore _history;
     private readonly IOddsCalculator _oddsCalculator = new OddsCalculator();
     private CatalogSnapshot _catalog = CatalogSnapshot.Empty;
     private ShopOddsSnapshot? _snapshot;
@@ -38,26 +36,29 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     private string _trinketSearchText = string.Empty;
     private string _status = "Loading bundled creature catalog…";
     private string _warning = string.Empty;
-    private string _runSummary = "No shop has been captured.";
+    private string _runSummary = "No shop state received yet.";
     private string _notes = string.Empty;
     private bool _itemAvailable = true;
-    private RegionFilterOption _selectedRegionFilter = new(MonsterRegionFilter.All, "All regions");
+    private bool _autoUpdate = true;
+    private bool _captureRun;
+    private RunCaptureStore? _runCaptureStore;
+    private string _runCaptureStatus = "Run capture is off.";
+    private long _lastLiveSequence;
+    private GameCombatState? _lastLiveCombat;
+    private RegionFilterOption _selectedRegionFilter = new(MonsterRegionFilter.Pantra, "Pantra region");
     private RarityFilterOption _selectedRarityFilter = new(null, "All rarities");
     private RarityFilterOption _selectedItemRarityFilter = new(null, "All rarities");
     private RarityFilterOption _selectedTrinketRarityFilter = new(null, "All rarities");
 
     public OverlayViewModel()
     {
-        var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BatomonHelper");
-        Directory.CreateDirectory(appData);
-        _history = new CaptureHistoryStore(Path.Combine(appData, "capture-history"));
         _repository = new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "assets", "wiki", "batomon-wiki.db"), readOnly: true);
         _captureQueue = new(_ => CaptureBoardOnceAsync(), _captureCancellation.Token);
         CaptureShopCommand = new AsyncCommand(CaptureShopAsync);
         DecreaseRankCommand = new RelayCommand(() => ChangeRank(-1));
         IncreaseRankCommand = new RelayCommand(() => ChangeRank(1));
         ResetCommand = new RelayCommand(ResetManualState);
-        _ = InitializeAsync();
+        _ = Application.Current.Dispatcher.InvokeAsync(InitializeAsync);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -84,7 +85,11 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     public string SearchText { get => _searchText; set { if (Set(ref _searchText, value)) RefreshCreatureRows(); } }
     public string ItemSearchText { get => _itemSearchText; set { if (Set(ref _itemSearchText, value)) RefreshItemRows(); } }
     public string TrinketSearchText { get => _trinketSearchText; set { if (Set(ref _trinketSearchText, value)) RefreshTrinketRows(); } }
-    public RegionFilterOption SelectedRegionFilter { get => _selectedRegionFilter; set { if (Set(ref _selectedRegionFilter, value)) ApplyRegionFilter(); } }
+    public RegionFilterOption SelectedRegionFilter
+    {
+        get => _selectedRegionFilter;
+        set => SyncCapturedRegion(MonsterRegionFilter.Pantra);
+    }
     public RarityFilterOption SelectedRarityFilter { get => _selectedRarityFilter; set { if (Set(ref _selectedRarityFilter, value)) RefreshCreatureRows(); } }
     public RarityFilterOption SelectedItemRarityFilter { get => _selectedItemRarityFilter; set { if (Set(ref _selectedItemRarityFilter, value)) RefreshItemRows(); } }
     public RarityFilterOption SelectedTrinketRarityFilter { get => _selectedTrinketRarityFilter; set { if (Set(ref _selectedTrinketRarityFilter, value)) RefreshTrinketRows(); } }
@@ -96,6 +101,37 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     public string RankLabel => _snapshot is null ? "Rank —" : $"Rank {_snapshot.ShopRank}";
     public string ShopOddsLabel => _snapshot is null ? "Shop odds" : $"Rank {_snapshot.ShopRank} shop odds";
     public bool ItemAvailable { get => _itemAvailable; set { if (Set(ref _itemAvailable, value) && _snapshot is not null) SetItemAvailable(value); } }
+    public bool AutoUpdate
+    {
+        get => _autoUpdate;
+        set
+        {
+            if (!Set(ref _autoUpdate, value)) return;
+            if (!value && CaptureRun) StopRunCapture();
+            if (value) _ = CaptureShopAsync();
+            OnPropertyChanged(nameof(CanToggleRunCapture));
+        }
+    }
+    public bool CaptureRun
+    {
+        get => _captureRun;
+        set
+        {
+            if (value == _captureRun) return;
+            if (value)
+            {
+                if (!CanStartRunCapture())
+                {
+                    Warning = "Run capture can start only with automatic update on, from the clean Day 1 opening state.";
+                    return;
+                }
+                StartRunCapture();
+            }
+            else StopRunCapture();
+        }
+    }
+    public bool CanToggleRunCapture => _captureRun || CanStartRunCapture();
+    public string RunCaptureStatus { get => _runCaptureStatus; private set => Set(ref _runCaptureStatus, value); }
 
     private async Task InitializeAsync()
     {
@@ -113,7 +149,8 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
             RefreshItemRows();
             RefreshTrinketRows();
             ResetManualState();
-            Status = $"Loaded {_catalog.Monsters.Length} bundled creatures. Press F9 to capture the focused shop.";
+            Status = $"Loaded {_catalog.Monsters.Length} bundled creatures. Waiting for the game bridge. F9 refreshes manually.";
+            _ = PollGameStateAsync();
         }
         catch (Exception exception)
         {
@@ -124,71 +161,81 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
 
     public async Task CaptureShopAsync()
     {
+        _lastBoardSignature = null;
         await _captureQueue.RequestAsync();
     }
 
     public void ReportHotkeyConflict(string message) => Warning = message;
 
-    public void StopCaptures() { _captureCancellation.Cancel(); }
+    public void StopCaptures()
+    {
+        if (CaptureRun) StopRunCapture();
+        _captureCancellation.Cancel();
+    }
+
+    private async Task PollGameStateAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
+            if (AutoUpdate) await _captureQueue.RequestAsync();
+            while (await timer.WaitForNextTickAsync(_captureCancellation.Token))
+                if (AutoUpdate) await _captureQueue.RequestAsync();
+        }
+        catch (OperationCanceledException) { }
+    }
 
     private async Task CaptureBoardOnceAsync()
     {
-        var window = Application.Current.MainWindow;
-        var restoreOpacity = window is not null && window.Visibility == Visibility.Visible ? window.Opacity : 1d;
-        void RestoreFrameVisibility() { if (window is not null) _ = window.Dispatcher.InvokeAsync(() => window.Opacity = restoreOpacity); }
-        _screenReader.FrameCaptured += RestoreFrameVisibility;
         try
         {
-            if (_catalog == CatalogSnapshot.Empty)
+            if (_catalog == CatalogSnapshot.Empty) return;
+            var message = await _bridge.ReadAsync(_catalog, _captureCancellation.Token);
+            if (message.Board is not { } board)
             {
-                Status = "The bundled catalog is unavailable; shop capture cannot start.";
+                Warning = "";
+                Status = "Game connected; outside the shop. Showing the last received board, if any.";
                 return;
             }
-            if (window is not null && window.Visibility == Visibility.Visible && window is not MainWindow { ExcludedFromCapture: true })
-            { window.Opacity = 0; await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render); await Task.Delay(20, _captureCancellation.Token); }
-            Status = "Reading the Batomon board…";
-            var result = await _screenReader.CaptureAsync(_catalog, _captureCancellation.Token);
-            if (window is not null) window.Opacity = restoreOpacity;
-            if (result.Snapshot is null)
+            // Until the game's region API is verified across builds, training captures use Pantra.
+            var capturedBoard = board with { RegionFilter = MonsterRegionFilter.Pantra };
+            _lastLiveSequence = message.Sequence;
+            _lastLiveCombat = message.Combat;
+            if (_captureRun && _runCaptureStore is not null)
+                await SaveRunChangeAsync(_runCaptureStore, message.Sequence, capturedBoard, message.Combat);
+            board = capturedBoard;
+            SyncCapturedRegion(MonsterRegionFilter.Pantra);
+            var signature = System.Text.Json.JsonSerializer.Serialize(board with { CapturedAt = default }, GameStateBridge.JsonOptions);
+            if (signature != _lastBoardSignature)
             {
-                QueueBoardHistory(result, false);
-                Warning = string.Join(" ", result.Diagnostics.Select(diagnostic => diagnostic.Message));
-                Status = "Shop capture was not accepted; the previous state is unchanged.";
-                return;
+                var snapshot = board.ToShopOddsSnapshot(_catalog);
+                _acceptedBoard = board;
+                var odds = CalculateOdds(snapshot);
+                _capturedSnapshot = snapshot;
+                _itemAvailable = snapshot.ItemAvailable;
+                OnPropertyChanged(nameof(ItemAvailable));
+                Render(odds, snapshot);
+                RenderBoard(board);
+                _lastBoardSignature = signature;
+                _manualScenario = false;
+                OnPropertyChanged(nameof(CanToggleRunCapture));
             }
-            result = result with { Snapshot = result.Snapshot with { RegionFilter = SelectedRegionFilter.Value } };
-            var board = result.Snapshot;
-            IEnumerable<RecognizedField>? acceptedFields = null;
-            if (result.RequiresReview || !BoardSnapshotValidator.Validate(board, _catalog).IsValid)
-            {
-                result = await Task.Run(result.MaterializeFrame);
-                var review = new CaptureReviewWindow(result, _catalog) { Owner = window };
-                if (review.ShowDialog() != true || review.AcceptedBoard is null)
-                { QueueBoardHistory(result, false); Status = "Board correction cancelled; the previous board remains active."; return; }
-                board = review.AcceptedBoard; acceptedFields = review.AcceptedFields;
-            }
-            var snapshot = board.ToShopOddsSnapshot(_catalog) with { RegionFilter = SelectedRegionFilter.Value };
-            _boardState.Publish(result, _catalog, acceptedFields is null ? null : board);
-            _acceptedBoard = board;
-            var odds = CalculateOdds(snapshot);
-            _capturedSnapshot = snapshot;
-            _itemAvailable = snapshot.ItemAvailable;
-            OnPropertyChanged(nameof(ItemAvailable));
-            Render(odds, snapshot);
-            RenderBoard(board);
-            QueueBoardHistory(result, true, board, acceptedFields);
-            Warning = string.Join(" ", result.Diagnostics.Select(diagnostic => diagnostic.Message));
-            Status = $"Board updated at {board.CapturedAt:HH:mm:ss} · {result.Timings.RecognitionMilliseconds:F0} ms. F9 refreshes it.";
+            _ = RefreshDamageAsync(board, message.Combat);
+            Warning = "";
+            Status = _manualScenario ? "Manual odds preview · game bridge connected · F9 restores live values"
+                : $"Live game state · updated {board.CapturedAt.ToLocalTime():HH:mm:ss} · automatic refresh";
         }
-        catch (OperationCanceledException) { Status = "Board capture cancelled."; }
-        catch (Exception exception)
-        {
-            Warning = exception.Message;
-            Status = "Shop capture failed; the previous state is unchanged.";
-        }
-        finally { _screenReader.FrameCaptured -= RestoreFrameVisibility; if (window is not null) window.Opacity = restoreOpacity; }
+        catch (OperationCanceledException) { }
+        catch (FileNotFoundException) { BridgeUnavailable("Install the BatomonHelper bridge mod and start the game."); }
+        catch (DirectoryNotFoundException) { BridgeUnavailable("Install the BatomonHelper bridge mod and start the game."); }
+        catch (Exception exception) { BridgeUnavailable(exception.Message); }
     }
 
+    private void BridgeUnavailable(string reason)
+    {
+        Warning = reason;
+        Status = "Game bridge disconnected or unavailable. Displayed board is the last received state.";
+    }
     private void RenderBoard(BoardSnapshot board)
     {
         var trainer = _catalog.Trainers.First(entry => entry.Id == board.TrainerId);
@@ -213,19 +260,6 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
                     slot.Price is null ? "" : $"${slot.Price}" + (slot.Affordable == false ? " · unavailable" : "")));
             }
         }
-    }
-
-    private void QueueBoardHistory(BoardCaptureResult result, bool accepted, BoardSnapshot? board = null, IEnumerable<RecognizedField>? fields = null)
-    {
-        var signature = accepted ? string.Join('|', (fields ?? result.Fields).Select(entry => entry.Name + "=" + entry.Value)) : null;
-        if (accepted && signature == _lastHistorySignature) return;
-        if (accepted) _lastHistorySignature = signature;
-        var previous = _historyTail;
-        _historyTail = Task.Run(async () =>
-        {
-            try { await previous; await _history.SaveBoardAsync(result, accepted, board, fields); }
-            catch (Exception exception) { await Application.Current.Dispatcher.InvokeAsync(() => Warning = $"Capture history could not be saved: {exception.Message}"); }
-        });
     }
 
     private void Render(OddsResult odds, ShopOddsSnapshot snapshot)
@@ -309,6 +343,12 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         Render(CalculateOdds(snapshot), snapshot);
     }
 
+    private void SyncCapturedRegion(MonsterRegionFilter region)
+    {
+        var option = RegionFilters.First(candidate => candidate.Value == region);
+        Set(ref _selectedRegionFilter, option, nameof(SelectedRegionFilter));
+    }
+
     private void ChangeRank(int change)
     {
         if (_snapshot is null) return;
@@ -318,6 +358,8 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         var odds = source is null ? ShopRankOdds.ForRank(rank) : ShopRankOdds.ApplyCapturedModifier(source.ShopRank, source.RarityOdds, rank);
         var snapshot = _snapshot with { ShopRank = rank, RarityOdds = odds, CapturedAt = DateTimeOffset.UtcNow };
         Render(CalculateOdds(snapshot), snapshot);
+        _manualScenario = true;
+        OnPropertyChanged(nameof(CanToggleRunCapture));
         Status = source is null ? $"Manual rank set to {rank}." : $"Calculated rank {rank}, preserving the captured shop-odds modifier.";
     }
 
@@ -325,24 +367,81 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     {
         var snapshot = _snapshot! with { ItemAvailable = itemAvailable, CapturedAt = DateTimeOffset.UtcNow };
         Render(CalculateOdds(snapshot), snapshot);
+        _manualScenario = true;
+        OnPropertyChanged(nameof(CanToggleRunCapture));
         Status = itemAvailable ? "Item slot enabled: four Batomon slots." : "Item slot disabled: five Batomon slots.";
     }
 
     private void ResetManualState()
     {
         if (_catalog == CatalogSnapshot.Empty) return;
+        _lastBoardSignature = null;
         _capturedSnapshot = null;
         _levelThreeCreatureIds.Clear();
         _ownedUniqueTrinketIds.Clear();
         SearchText = ItemSearchText = TrinketSearchText = string.Empty;
-        SelectedRegionFilter = RegionFilters[0];
+        SelectedRegionFilter = RegionFilters.Single(option => option.Value == MonsterRegionFilter.Pantra);
         SelectedRarityFilter = SelectedItemRarityFilter = SelectedTrinketRarityFilter = RarityFilters[0];
         _itemAvailable = true;
         OnPropertyChanged(nameof(ItemAvailable));
         var snapshot = new ShopOddsSnapshot(null, ShopRankOdds.MinimumRank, 0, ShopRankOdds.ForRank(ShopRankOdds.MinimumRank), true, null, DateTimeOffset.UtcNow)
-        { RegionFilter = MonsterRegionFilter.All };
+        { RegionFilter = MonsterRegionFilter.Pantra };
         Render(CalculateOdds(snapshot), snapshot);
+        _manualScenario = true;
+        OnPropertyChanged(nameof(CanToggleRunCapture));
         Status = "Manual browse reset to Rank 1 with an item available.";
+    }
+
+    private bool CanStartRunCapture() => AutoUpdate && !_manualScenario && _acceptedBoard is { Day: 1, Wins: 0 } board
+        && board.ShopLocked == false
+        && board.Team.All(slot => slot.Occupancy == SlotOccupancy.Empty)
+        && board.Bench.All(slot => slot.Occupancy == SlotOccupancy.Empty);
+
+    private void StartRunCapture()
+    {
+        var board = _acceptedBoard!;
+        var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BatomonHelper", "runs");
+        var store = new RunCaptureStore(directory, _catalog, DateTimeOffset.UtcNow);
+        _runCaptureStore = store;
+        _captureRun = true;
+        OnPropertyChanged(nameof(CaptureRun));
+        OnPropertyChanged(nameof(CanToggleRunCapture));
+        Warning = "";
+        RunCaptureStatus = $"Recording training run to {store.Path}";
+        _ = SaveRunChangeAsync(store, _lastLiveSequence, board, _lastLiveCombat);
+    }
+
+    private void StopRunCapture()
+    {
+        var store = _runCaptureStore;
+        _runCaptureStore = null;
+        _captureRun = false;
+        OnPropertyChanged(nameof(CaptureRun));
+        OnPropertyChanged(nameof(CanToggleRunCapture));
+        if (store is null) return;
+        RunCaptureStatus = $"Saving captured run to {store.Path}";
+        _ = CompleteRunCaptureAsync(store);
+    }
+
+    private async Task SaveRunChangeAsync(RunCaptureStore store, long sequence, BoardSnapshot board, GameCombatState? combat)
+    {
+        try { await store.AppendAsync(sequence, board, combat, _captureCancellation.Token); }
+        catch (OperationCanceledException) { }
+        catch (Exception exception)
+        {
+            Warning = $"Run capture could not be saved: {exception.Message}";
+            if (ReferenceEquals(store, _runCaptureStore)) StopRunCapture();
+        }
+    }
+
+    private async Task CompleteRunCaptureAsync(RunCaptureStore store)
+    {
+        try
+        {
+            await store.CompleteAsync();
+            RunCaptureStatus = $"Saved training run: {store.Path}";
+        }
+        catch (Exception exception) { Warning = $"Run capture could not be finalized: {exception.Message}"; }
     }
 
     private static string DisplayRarity(Rarity rarity) => rarity == Rarity.SuperRare ? "Super Rare" : rarity.ToString();
