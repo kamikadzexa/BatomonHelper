@@ -6,6 +6,55 @@ namespace BatomonHelper.Tests;
 
 public sealed class PositionAdvisorTests
 {
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Random_trinket_targets_do_not_create_a_better_position(int strongSlot)
+    {
+        var (rules, board) = RandomTrinketBoard(strongSlot);
+        var before = JsonSerializer.Serialize(new { rules, board });
+        Assert.Null(new PositionAdvisor(rules).FindBetterPosition(board, new Unit?[4], targetHp: 100_000));
+        Assert.Equal(before, JsonSerializer.Serialize(new { rules, board }));
+        // Ordinary output projections still include the random trinket effect.
+        var output = new BoardAnalyzer(rules).Analyze(board, targetHp: 100_000, samples: 1);
+        Assert.Equal(.04, output.Checkpoints[0].Units.Sum(unit => unit.Stats[(int)Stat.Speed]), 8);
+    }
+
+    [Fact]
+    public void Keeps_real_position_bonuses_when_a_trinket_also_has_a_random_effect()
+    {
+        var (rules, board) = RandomTrinketBoard(0);
+        var trinket = rules.Trinkets[0];
+        rules = rules with { Trinkets = [trinket with { Effects = [..trinket.Effects,
+            new(Trigger.Ongoing, Operation.Add, Target.TopMiddle, Stat.Speed, .2)] }] };
+        var advice = new PositionAdvisor(rules).FindBetterPosition(board, new Unit?[4], targetHp: 100_000);
+        Assert.NotNull(advice);
+        Assert.True(advice.ExcludesRandomTrinketEffects);
+        Assert.Equal("striker", advice.Slots[1]!.SpeciesId);
+        Assert.True(advice.Recommended.Checkpoints[^1].Dps > advice.Current.Checkpoints[^1].Dps);
+    }
+
+    private static (RulesManifest Rules, FrozenBoard Board) RandomTrinketBoard(int strongSlot)
+    {
+        var rules = RuleCompiler.Fixture();
+        var strong = new double[9]; strong[(int)Stat.Damage] = 100; strong[(int)Stat.Multicast] = 1;
+        var weak = new double[9]; weak[(int)Stat.Damage] = 1; weak[(int)Stat.Multicast] = 1;
+        rules = rules with
+        {
+            Species = [rules.Species[0] with { Normal = [new(1, 1.1, strong, [])] },
+                rules.Species[1] with { Normal = [new(1, 1.1, weak, [])] }],
+            Trinkets = [new("tempo-charm", "Tempo Charm", 0, false, 0,
+                InventoryRules.Definition("tempo-charm")!.Value.Effects, "fixture", "Random speed buff")]
+        };
+        var units = Enumerable.Range(0, 6).Select(slot => (Unit?)new Unit
+        { Instance = slot + 1, SpeciesId = slot == strongSlot ? "striker" : "guard", Level = 1 }).ToArray();
+        return (rules, new(1, 100, "fixture", units, [new("tempo-charm", 1)], []));
+    }
+
     [Fact]
     public void Superseded_live_search_returns_no_partial_advice_without_throwing()
     {

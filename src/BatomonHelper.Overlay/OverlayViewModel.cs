@@ -6,7 +6,10 @@ using System.Windows.Input;
 
 namespace BatomonHelper.Overlay;
 
-public sealed record BoardCardRow(string Name, string? SpritePath, string Level, string Variant, string Stats, string Price);
+public sealed record BoardCardRow(string Name, string? SpritePath, string Level, string Variant, string Stats, string Price)
+{
+    public bool IsChanged { get; init; }
+}
 
 public sealed partial class OverlayViewModel : INotifyPropertyChanged
 {

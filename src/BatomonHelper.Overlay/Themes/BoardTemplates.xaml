@@ -22,7 +22,32 @@
             <TextBlock Text="{Binding PositionHint}" TextWrapping="Wrap" Foreground="#E0F5F8" />
             <StackPanel Visibility="{Binding RecommendedPositionsVisibility}">
               <TextBlock Text="FASTEST DPS / WIN" FontWeight="Bold" Foreground="#FFD34D" Margin="0,7,0,2" />
-              <ItemsControl ItemsSource="{Binding RecommendedTeamRows}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Background="#1B5D6E" BorderBrush="#5894A2" BorderThickness="1" CornerRadius="3" Padding="4" Margin="2"><StackPanel Orientation="Horizontal"><Image Source="{Binding SpritePath}" Height="30" Width="30" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,4,0" /><StackPanel><TextBlock Text="{Binding Name}" FontSize="11" TextWrapping="Wrap" /><TextBlock Text="{Binding Level}" Foreground="#FFD34D" FontSize="10" /></StackPanel></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+              <TextBlock Text="Yellow positions need a change." Foreground="#FFD34D" FontSize="11" Margin="0,0,0,4" />
+              <ItemsControl ItemsSource="{Binding RecommendedTeamRows}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border x:Name="PositionCard" Background="#1B5D6E" BorderBrush="#5894A2" BorderThickness="1" CornerRadius="3" Padding="4" Margin="2">
+                      <StackPanel Orientation="Horizontal">
+                        <Image Source="{Binding SpritePath}" Height="30" Width="30" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,4,0" />
+                        <StackPanel>
+                          <TextBlock x:Name="PositionName" Text="{Binding Name}" FontSize="11" TextWrapping="Wrap" />
+                          <TextBlock x:Name="PositionLevel" Text="{Binding Level}" Foreground="#FFD34D" FontSize="10" />
+                        </StackPanel>
+                      </StackPanel>
+                    </Border>
+                    <DataTemplate.Triggers>
+                      <DataTrigger Binding="{Binding IsChanged}" Value="True">
+                        <Setter TargetName="PositionCard" Property="Background" Value="#FFD34D" />
+                        <Setter TargetName="PositionCard" Property="BorderBrush" Value="#FFD34D" />
+                        <Setter TargetName="PositionName" Property="Foreground" Value="#17313B" />
+                        <Setter TargetName="PositionName" Property="FontWeight" Value="SemiBold" />
+                        <Setter TargetName="PositionLevel" Property="Foreground" Value="#17313B" />
+                      </DataTrigger>
+                    </DataTemplate.Triggers>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
             </StackPanel>
           </StackPanel>
         </Border>

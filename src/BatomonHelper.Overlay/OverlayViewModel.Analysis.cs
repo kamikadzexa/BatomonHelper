@@ -140,8 +140,9 @@ public sealed partial class OverlayViewModel
             }
             if (refreshPositionAdvice && output.advice is { } advice)
             {
-                PositionHint = $"Final placement reaches target HP {Timing(advice.Recommended)} instead of {Timing(advice.Current)}.";
-                FillRecommendedPositions(advice.Slots);
+                PositionHint = $"Final placement reaches target HP {Timing(advice.Recommended)} instead of {Timing(advice.Current)}."
+                    + (advice.ExcludesRandomTrinketEffects ? " Placement scoring excludes random trinket targets." : "");
+                FillRecommendedPositions(advice.Slots, output.projection.Board.Team);
             }
             else if (refreshPositionAdvice && output.projection.Bench is not null) PositionHint = "No final board and bench placement improves the estimated win time or 30-second DPS.";
         }
@@ -153,7 +154,7 @@ public sealed partial class OverlayViewModel
             ? $"at {seconds:0.0}s" : $"not reached by 30s ({result.Checkpoints[^1].Dps:N1} DPS)";
     }
 
-    private void FillRecommendedPositions(Unit?[] slots)
+    private void FillRecommendedPositions(Unit?[] slots, Unit?[] currentTeam)
     {
         Fill(RecommendedTeamRows, slots.Take(6), "Board");
         OnPropertyChanged(nameof(RecommendedPositionsVisibility));
@@ -166,7 +167,10 @@ public sealed partial class OverlayViewModel
                 var monster = unit is null ? null : _catalog.Monsters.FirstOrDefault(value => value.Id == unit.SpeciesId);
                 var path = unit?.Shiny == true ? monster?.ShinySpritePath : monster?.SpritePath;
                 rows.Add(new($"{area} {index}: {monster?.Name ?? "Empty"}", path is null ? null : Path.Combine(AppContext.BaseDirectory, path.Replace('/', Path.DirectorySeparatorChar)),
-                    unit is null ? "" : $"Lv. {unit.Level}", unit?.Shiny == true ? "Shiny" : "", "", ""));
+                    unit is null ? "" : $"Lv. {unit.Level}", unit?.Shiny == true ? "Shiny" : "", "", "")
+                {
+                    IsChanged = unit?.Instance != currentTeam[index - 1]?.Instance
+                });
             }
         }
     }

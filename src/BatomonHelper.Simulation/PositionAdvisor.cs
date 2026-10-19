@@ -2,7 +2,10 @@ namespace BatomonHelper.Simulation;
 
 /// <summary>Finds the strongest reachable final layout by repeatedly taking the best legal
 /// board/bench swap. The returned slots are the final placement, not merely the first move.</summary>
-public sealed record PositionAdvice(Unit?[] Slots, BoardAnalysisResult Current, BoardAnalysisResult Recommended);
+public sealed record PositionAdvice(Unit?[] Slots, BoardAnalysisResult Current, BoardAnalysisResult Recommended)
+{
+    public bool ExcludesRandomTrinketEffects { get; init; }
+}
 
 public sealed class PositionAdvisor(RulesManifest rules)
 {
@@ -23,7 +26,21 @@ public sealed class PositionAdvisor(RulesManifest rules)
         var slots = current.Team.Select(unit => unit?.Clone()).Concat(bench.Select(unit => unit?.Clone())).ToArray();
         if (slots.Count(unit => unit is not null) < 2) return null;
 
-        var analyzer = new BoardAnalyzer(rules);
+        // A fixed seed chooses random recipients by slot. Searching layouts against
+        // that roll would move the best unit into a lucky slot the game cannot
+        // predict. Keep the bag (including counts/scaling) and all guaranteed
+        // effects, but exclude random trinket targets from placement scoring only.
+        var randomTrinkets = rules.Trinkets.Where(trinket => trinket.Effects.Any(IsRandomTarget))
+            .Select(trinket => trinket.Id).ToHashSet(StringComparer.Ordinal);
+        var placementRules = randomTrinkets.Count == 0 ? rules : rules with
+        {
+            Hash = rules.Hash + ":placement-without-random-trinket-targets",
+            Trinkets = rules.Trinkets.Select(trinket => trinket with
+            {
+                Effects = trinket.Effects.Where(effect => !IsRandomTarget(effect)).ToArray()
+            }).ToArray()
+        };
+        var analyzer = new BoardAnalyzer(placementRules);
         var baseline = analyzer.TryAnalyze(current, targetHp, samples: 1, cancellation: cancellation);
         if (baseline is null) return null;
         var recommended = baseline;
@@ -56,8 +73,13 @@ public sealed class PositionAdvisor(RulesManifest rules)
             recommended = best;
             improved = true;
         }
-        return !cancellation.IsCancellationRequested && improved ? new(slots, baseline, recommended) : null;
+        return !cancellation.IsCancellationRequested && improved ? new(slots, baseline, recommended)
+        {
+            ExcludesRandomTrinketEffects = current.Bag.Any(entry => randomTrinkets.Contains(entry.Id))
+        } : null;
     }
+
+    private static bool IsRandomTarget(Effect effect) => effect.Target is Target.RandomAlly or Target.RandomEnemy;
 
     private static bool IsBetter(BoardAnalysisResult candidate, BoardAnalysisResult current)
     {
