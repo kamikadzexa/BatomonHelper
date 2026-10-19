@@ -1,0 +1,369 @@
+{
+  "board": {
+    "bench": [
+      {
+        "index": 0,
+        "occupancy": "Empty",
+        "stats": []
+      },
+      {
+        "index": 1,
+        "occupancy": "Empty",
+        "stats": []
+      },
+      {
+        "index": 2,
+        "occupancy": "Empty",
+        "stats": []
+      },
+      {
+        "definitionId": "saberhorn",
+        "index": 3,
+        "level": 1,
+        "occupancy": "Creature",
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 100
+          }
+        ],
+        "variant": "Shiny"
+      }
+    ],
+    "capturedAt": "2026-10-19T08:54:44Z",
+    "day": 11,
+    "freeRerolls": 7,
+    "gold": 160,
+    "itemUsesCounterVisible": false,
+    "itemUsesMaximum": null,
+    "itemUsesRemaining": null,
+    "lives": 2,
+    "rarityOdds": [
+      {
+        "probability": 0.01,
+        "rarity": "Common"
+      },
+      {
+        "probability": 0.02,
+        "rarity": "Uncommon"
+      },
+      {
+        "probability": 0.2,
+        "rarity": "Rare"
+      },
+      {
+        "probability": 0.47,
+        "rarity": "SuperRare"
+      },
+      {
+        "probability": 0.3,
+        "rarity": "Legendary"
+      }
+    ],
+    "regionFilter": "All",
+    "rerollCost": null,
+    "shop": [
+      {
+        "affordable": true,
+        "definitionId": "aerophim",
+        "index": 0,
+        "level": 1,
+        "occupancy": "Creature",
+        "price": 80,
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 666
+          }
+        ],
+        "variant": "Normal"
+      },
+      {
+        "affordable": true,
+        "definitionId": "omnichrome",
+        "index": 1,
+        "level": 1,
+        "occupancy": "Creature",
+        "price": 80,
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 1
+          }
+        ],
+        "variant": "Normal"
+      },
+      {
+        "affordable": true,
+        "definitionId": "goldora",
+        "index": 2,
+        "level": 1,
+        "occupancy": "Creature",
+        "price": 80,
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 333
+          }
+        ],
+        "variant": "Normal"
+      },
+      {
+        "affordable": true,
+        "definitionId": "omnichrome",
+        "index": 3,
+        "level": 1,
+        "occupancy": "Creature",
+        "price": 80,
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 1
+          }
+        ],
+        "variant": "Normal"
+      },
+      {
+        "affordable": true,
+        "definitionId": "goldora",
+        "index": 4,
+        "level": 1,
+        "occupancy": "Creature",
+        "price": 80,
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 333
+          }
+        ],
+        "variant": "Normal"
+      }
+    ],
+    "shopLocked": false,
+    "shopRank": 15,
+    "team": [
+      {
+        "definitionId": "galvanade",
+        "index": 0,
+        "level": 3,
+        "occupancy": "Creature",
+        "stats": [
+          {
+            "kind": "Shock",
+            "value": 150
+          }
+        ],
+        "variant": "Normal"
+      },
+      {
+        "definitionId": "pylong",
+        "index": 1,
+        "level": 1,
+        "occupancy": "Creature",
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 1
+          },
+          {
+            "kind": "Shock",
+            "value": 15
+          }
+        ],
+        "variant": "Normal"
+      },
+      {
+        "definitionId": "ironcore",
+        "index": 2,
+        "level": 1,
+        "occupancy": "Creature",
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 30
+          }
+        ],
+        "variant": "Normal"
+      },
+      {
+        "definitionId": "cherubble",
+        "index": 3,
+        "level": 1,
+        "occupancy": "Creature",
+        "stats": [
+          {
+            "kind": "Shield",
+            "value": 100
+          }
+        ],
+        "variant": "Normal"
+      },
+      {
+        "definitionId": "clawnetic",
+        "index": 4,
+        "level": 1,
+        "occupancy": "Creature",
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 60
+          }
+        ],
+        "variant": "Normal"
+      },
+      {
+        "definitionId": "humbolt",
+        "index": 5,
+        "level": 2,
+        "occupancy": "Creature",
+        "stats": [
+          {
+            "kind": "Damage",
+            "value": 48
+          },
+          {
+            "kind": "Shock",
+            "value": 1
+          },
+          {
+            "kind": "Multicast",
+            "value": 3
+          }
+        ],
+        "variant": "Normal"
+      }
+    ],
+    "teamHp": 24900,
+    "trainerId": "shopkeeper",
+    "winTarget": 10,
+    "wins": 6
+  },
+  "combat": {
+    "bench": [
+      {
+        "addedTypes": [],
+        "baseCooldown": 6.0,
+        "permanentStats": [
+          100.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "slot": 3
+      }
+    ],
+    "team": [
+      {
+        "addedTypes": [],
+        "baseCooldown": 4.0,
+        "permanentStats": [
+          48.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.15,
+          3.0,
+          0.0
+        ],
+        "slot": 5
+      },
+      {
+        "addedTypes": [],
+        "baseCooldown": 3.0,
+        "permanentStats": [
+          60.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "slot": 4
+      },
+      {
+        "addedTypes": [],
+        "baseCooldown": 4.0,
+        "permanentStats": [
+          0.0,
+          0.0,
+          100.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "slot": 3
+      },
+      {
+        "addedTypes": [],
+        "baseCooldown": 2.0,
+        "permanentStats": [
+          30.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "slot": 2
+      },
+      {
+        "addedTypes": [],
+        "baseCooldown": 7.0,
+        "permanentStats": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          15.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "slot": 1
+      },
+      {
+        "addedTypes": [],
+        "baseCooldown": 4.5,
+        "permanentStats": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          75.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "slot": 0
+      }
+    ],
+    "trinkets": [
+      "gold_nugget",
+      "arcade_coins",
+      "market_license"
+    ]
+  },
+  "phase": "shop",
+  "processId": 22876,
+  "protocolVersion": 1,
+  "sequence": 372,
+  "updatedAt": "2026-10-19T08:54:44Z"
+}

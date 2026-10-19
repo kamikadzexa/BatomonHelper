@@ -8,7 +8,7 @@ public sealed class AbilitySimulationTests
     [Theory]
     [InlineData("This and Common allies gain +10 Damage permanently.",Trigger.BattleStart,Operation.Add,Target.All,10)]
     [InlineData("Give adjacent allies +40% Shield for this battle.",Trigger.Cast,Operation.Multiply,Target.Adjacent,.4)]
-    [InlineData("Give the Flying ally in front +3 Multicast permanently. (Zephyrex can't have Multicast)",Trigger.Cast,Operation.Add,Target.Above,3)]
+    [InlineData("Give the Flying ally in front +3 Multicast permanently. (Zephyrex can't have Multicast)",Trigger.Cast,Operation.Add,Target.Right,3)]
     [InlineData("Gain 3 random non-unique Legendary Trinkets.",Trigger.Victory,Operation.GrantTrinket,Target.Self,3)]
     [InlineData("Gain a Junk Trinket.",Trigger.Bought,Operation.GrantTrinket,Target.Self,1)]
     [InlineData("Charge adjacent Electric allies by 2 second(s). (Ironcore can't receive charge)",Trigger.Cast,Operation.Charge,Target.Adjacent,2)]

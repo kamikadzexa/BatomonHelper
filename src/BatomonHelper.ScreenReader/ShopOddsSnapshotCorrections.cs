@@ -8,7 +8,7 @@ public static class ShopOddsSnapshotCorrections
     public static ShopOddsSnapshot Apply(ShopOddsSnapshot source, IEnumerable<RecognizedField> fields, CatalogSnapshot catalog)
     {
         var values = fields.ToDictionary(field => field.Name, field => field.Value, StringComparer.OrdinalIgnoreCase);
-        var rank = Integer("ShopRank", source.ShopRank);
+        var rank = ShopRankOdds.Normalize(Integer("ShopRank", source.ShopRank));
         var odds = Enum.GetValues<Rarity>().Take(5).Select(rarity => new CapturedRarityOdds(rarity, Percentage($"{rarity}Odds", source.RarityOdds.First(current => current.Rarity == rarity).Probability))).ToImmutableArray();
         return source with
         {

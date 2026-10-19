@@ -43,13 +43,13 @@ public partial class MainWindow
     {
             DamageRows.Clear();
             DamageSummary=$"Passive-target damage · {result.Samples} samples · target {result.TargetHp:N0} HP ({result.TargetProvenance})\n"+
-                (result.MedianKillSeconds is {} seconds?$"Reaches HP in {seconds:0.##}s ({result.MedianTimePercent:0.#}% of 30s), median among successful samples · reach rate {result.ReachProbability:P0}":"Not reached within 30 seconds")+
+                (result.MedianKillSeconds is {} seconds?$"Estimated win at {seconds:0.0}s ({seconds / 30:0%}), median among successful samples · reach rate {result.ReachProbability:P0}":"Target not defeated within 30 seconds")+
                 $"\nDamage at 30s: {result.DamagePercentAt30:0.#}% of target HP. DPS = damage in the following second; includes opening burst at 0s.";
             foreach(var point in result.Checkpoints){
                 var units=string.Join("\n",point.Units.Select(u=>$"Slot {u.Slot+1} {u.Species}{(u.Alive?"":" (knocked out)")}: "+
                     string.Join(" · ",Enumerable.Range(0,8).Select(i=>$"{(Stat)i} {u.Stats[i]:0.##}"))+$" · cooldown {u.Cooldown:0.##}s\n"+
                     string.Join(" · ",u.Counters.Select(x=>$"{x.Key}: {x.Value:0.##}"))));
-                DamageRows.Add(new($"{point.Seconds/30:P0} · {point.Seconds:0.#}s",point.Dps.ToString("N1"),$"{point.Damage:N1} [range {point.Minimum:N1}–{point.Maximum:N1}; σ {point.StandardDeviation:N1}]",
+                DamageRows.Add(new($"{point.Seconds:0.#}s",point.Dps.ToString("N1"),$"{point.Damage:N1} [range {point.Minimum:N1}–{point.Maximum:N1}; σ {point.StandardDeviation:N1}]",
                     point.DamageByKind["Direct"].ToString("N1"),point.DamageByKind["Burn"].ToString("N1"),point.DamageByKind["Poison"].ToString("N1"),point.DamageByKind["Shock"].ToString("N1"),
                     $"Burn {point.StatusStacks[0]:0.#} · Poison {point.StatusStacks[1]:0.#} · Shock {point.StatusStacks[2]:0.#}",units));
             }

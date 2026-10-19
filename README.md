@@ -32,7 +32,9 @@ Omit `-LoaderDirectory` if the loader is already installed. Start the game and h
 
 The bridge and installation script ship with the helper; the third-party loader is a separate download. BatoEyes is optional. See [installation, protocol, verified fields and limitations](docs/game-bridge.md). The old screenshot code and fixtures remain for [historical regression coverage](docs/legacy-screenshot-reader.md).
 
-The Board summary and DPS tab reuse the training analyzer for 32-sample passive-target damage projections, checkpoint DPS, status stacks and time to target HP. Restart the game after upgrading the bridge to 1.1 to enable the additional combat metadata. Simulator assumptions and import limits are shown alongside the results.
+The Board panel shows team DPS, healing, shielding and status output at 0/5/10/15/20/30 seconds, plus useful board and bench position suggestions.
+
+Bridge 1.3 loads the enemy lineup and HP when battle starts and displays **WIN** or **LOSS** from the game's own completed ghost battle. There is no sampled win probability or separate DPS tab. While the game is still calculating, the result remains pending. Team output tables use the helper's passive-target simulator independently of the authoritative outcome. Update the companion bridge and restart the game to enable enemy loading and results.
 
 ## Data and limits
 

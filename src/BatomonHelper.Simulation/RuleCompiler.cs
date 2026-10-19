@@ -106,8 +106,10 @@ public static class RuleCompiler
         if (EvolutionRules.TryCompile(text,trigger,out compiled)) return compiled;
         var permanent = text.Contains("permanently", StringComparison.OrdinalIgnoreCase) || trigger == Trigger.Bought;
         var target = text.Contains("adjacent", StringComparison.OrdinalIgnoreCase) ? Target.Adjacent
-            : Regex.IsMatch(text, "\\b(above|front)\\b", RegexOptions.IgnoreCase) ? Target.Above
-            : Regex.IsMatch(text, "\\b(behind|below)\\b", RegexOptions.IgnoreCase) ? Target.Below
+            : Regex.IsMatch(text, "\\babove\\b", RegexOptions.IgnoreCase) ? Target.Above
+            : Regex.IsMatch(text, "\\bbelow\\b", RegexOptions.IgnoreCase) ? Target.Below
+            : Regex.IsMatch(text, "\\bbehind\\b", RegexOptions.IgnoreCase) ? Target.Left
+            : Regex.IsMatch(text, "\\bfront\\b", RegexOptions.IgnoreCase) ? Target.Right
             : text.Contains("allies") || text.StartsWith("Your monsters") || text.StartsWith("Give your") || text.StartsWith("Your team") ? Target.All : Target.Self;
         var type = Regex.Match(text, "\\b(Fire|Water|Grass|Rock|Bug|Flying|Electric|Toxic)\\b", RegexOptions.IgnoreCase).Value.ToLowerInvariant();
         string? filter = type.Length == 0 ? null : type;

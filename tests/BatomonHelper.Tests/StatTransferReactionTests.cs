@@ -84,10 +84,16 @@ public sealed class StatTransferReactionTests
         var e=Effects("Give the Fire ally behind 2x this monster's Burn for this battle.")
             .Concat(Effects("Has an additional +5 Burn for each Trinket that you own.",Trigger.Ongoing)).ToArray();
         var actor=Species("actor",1,e);var ally=Species("ally",1,[]);
-        var junk=new InventoryDefinition("junk","Junk",0,false,0,[],"fixture","");var own=Board("actor",null,null,"ally") with {Bag=[new("junk",2,1)]};
+        var junk=new InventoryDefinition("junk","Junk",0,false,0,[],"fixture","");var own=Board("ally","actor") with {Bag=[new("junk",2,1)]};
         var result=Match([actor,ally],own,own with {Bag=[],MaxHp=5,Team=new Unit?[6]},[junk]);
-        Assert.Equal(1,result.Seconds);Assert.Equal(-25,result.OpponentHp);
-        Assert.Equal(0,result.PersistentTeam[3]!.Bonuses[3]);
+        Assert.Equal(1,result.Seconds);Assert.Equal(-5,result.OpponentHp);
+        // The left recipient casts earlier on this tick, so the new buff is
+        // available on its next cast rather than retroactively changing this one.
+        var probe=new CombatProbe {Duration=1};
+        new Combat(RuleCompiler.Fixture() with {Species=[actor,ally],Trinkets=[junk]})
+            .ResolveBattle(own,own with {Bag=[],Team=new Unit?[6]},1,probe:probe);
+        Assert.Equal(20,probe.Frames[^1].Units.Single(unit=>unit.Slot==0).Stats[(int)Stat.Burn]);
+        Assert.Equal(0,result.PersistentTeam[0]!.Bonuses[3]);
     }
 
     [Fact]

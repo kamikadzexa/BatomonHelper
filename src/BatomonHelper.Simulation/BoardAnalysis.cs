@@ -75,7 +75,8 @@ public sealed class BoardAnalyzer(RulesManifest rules)
             };
         }
         var curve=Enumerable.Range(0,61).Select(i=>Point(i*.5)).ToArray();
-        var checkpoints=new[]{0d,7.5,15,22.5,30}.Select(Point).ToArray();
+        // These are human-facing timeline markers, not percentages of the combat limit.
+        var checkpoints=new[]{0d,5,10,15,20,30}.Select(Point).ToArray();
         kills.Sort();double? median=kills.Count==0?null:kills.Count%2==1?kills[kills.Count/2]:(kills[kills.Count/2-1]+kills[kills.Count/2])/2;
         var effects=board.Team.OfType<Unit>().SelectMany(u=>LevelRules.Resolve(rules.Species.First(s=>s.Id==u.SpeciesId),u.Level,u.Shiny).Effects)
             .Concat(board.Bag.SelectMany(b=>rules.Trinkets.First(t=>t.Id==b.Id).Effects)).Concat(board.ExtraTrainers.Prepend(board.Trainer).SelectMany(t=>rules.Trainers.First(x=>x.Id==t).Effects)).ToArray();

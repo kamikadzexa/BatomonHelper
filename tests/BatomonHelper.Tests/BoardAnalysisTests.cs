@@ -58,13 +58,13 @@ public sealed class BoardAnalysisTests
         Assert.Contains(DamagePresentation.Rows(result),row=>row.Metric=="Electricity /s");
         Assert.Contains(DamagePresentation.Rows(result),row=>row.Metric=="Healing /s");
     }
-    [Fact] public void Friendly_projection_shows_defeat_percentage_and_hides_unused_effects(){
+    [Fact] public void Friendly_projection_shows_target_time_in_seconds_and_percentage_and_hides_unused_effects(){
         var (rules,board)=Board();var result=new BoardAnalyzer(rules).Analyze(board,100,1);
         var summary=DamagePresentation.Summary(result);
-        Assert.Contains("33.3%",summary);Assert.Contains("HP dealt at",summary);
+        Assert.Contains("Estimated win at 10.0s (33%)",summary);
         Assert.Equal(new[]{"DPS"},DamagePresentation.Rows(result).Select(row=>row.Metric));
         var unreachable=new BoardAnalyzer(rules).Analyze(board,10000,1);
-        Assert.Contains("HP dealt at >100%",DamagePresentation.Summary(unreachable));
+        Assert.Contains("Target not defeated within 30s",DamagePresentation.Summary(unreachable));
     }
     [Fact] public void Slow_stacking_is_visible_between_casts_and_includes_multicast(){
         var (rules,board)=Board();var stats=(double[])rules.Species[0].Normal[0].Stats.Clone();
@@ -77,7 +77,18 @@ public sealed class BoardAnalysisTests
             Assert.Equal(.2,point.OutputPerSecond["Shield"],8);
         }
         var row=DamagePresentation.Rows(result).Single(value=>value.Metric=="Electricity /s");
-        Assert.Equal("0.2",row.Start);Assert.Equal("0.2",row.End);
+        Assert.Equal("0.2",row.Second0);Assert.Equal("0.2",row.Second30);
+    }
+    [Fact] public void Position_advisor_finds_a_bench_swap_that_reaches_the_target_sooner(){
+        var basis=RuleCompiler.Fixture();var damage=new double[9];damage[0]=1;
+        var attacker=basis.Species[0] with {Id="attacker",Normal=[new(1,1,damage,[])]};
+        var support=basis.Species[0] with {Id="support",Normal=[new(1,1,new double[9],
+            [new(Trigger.Ongoing,Operation.Add,Target.Adjacent,Stat.Damage,20)])]};
+        var rules=basis with {Species=[attacker,support]};
+        var board=new FrozenBoard(1,100,"fixture",[new Unit{SpeciesId=attacker.Id,Instance=1},null,null,null,null,null],[],[]);
+        var advice=new PositionAdvisor(rules).FindBetterPosition(board,[new Unit{SpeciesId=support.Id,Instance=2},null,null,null],30);
+        Assert.NotNull(advice);Assert.True(advice!.Recommended.MedianKillSeconds < advice.Current.MedianKillSeconds);
+        Assert.Contains(advice.Slots.Take(6),unit=>unit?.SpeciesId==support.Id);
     }
     [Theory]
     [InlineData(.025,"0.025")]

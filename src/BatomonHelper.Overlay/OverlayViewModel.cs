@@ -69,6 +69,8 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     public ObservableCollection<BoardCardRow> TeamRows { get; } = [];
     public ObservableCollection<BoardCardRow> BenchRows { get; } = [];
     public ObservableCollection<BoardCardRow> OfferRows { get; } = [];
+    public ObservableCollection<BoardCardRow> RecommendedTeamRows { get; } = [];
+    public ObservableCollection<BoardCardRow> RecommendedBenchRows { get; } = [];
     public string BoardSummary { get => _boardSummary; private set => Set(ref _boardSummary, value); }
     public string? TrainerSpritePath { get => _trainerSpritePath; private set => Set(ref _trainerSpritePath, value); }
     public IReadOnlyList<RegionFilterOption> RegionFilters { get; } = [new(MonsterRegionFilter.All, "All regions"), new(MonsterRegionFilter.Jinto, "Jinto region"), new(MonsterRegionFilter.Pantra, "Pantra region")];
@@ -88,7 +90,10 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     public RegionFilterOption SelectedRegionFilter
     {
         get => _selectedRegionFilter;
-        set => SyncCapturedRegion(MonsterRegionFilter.Pantra);
+        set
+        {
+            if (Set(ref _selectedRegionFilter, value)) ApplyRegionFilter();
+        }
     }
     public RarityFilterOption SelectedRarityFilter { get => _selectedRarityFilter; set { if (Set(ref _selectedRarityFilter, value)) RefreshCreatureRows(); } }
     public RarityFilterOption SelectedItemRarityFilter { get => _selectedItemRarityFilter; set { if (Set(ref _selectedItemRarityFilter, value)) RefreshItemRows(); } }
@@ -191,20 +196,28 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         {
             if (_catalog == CatalogSnapshot.Empty) return;
             var message = await _bridge.ReadAsync(_catalog, _captureCancellation.Token);
+            if (message.Phase == "battle" && message.Battle is { } battle)
+            {
+                _ = RefreshBattleAsync(battle);
+                Warning = "";
+                Status = "Live battle · analysis uses both teams at battle start";
+                return;
+            }
             if (message.Board is not { } board)
             {
                 Warning = "";
                 Status = "Game connected; outside the shop. Showing the last received board, if any.";
                 return;
             }
-            // Until the game's region API is verified across builds, training captures use Pantra.
-            var capturedBoard = board with { RegionFilter = MonsterRegionFilter.Pantra };
+            // The bridge exports the active run region. Keep All only when an older
+            // game build cannot expose it, so its wider pool remains explicit.
+            var capturedBoard = board;
             _lastLiveSequence = message.Sequence;
             _lastLiveCombat = message.Combat;
             if (_captureRun && _runCaptureStore is not null)
                 await SaveRunChangeAsync(_runCaptureStore, message.Sequence, capturedBoard, message.Combat);
             board = capturedBoard;
-            SyncCapturedRegion(MonsterRegionFilter.Pantra);
+            SyncCapturedRegion(board.RegionFilter);
             var signature = System.Text.Json.JsonSerializer.Serialize(board with { CapturedAt = default }, GameStateBridge.JsonOptions);
             if (signature != _lastBoardSignature)
             {

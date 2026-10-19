@@ -4,10 +4,16 @@ using System.Text.Json.Serialization;
 namespace BatomonHelper.Core;
 
 public sealed record GameStateMessage(int ProtocolVersion, long Sequence, DateTimeOffset UpdatedAt,
-    int ProcessId, string Phase, BoardSnapshot? Board, string? Error = null, GameCombatState? Combat = null);
+    int ProcessId, string Phase, BoardSnapshot? Board, string? Error = null, GameCombatState? Combat = null,
+    GameBattleState? Battle = null);
+
+public sealed record GameBattleSide(int Day, int TeamHp, string TrainerId,
+    System.Collections.Immutable.ImmutableArray<BoardSlot> Team, GameCombatState Combat, int Rank = 1, int Wins = 0);
+public sealed record GameBattleState(GameBattleSide Player, GameBattleSide Opponent, GameBattleOutcome? Outcome = null);
+public sealed record GameBattleOutcome(bool PlayerWon);
 
 public sealed record GameCombatUnit(int Slot, double[] PermanentStats, double? BaseCooldown, string[] AddedTypes);
-public sealed record GameCombatState(GameCombatUnit[] Team, string[] Trinkets);
+public sealed record GameCombatState(GameCombatUnit[] Team, string[] Trinkets, GameCombatUnit[]? Bench = null);
 
 public static class GameCatalogIds
 {
@@ -49,6 +55,14 @@ public sealed class GameStateBridge
             throw new InvalidDataException("Game state is stale. Start the game with the BatomonHelper bridge mod enabled.");
         if (message.Error is { Length: > 0 }) throw new InvalidDataException(message.Error);
         if (message.Phase == "other") return message with { Board = null };
+        if (message.Phase == "battle")
+        {
+            var battle = message.Battle ?? throw new InvalidDataException("The bridge did not supply battle-start teams.");
+            var player = ResolveSide(battle.Player);
+            var opponent = ResolveSide(battle.Opponent);
+            if (player.Day != opponent.Day) throw new InvalidDataException("Battle teams have different days.");
+            return message with { Board = null, Battle = battle with { Player = player, Opponent = opponent } };
+        }
         if (message.Phase != "shop") throw new InvalidDataException("Unknown bridge phase.");
         var board = message.Board ?? throw new InvalidDataException("The bridge did not supply a shop board.");
         if ((board.CapturedAt - message.UpdatedAt).Duration() > TimeSpan.FromSeconds(5))
@@ -67,6 +81,7 @@ public sealed class GameStateBridge
         // Game IDs and wiki IDs differ for a few renamed creatures. Resolve only unique exact aliases.
         board = board with
         {
+            ShopRank = board.ShopRank is int rank ? ShopRankOdds.Normalize(rank) : null,
             TrainerId = ResolveTrainer(board.TrainerId),
             Team = Resolve(board.Team),
             Bench = Resolve(board.Bench),
@@ -75,6 +90,21 @@ public sealed class GameStateBridge
         var validation = BoardSnapshotValidator.Validate(board, catalog);
         if (!validation.IsValid) throw new InvalidDataException("Game state could not be applied: " + string.Join(" ", validation.Errors));
         return message with { Board = board };
+
+        GameBattleSide ResolveSide(GameBattleSide side)
+        {
+            var trainer = ResolveTrainer(side.TrainerId);
+            var team = Resolve(side.Team);
+            if (side.Day is < 1 or > 999 || side.TeamHp <= 0 ||
+                !catalog.Trainers.Any(value => value.Id == trainer) || side.Combat is null ||
+                team.Length != 6 || !team.Select(slot => slot.Index).SequenceEqual(Enumerable.Range(0, 6)) ||
+                team.Any(slot => slot.Occupancy != SlotOccupancy.Empty &&
+                    (slot.Occupancy != SlotOccupancy.Creature || slot.Level is null or < 1 or > 4 ||
+                     slot.Variant is not (ShinyState.Normal or ShinyState.Shiny) ||
+                     !catalog.Monsters.Any(value => value.Id == slot.DefinitionId))))
+                throw new InvalidDataException("Invalid battle-start team.");
+            return side with { TrainerId = trainer!, Team = team };
+        }
 
         System.Collections.Immutable.ImmutableArray<BoardSlot> Resolve(System.Collections.Immutable.ImmutableArray<BoardSlot> slots)
         {

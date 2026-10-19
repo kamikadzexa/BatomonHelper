@@ -42,11 +42,11 @@ public sealed class MythicalDevourTests
         var devour=Species("riglet",1,Effects("At the start of the next day, devour the ally in front and evolve into Rigalord."));
         var parent=Species("rigalord",1,Effects("Spawn exact copies of the Batomon this devoured in empty slots the bottom row. They ONLY trigger when this casts."));
         var victim=Species("victim",1,[]);var rules=RuleCompiler.Fixture() with {Species=[devour,parent,victim]};var env=new GameEnvironment(rules);env.Reset(123,"fixture");
-        env.State.Units[0]=new(){SpeciesId="victim",Instance=50,Level=2,Shiny=true,AddedTypes=["water"],Bonuses=[7,0,0,0,0,0,0,0,0],Counters=new(){["saved"]=8}};
+        env.State.Units[4]=new(){SpeciesId="victim",Instance=50,Level=2,Shiny=true,AddedTypes=["water"],Bonuses=[7,0,0,0,0,0,0,0,0],Counters=new(){["saved"]=8}};
         env.State.Units[3]=new(){SpeciesId="riglet",Instance=51,Counters=new(){["born-day"]=1}};
         env.State.Choices=[new("Continue",null,[])];env.State.ActiveChoicePhase=env.State.Phase=Phase.Event;env.State.PendingShopStart=true;
-        env.Step(new(Move.Choose,Choice:0));Assert.NotNull(env.State.Units[0]);Assert.Equal("riglet",env.State.Units[3]!.SpeciesId);
-        env.Step(new(Move.Finish),b=>b with {MaxHp=1,Team=new Unit?[6]});Assert.Null(env.State.Units[0]);Assert.Equal("rigalord",env.State.Units[3]!.SpeciesId);
+        env.Step(new(Move.Choose,Choice:0));Assert.NotNull(env.State.Units[4]);Assert.Equal("riglet",env.State.Units[3]!.SpeciesId);
+        env.Step(new(Move.Finish),b=>b with {MaxHp=1,Team=new Unit?[6]});Assert.Null(env.State.Units[4]);Assert.Equal("rigalord",env.State.Units[3]!.SpeciesId);
         var payload=env.State.Units[3]!.Devoured!;Assert.Equal(50,payload.Instance);Assert.Equal(2,payload.Level);Assert.True(payload.Shiny);
         Assert.Equal(7,payload.Bonuses[0]);Assert.Equal(8,payload.Counters["saved"]);
         var restored=new GameEnvironment(rules);restored.Restore(env.State);Assert.Equal(JsonSerializer.Serialize(env.State),JsonSerializer.Serialize(restored.State));

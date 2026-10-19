@@ -2,14 +2,14 @@ using BatomonHelper.Simulation;
 
 namespace BatomonHelper.Overlay;
 
-public sealed record DamageRateRow(string Metric,string Start,string Quarter,string Half,string ThreeQuarters,string End,string Description);
+public sealed record DamageRateRow(string Metric,string Second0,string Second5,string Second10,string Second15,string Second20,string Second30,string Description);
 
 public static class DamagePresentation
 {
     public static string Summary(BoardAnalysisResult result)
     {
-        var timing = result.MedianKillSeconds.HasValue ? $"{result.MedianTimePercent:0.#}%" : ">100%";
-        return $"Next opponent HP (est.): {result.TargetHp:N0}  ·  HP dealt at {timing}";
+        var timing = result.MedianKillSeconds is {} seconds ? $"Estimated win at {seconds:0.0}s ({seconds / 30:0%})" : "Target not defeated within 30s";
+        return $"Next opponent HP (est.): {result.TargetHp:N0}  ·  {timing}";
     }
 
     public static DamageRateRow[] Rows(BoardAnalysisResult result)
@@ -30,7 +30,7 @@ public static class DamagePresentation
         void Add(string label,Func<DamagePoint,double> value,string description)
         {
             var values=result.Checkpoints.Select(point=>FormatRate(value(point))).ToArray();
-            rows.Add(new(label,values[0],values[1],values[2],values[3],values[4],description));
+            rows.Add(new(label,values[0],values[1],values[2],values[3],values[4],values[5],description));
         }
     }
 

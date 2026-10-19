@@ -55,33 +55,96 @@
 
     </Style>
     <Style TargetType="ComboBoxItem"><Setter Property="Foreground" Value="#F7FAFF" /><Setter Property="Background" Value="#1B2D40" /><Setter Property="Padding" Value="8,6" /><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem"><Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><ContentPresenter /></Border><ControlTemplate.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#42627F" /></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#2C755F" /></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+            <DataTemplate x:Key="BoardCard">
+              <Border Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="5" Padding="8" Margin="3">
+                <Grid MinHeight="68"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                  <Image Source="{Binding SpritePath}" Height="48" Width="48" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,8,0" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="{Binding Level}" Foreground="#FFCE79" Margin="0,0,7,0" FontSize="11" /><TextBlock Text="{Binding Variant}" Foreground="#78E2B8" FontSize="11" /></StackPanel>
+                    <TextBlock Text="{Binding Stats}" TextWrapping="Wrap" FontSize="11" />
+                    <TextBlock Text="{Binding Price}" TextWrapping="Wrap" Foreground="#B7C7D9" FontSize="12" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
     <DataTemplate x:Key="DamagePanel">
       <StackPanel>
-        <TextBlock Text="{Binding DamageSummary}" FontWeight="SemiBold" Foreground="#78E2B8" FontSize="15" Margin="0,0,0,10" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding BattleSummary}" FontWeight="Bold" Foreground="#FFD580" FontSize="16" Margin="0,0,0,10" TextWrapping="Wrap">
+          <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding BattleSummary}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+        </TextBlock>
+        <TextBlock Text="{Binding DamageSummary}" FontWeight="SemiBold" Foreground="#78E2B8" FontSize="15" Margin="0,0,0,10" TextWrapping="Wrap">
+          <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding DamageSummary}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+        </TextBlock>
+        <Border Background="#1B3141" BorderBrush="#4C8FB5" BorderThickness="1" CornerRadius="5" Padding="8" Margin="0,0,0,10" Visibility="{Binding RecommendedPositionsVisibility}">
+          <StackPanel>
+            <TextBlock Text="{Binding PositionHint}" TextWrapping="Wrap" Foreground="#CBEAFF" />
+            <StackPanel Visibility="{Binding RecommendedPositionsVisibility}">
+              <TextBlock Text="RECOMMENDED BOARD" FontWeight="Bold" Foreground="#FFCE79" Margin="0,7,0,2" />
+              <ItemsControl ItemsSource="{Binding RecommendedTeamRows}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="3" Padding="4" Margin="2"><StackPanel Orientation="Horizontal"><Image Source="{Binding SpritePath}" Height="30" Width="30" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,4,0" /><StackPanel><TextBlock Text="{Binding Name}" FontSize="11" TextWrapping="Wrap" /><TextBlock Text="{Binding Level}" Foreground="#FFCE79" FontSize="10" /></StackPanel></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+              <TextBlock Text="RECOMMENDED BENCH" FontWeight="Bold" Foreground="#FFCE79" Margin="0,7,0,2" />
+              <ItemsControl ItemsSource="{Binding RecommendedBenchRows}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="3" Padding="4" Margin="2"><StackPanel Orientation="Horizontal"><Image Source="{Binding SpritePath}" Height="30" Width="30" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,4,0" /><StackPanel><TextBlock Text="{Binding Name}" FontSize="11" TextWrapping="Wrap" /><TextBlock Text="{Binding Level}" Foreground="#FFCE79" FontSize="10" /></StackPanel></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <TextBlock Text="YOUR TEAM OUTPUT" FontWeight="SemiBold" Foreground="#78E2B8" Margin="8,0,0,8" />
         <Grid Margin="8,0,8,5">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-          <TextBlock Text="PER SECOND" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="1" Text="0%" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="2" Text="25%" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="3" Text="50%" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="4" Text="75%" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="5" Text="100%" TextAlignment="Center" Foreground="#AAB7CA" />
+          <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+          <TextBlock Text="PER SECOND" Foreground="#AAB7CA" FontWeight="SemiBold" />
+          <TextBlock Grid.Column="1" Text="0s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="2" Text="5s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="3" Text="10s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="4" Text="15s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="5" Text="20s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="6" Text="30s" TextAlignment="Center" Foreground="#AAB7CA" />
         </Grid>
         <ItemsControl ItemsSource="{Binding DamageRows}" HorizontalContentAlignment="Stretch">
           <ItemsControl.ItemTemplate><DataTemplate>
             <Border BorderBrush="#34516A" BorderThickness="0,1,0,0" Padding="8,9">
               <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Metric}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding Start}" FontSize="18" TextAlignment="Center" />
-                <TextBlock Grid.Column="2" Text="{Binding Quarter}" FontSize="18" TextAlignment="Center" />
-                <TextBlock Grid.Column="3" Text="{Binding Half}" FontSize="18" TextAlignment="Center" />
-                <TextBlock Grid.Column="4" Text="{Binding ThreeQuarters}" FontSize="18" TextAlignment="Center" />
-                <TextBlock Grid.Column="5" Text="{Binding End}" FontSize="18" TextAlignment="Center" Foreground="#78E2B8" />
+                <TextBlock Grid.Column="1" Text="{Binding Second0}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding Second5}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding Second10}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="{Binding Second15}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="5" Text="{Binding Second20}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="6" Text="{Binding Second30}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" Foreground="#78E2B8" />
               </Grid>
             </Border>
           </DataTemplate></ItemsControl.ItemTemplate>
         </ItemsControl>
+        <StackPanel>
+          <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><DataTrigger Binding="{Binding OpponentRows.Count}" Value="0"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+        <TextBlock Text="ENEMY" FontWeight="SemiBold" Foreground="#FFD580" Margin="8,18,0,8" />
+        <ItemsControl ItemsSource="{Binding OpponentRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+        <Grid Margin="8,0,8,5">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+          <TextBlock Text="PER SECOND" Foreground="#AAB7CA" FontWeight="SemiBold" />
+          <TextBlock Grid.Column="1" Text="0s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="2" Text="5s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="3" Text="10s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="4" Text="15s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="5" Text="20s" TextAlignment="Center" Foreground="#AAB7CA" />
+          <TextBlock Grid.Column="6" Text="30s" TextAlignment="Center" Foreground="#AAB7CA" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding OpponentDamageRows}" HorizontalContentAlignment="Stretch">
+          <ItemsControl.ItemTemplate><DataTemplate>
+            <Border BorderBrush="#34516A" BorderThickness="0,1,0,0" Padding="8,9">
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Metric}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Second0}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding Second5}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding Second10}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="{Binding Second15}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="5" Text="{Binding Second20}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Grid.Column="6" Text="{Binding Second30}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" Foreground="#78E2B8" />
+              </Grid>
+            </Border>
+          </DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+        </StackPanel>
       </StackPanel>
     </DataTemplate>
   </Window.Resources>
@@ -149,21 +212,7 @@
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <StackPanel><TextBlock FontWeight="SemiBold" Text="{Binding Status}" /><TextBlock FontSize="11" Foreground="#AAB7CA" TextWrapping="Wrap" Text="{Binding RunSummary}" /><TextBlock FontSize="11" Foreground="#78E2B8" TextWrapping="Wrap" Text="{Binding RunCaptureStatus}" /></StackPanel>
         <TabControl x:Name="BoardTabs" SelectedIndex="0" Grid.Row="1" Margin="0,8,0,0" Style="{StaticResource BrowserTabs}">
-          <TabControl.Resources>
-            <DataTemplate x:Key="BoardCard">
-              <Border Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="5" Padding="8" Margin="3">
-                <Grid MinHeight="68"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition /></Grid.ColumnDefinitions>
-                  <Image Source="{Binding SpritePath}" Height="48" Width="48" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,8,0" VerticalAlignment="Center" />
-                  <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                    <StackPanel Orientation="Horizontal"><TextBlock Text="{Binding Level}" Foreground="#FFCE79" Margin="0,0,7,0" FontSize="11" /><TextBlock Text="{Binding Variant}" Foreground="#78E2B8" FontSize="11" /></StackPanel>
-                    <TextBlock Text="{Binding Stats}" TextWrapping="Wrap" FontSize="11" />
-                    <TextBlock Text="{Binding Price}" TextWrapping="Wrap" Foreground="#B7C7D9" FontSize="12" />
-                  </StackPanel>
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </TabControl.Resources>
+
           <TabItem Header="Board">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Margin="5">
@@ -183,11 +232,7 @@
               </StackPanel>
             </ScrollViewer>
           </TabItem>
-          <TabItem Header="DPS">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-              <ContentControl Margin="10" Content="{Binding}" ContentTemplate="{StaticResource DamagePanel}" HorizontalContentAlignment="Stretch" />
-            </ScrollViewer>
-          </TabItem>
+
           <TabItem Header="Creatures">
             <DataGrid ItemsSource="{Binding CreatureRows}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="True" HeadersVisibility="Column" Background="#10202E" Foreground="White" BorderThickness="0" CellStyle="{StaticResource GridCell}" RowStyle="{StaticResource CreatureGridRow}" ColumnHeaderStyle="{StaticResource GridHeader}">
               <DataGrid.Columns>
@@ -230,7 +275,6 @@
           </TabItem>
         </TabControl>
       </Grid>
-      <TextBlock Grid.Row="5" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#CBD6E5" Text="{Binding Notes}" />
     </Grid>
   </Border>
 </Window>

@@ -6,6 +6,7 @@ namespace BatomonHelper.Core;
 public static class ShopRankOdds
 {
     public const int MinimumRank = 1;
+    /// <summary>The maximum shop rank; the game treats rank 14 and above as this rank.</summary>
     public const int MaximumRank = 14;
 
     private static readonly IReadOnlyDictionary<int, int[]> Percentages = new Dictionary<int, int[]>
@@ -21,6 +22,9 @@ public static class ShopRankOdds
         var values = Percentages[Math.Clamp(rank, MinimumRank, MaximumRank)];
         return Enum.GetValues<Rarity>().Take(5).Select((rarity, index) => new CapturedRarityOdds(rarity, values[index] / 100m)).ToImmutableArray();
     }
+
+    /// <summary>Collapses game ranks above the maximum into the maximum-rank state.</summary>
+    public static int Normalize(int rank) => Math.Min(rank, MaximumRank);
 
     public static bool TryFindRank(IEnumerable<int?> values, out int rank)
     {

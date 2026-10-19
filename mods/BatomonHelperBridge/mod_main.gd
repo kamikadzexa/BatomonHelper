@@ -3,11 +3,14 @@ extends Node
 ## Reads game objects on the main thread; writes only user://batomon-helper/.
 const OUTPUT_DIR := "user://batomon-helper"
 const SHOP_SCRIPT := "res://game/states/shop_state.gd"
+const BATTLE_SCRIPT := "res://game/states/battle_state.gd"
 const STAT_NAMES := {1: "Damage", 2: "Heal", 3: "Shield", 4: "Burn", 5: "Poison", 6: "Shock", 7: "Multicast"}
 const RARITIES := ["Common", "Uncommon", "Rare", "SuperRare", "Legendary"]
 var _next_poll := 0
 var _sequence := 0
 var _last_error := ""
+var _battle_player_id := 0
+var _battle_snapshot := {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -28,6 +31,7 @@ func _publish() -> void:
 	var main = get_tree().current_scene
 	var state = main.get("current_state") if _has(main, "current_state") else null
 	if _script_is(state, SHOP_SCRIPT):
+		_battle_player_id = 0
 		message.phase = "shop"
 		var run = get_node_or_null("/root/RunManager")
 		run = run.get("data") if run != null else null
@@ -40,6 +44,20 @@ func _publish() -> void:
 		else:
 			message.board = read_board(run, manager, view)
 			message.combat = read_combat(run)
+	elif _script_is(state, BATTLE_SCRIPT):
+		message.phase = "battle"
+		# TEMPLATE copies are captured before start effects and remain stable throughout replays.
+		var player = state.get("_replay_p1_data") if _has(state, "_replay_p1_data") else null
+		var opponent = state.get("_replay_p2_data") if _has(state, "_replay_p2_data") else null
+		if player == null or opponent == null:
+			message.error = "Battle teams are initializing."
+		else:
+			if _battle_player_id != player.get_instance_id():
+				_battle_snapshot = {"player": read_battle_side(player, int(player.current_round)),
+					"opponent": read_battle_side(opponent, int(player.current_round))}
+				_battle_player_id = player.get_instance_id()
+			message.battle = _battle_snapshot.duplicate()
+			message.battle.outcome = read_battle_outcome(player)
 	var pending := OUTPUT_DIR.path_join("state.pending")
 	var file := FileAccess.open(pending, FileAccess.WRITE)
 	if file == null:
@@ -73,8 +91,11 @@ func read_board(run, manager, view) -> Dictionary:
 		"itemUsesRemaining": int(uses[0]) if uses.size() == 2 else null,
 		"itemUsesMaximum": int(uses[1]) if uses.size() == 2 else null,
 		"shopLocked": bool(manager.is_shop_frozen), "regionFilter": read_region(run),
-		"team": read_slots(run.team, 6, false, int(run.gold)),
-		"bench": read_slots(run.bench, 4, false, int(run.gold)),
+		# The game stores both grids from their visual bottom-right back to top-left.
+		# Export screen order so slot 0 is always the top-left card in the helper,
+		# training data and combat position rules.
+		"team": read_slots(run.team, 6, false, int(run.gold), true),
+		"bench": read_slots(run.bench, 4, false, int(run.gold), true),
 		"shop": read_slots(items, 5, true, int(run.gold)),
 		"capturedAt": Time.get_datetime_string_from_system(true) + "Z"}
 
@@ -97,10 +118,11 @@ func read_region(run) -> String:
 	push_warning("BatomonHelper Bridge: Cannot read the active run region.")
 	return "All"
 
-func read_slots(source: Array, count: int, shop: bool, gold: int) -> Array:
+func read_slots(source: Array, count: int, shop: bool, gold: int, reverse_visual_order := false) -> Array:
 	var slots := []
 	for i in range(count):
-		var value = source[i] if i < source.size() else null
+		var source_index := count - 1 - i if reverse_visual_order else i
+		var value = source[source_index] if source_index < source.size() else null
 		var slot := {"index": i, "occupancy": "Empty", "stats": []}
 		if value != null:
 			if value.has_method("get_gold_cost") and _has(value, "current_stats"):
@@ -126,12 +148,35 @@ func read_slots(source: Array, count: int, shop: bool, gold: int) -> Array:
 	return slots
 
 func read_combat(run) -> Dictionary:
+	return {"team": read_combat_units(run.team), "bench": read_combat_units(run.bench), "trinkets": run.trinket_ids}
+
+func read_battle_side(run, day: int) -> Dictionary:
+	# Replay templates omit passive caches. Rebuild them only on an isolated copy,
+	# so player_hp includes the game's trainer/trinket HP without changing the run.
+	run = run.duplicate_deep(RunData.CopyMode.BATTLE)
+	return {"day": day, "teamHp": int(run.player_hp), "trainerId": str(run.trainer_id),
+		"rank": int(run.shop_rank), "wins": int(run.current_wins),
+		"team": read_slots(run.team, 6, false, int(run.gold), true),
+		"combat": {"team": read_combat_units(run.team), "trinkets": run.trinket_ids}}
+
+func read_battle_outcome(player):
+	# The game's ghost simulation promotes the completed run before the visual
+	# battle ends. Read its committed result; never rerun combat or vary seeds.
+	var manager = get_node_or_null("/root/RunManager")
+	var completed = manager.get("data") if manager != null else null
+	if completed == null or completed.run_id != player.run_id or completed.current_round != player.current_round:
+		return null
+	if not completed.pending_round_start or not completed.pending_battle_opponent.is_empty():
+		return null
+	return {"playerWon": int(completed.current_wins) > int(player.current_wins)}
+
+func read_combat_units(source: Array) -> Array:
 	var units := []
 	# Simulator order: damage/heal/shield/burn/poison/shock/speed/multicast/sell.
 	var stat_ids := [1, 2, 3, 4, 5, 6, 10, 7, "bonus_sell_value"]
 	var multipliers := {1: 8, 2: 13, 3: 12, 4: 15, 5: 14, 6: 9}
-	for i in range(run.team.size()):
-		var monster = run.team[i]
+	for i in range(source.size()):
+		var monster = source[i]
 		if monster == null: continue
 		var stats := []
 		for stat in stat_ids:
@@ -140,9 +185,9 @@ func read_combat(run) -> Dictionary:
 				value = round(value * (1.0 + monster.get_base_permanent_stat(multipliers[stat])))
 			stats.append(value)
 		var cooldown = monster.get_base_cooldown()
-		units.append({"slot": i, "permanentStats": stats, "baseCooldown": cooldown if cooldown > 0 else null,
+		units.append({"slot": source.size() - 1 - i, "permanentStats": stats, "baseCooldown": cooldown if cooldown > 0 else null,
 			"addedTypes": monster.get_extra_types()})
-	return {"team": units, "trinkets": run.trinket_ids}
+	return units
 
 func _compatible(run, manager, view) -> bool:
 	for key in ["trainer_id", "current_round", "lives", "current_wins", "player_hp", "gold", "shop_rank", "team", "bench"]:

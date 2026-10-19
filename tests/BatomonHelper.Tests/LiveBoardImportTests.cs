@@ -16,7 +16,7 @@ public sealed class LiveBoardImportTests
         var rules = JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json")))!;
         var imported = LiveBoardImport.Create(message.Board!, message.Combat!, rules);
         var result = new BoardAnalyzer(imported.Rules).Analyze(imported.Board, samples: 1);
-        Assert.Equal(5, result.Checkpoints.Length);
+        Assert.Equal(6, result.Checkpoints.Length);
         Assert.Equal(23, result.Checkpoints[0].Units[0].Stats[0]);
         Assert.Equal(5.5, result.Checkpoints[0].Units[0].Cooldown);
         Assert.True(result.Checkpoints[^1].Damage > 0);

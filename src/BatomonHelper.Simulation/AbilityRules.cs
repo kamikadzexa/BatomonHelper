@@ -13,8 +13,8 @@ public static class AbilityRules
     private static Stat S(string s) => s switch {"Cooldown Speed"=>Stat.Speed,"Sell Value"=>Stat.SellValue,_=>Enum.Parse<Stat>(s)};
     private static Target T(string s) => s switch
     {
-        "this"=>Target.Self,"adjacent allies"=>Target.Adjacent,"ally above"=>Target.Above,"ally behind"=>Target.Below,
-        "ally in front"=>Target.Above,"allies"=>Target.All,"random ally"=>Target.RandomAlly,_=>throw new InvalidDataException(s)
+        "this"=>Target.Self,"adjacent allies"=>Target.Adjacent,"ally above"=>Target.Above,"ally behind"=>Target.Left,
+        "ally in front"=>Target.Right,"allies"=>Target.All,"random ally"=>Target.RandomAlly,_=>throw new InvalidDataException(s)
     };
     public static bool TryCompile(string text,Trigger trigger,out Effect[] effects)
     {
@@ -63,7 +63,7 @@ public static class AbilityRules
         {effects=[new(trigger,Operation.Add,Target.Self,Amount:N(lives.Groups["amount"].Value),Permanent:true,Scale:EffectScale.LostLives)];return true;}
         var ongoingAura=M("(?<target>Adjacent allies|Ally behind) (?:have|has) (?<amount>\\+"+Number+")% Cooldown Speed for each Trinket that you own\\.");
         if(ongoingAura.Success)
-        {effects=[new(trigger,Operation.Add,ongoingAura.Groups["target"].Value=="Adjacent allies"?Target.Adjacent:Target.Below,Stat.Speed,
+        {effects=[new(trigger,Operation.Add,ongoingAura.Groups["target"].Value=="Adjacent allies"?Target.Adjacent:Target.Left,Stat.Speed,
             N(ongoingAura.Groups["amount"].Value)/100,Scale:EffectScale.Trinkets)];return true;}
         var multiCount=M("(?<shield>\\+"+Number+") Shield permanently for each Rock ally and (?<multicast>\\+"+Number+") Multicast permanently for each Flying ally\\.");
         if(multiCount.Success)
@@ -103,7 +103,7 @@ public static class AbilityRules
             MaximumLevel:int.Parse(levelUp.Groups["max"].Value),OncePerBattle:levelUp.Groups["first"].Success)];return true;}
         var frontMulticast=M("Give the ally in front (?<amount>\\+"+Number+") Multicast and increase this monster's Cooldown by (?<cooldown>"+Number+") seconds for this battle\\.");
         if(frontMulticast.Success)
-        {effects=[new(trigger,Operation.Add,Target.Above,Stat.Multicast,N(frontMulticast.Groups["amount"].Value)),
+        {effects=[new(trigger,Operation.Add,Target.Right,Stat.Multicast,N(frontMulticast.Groups["amount"].Value)),
             new(trigger,Operation.AddedCooldown,Target.Self,Amount:N(frontMulticast.Groups["cooldown"].Value))];return true;}
         var reactiveTrigger=M("Trigger this when (?<who>an ally of level (?<level>[1-4]) or above casts|an ally applies Shield|adjacent Toxic allies trigger)\\. \\(Except other (?<except>[A-Za-z]+)\\)");
         if(reactiveTrigger.Success)
@@ -149,7 +149,7 @@ public static class AbilityRules
             ScaleTarget:copyAlliedStat.Groups["who"].Value=="adjacent allies"?Target.Adjacent:Target.All,ScaleExcludeSpecies:copyAlliedStat.Groups["except"].Value.ToLowerInvariant())];return true;}
         var burnTransfer=M("Give the Fire ally behind (?:(?<amount>"+Number+")x )?this monster's Burn for this battle\\.");
         if(burnTransfer.Success)
-        {effects=[new(trigger,Operation.Add,Target.Below,Stat.Burn,burnTransfer.Groups["amount"].Success?N(burnTransfer.Groups["amount"].Value):1,
+        {effects=[new(trigger,Operation.Add,Target.Left,Stat.Burn,burnTransfer.Groups["amount"].Success?N(burnTransfer.Groups["amount"].Value):1,
             Type:"fire",Scale:EffectScale.SelfStat,ScaleStat:Stat.Burn)];return true;}
         var allyShieldDamage=M("Allies gain Damage for this battle equal to (?:(?<amount>"+Number+")x )?their Shield\\.");
         if(allyShieldDamage.Success)
@@ -204,7 +204,7 @@ public static class AbilityRules
         {effects=[new(Trigger.Ongoing,Operation.MergeRequirement,Target.Self,Amount:N(unlimitedMerge.Groups["count"].Value),UnlimitedLevels:true)];return true;}
         var amplify=M("(?<who>Adjacent allies apply|The ally behind applies) (?<their>their|its) Ongoing abilities (?<count>[0-9]+) additional time\\(s\\)\\.");
         if(amplify.Success)
-        {effects=[new(Trigger.Ongoing,Operation.RepeatOngoing,amplify.Groups["who"].Value=="Adjacent allies apply"?Target.Adjacent:Target.Below,Amount:N(amplify.Groups["count"].Value))];return true;}
+        {effects=[new(Trigger.Ongoing,Operation.RepeatOngoing,amplify.Groups["who"].Value=="Adjacent allies apply"?Target.Adjacent:Target.Left,Amount:N(amplify.Groups["count"].Value))];return true;}
         var slowRow=M("Allies and enemies in this row have (?<amount>\\+"+Number+") Cooldown\\.");
         if(slowRow.Success)
         {effects=[new(Trigger.Ongoing,Operation.AddedCooldown,Target.BothRows,Amount:N(slowRow.Groups["amount"].Value))];return true;}
@@ -216,7 +216,7 @@ public static class AbilityRules
         {effects=[new(Trigger.Ongoing,Operation.ShopModifier,Target.Self,Amount:.1,ShopTrait:ShopTrait.MythicalItemChance),
             new(Trigger.Ongoing,Operation.Multiply,Target.Adjacent,Amount:N(mythicalItem.Groups["amount"].Value)/100,Scale:EffectScale.ItemsUsed,ScaleRarity:5)];return true;}
         if(text=="At the start of the next day, devour the ally in front and evolve into Rigalord.")
-        {effects=[new(Trigger.DayStart,Operation.Devour,Target.Above,Permanent:true,DefinitionId:"rigalord")];return true;}
+        {effects=[new(Trigger.DayStart,Operation.Devour,Target.Right,Permanent:true,DefinitionId:"rigalord")];return true;}
         if(text=="Spawn exact copies of the Batomon this devoured in empty slots the bottom row. They ONLY trigger when this casts.")
         {effects=[new(Trigger.Cast,Operation.SpawnDevoured,Target.Self)];return true;}
         var discarded=M("When rerolling the shop, gain (?<amount>"+Number+")% of the total stats of the monsters remaining in the shop \\(excluding Multicast and Cooldown\\)\\.");
@@ -258,7 +258,7 @@ public static class AbilityRules
         var charge=M("Charge (?<target>the ally behind|adjacent (?<type>"+Types+") allies) by (?<amount>"+Number+") second\\(s\\)(?: and give this (?<speed>\\+"+Number+")% Cooldown Speed for this battle)?\\. \\((?:Dracana|Ironcore) can't receive charge\\)");
         if(charge.Success)
         {
-            var list=new List<Effect>{new(trigger,Operation.Charge,charge.Groups["target"].Value=="the ally behind"?Target.Below:Target.Adjacent,
+            var list=new List<Effect>{new(trigger,Operation.Charge,charge.Groups["target"].Value=="the ally behind"?Target.Left:Target.Adjacent,
                 Amount:N(charge.Groups["amount"].Value),Type:charge.Groups["type"].Success?charge.Groups["type"].Value.ToLowerInvariant():null)};
             if(charge.Groups["speed"].Success)list.Add(new(trigger,Operation.Add,Target.Self,Stat.Speed,N(charge.Groups["speed"].Value)/100));
             effects=list.ToArray();return true;

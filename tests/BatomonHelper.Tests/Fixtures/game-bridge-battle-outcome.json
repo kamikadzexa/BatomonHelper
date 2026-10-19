@@ -1,0 +1,153 @@
+{
+	"battle": {
+		"opponent": {
+			"combat": {
+				"team": [
+					{
+						"addedTypes": [],
+						"baseCooldown": 3.0,
+						"permanentStats": [
+							0.0,
+							15.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0
+						],
+						"slot": 5
+					}
+				],
+				"trinkets": []
+			},
+			"day": 5,
+			"rank": 0,
+			"team": [
+				{
+					"index": 0,
+					"occupancy": "Empty",
+					"stats": []
+				},
+				{
+					"index": 1,
+					"occupancy": "Empty",
+					"stats": []
+				},
+				{
+					"index": 2,
+					"occupancy": "Empty",
+					"stats": []
+				},
+				{
+					"index": 3,
+					"occupancy": "Empty",
+					"stats": []
+				},
+				{
+					"index": 4,
+					"occupancy": "Empty",
+					"stats": []
+				},
+				{
+					"definitionId": "dribblet",
+					"index": 5,
+					"level": 1,
+					"occupancy": "Creature",
+					"stats": [
+						{
+							"kind": "Heal",
+							"value": 15
+						}
+					],
+					"variant": "Normal"
+				}
+			],
+			"teamHp": 2400,
+			"trainerId": "redhead",
+			"wins": 0
+		},
+		"outcome": {
+			"playerWon": true
+		},
+		"player": {
+			"combat": {
+				"team": [
+					{
+						"addedTypes": [],
+						"baseCooldown": 5.5,
+						"permanentStats": [
+							6.0,
+							0.0,
+							0.0,
+							6.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0
+						],
+						"slot": 0
+					}
+				],
+				"trinkets": []
+			},
+			"day": 5,
+			"rank": 0,
+			"team": [
+				{
+					"definitionId": "scorchimp",
+					"index": 0,
+					"level": 1,
+					"occupancy": "Creature",
+					"stats": [
+						{
+							"kind": "Damage",
+							"value": 6
+						},
+						{
+							"kind": "Burn",
+							"value": 6
+						}
+					],
+					"variant": "Shiny"
+				},
+				{
+					"index": 1,
+					"occupancy": "Empty",
+					"stats": []
+				},
+				{
+					"index": 2,
+					"occupancy": "Empty",
+					"stats": []
+				},
+				{
+					"index": 3,
+					"occupancy": "Empty",
+					"stats": []
+				},
+				{
+					"index": 4,
+					"occupancy": "Empty",
+					"stats": []
+				},
+				{
+					"index": 5,
+					"occupancy": "Empty",
+					"stats": []
+				}
+			],
+			"teamHp": 2400,
+			"trainerId": "redhead",
+			"wins": 0
+		}
+	},
+	"board": null,
+	"phase": "battle",
+	"processId": 24300,
+	"protocolVersion": 1,
+	"sequence": 1,
+	"updatedAt": "2026-10-19T08:46:11Z"
+}

@@ -63,7 +63,7 @@ public sealed class LevelTimerAmplifierTests
     {
         var amp=Species("amp",null,Effects("The ally behind applies its Ongoing abilities 1 additional time(s)."),0);
         var aura=Species("aura",null,Effects("Give adjacent allies +10 Damage.",Trigger.Ongoing),0);
-        var caster=Species("caster",1,[],1,Trigger.None);var own=Board("amp",null,null,"aura","caster");
+        var caster=Species("caster",1,[],1,Trigger.None);var own=Board("aura","amp",null,"caster");
         var result=Match([amp,aura,caster],own,own with {MaxHp=20,Team=new Unit?[6]});Assert.Equal(-1,result.OpponentHp);
         aura=aura with {Normal=aura.Normal.Select(x=>x with {Effects=Effects("Give adjacent allies +100% Damage.",Trigger.Ongoing)}).ToArray()};
         result=Match([amp,aura,caster],own,own with {MaxHp=2,Team=new Unit?[6]});Assert.Equal(-1,result.OpponentHp);
@@ -75,8 +75,8 @@ public sealed class LevelTimerAmplifierTests
         var amp=Species("amp",null,Effects("The ally behind applies its Ongoing abilities 1 additional time(s)."),0);
         var watcher=Species("watcher",null,Effects("When allies inflict Poison, this gains +2 Damage permanently."),0);
         var caster=Species("caster",1,[],0,Trigger.None);foreach(var level in caster.Normal)level.Stats[4]=1;
-        var own=Board("amp","caster",null,"watcher");var result=Match([amp,watcher,caster],own,own with {MaxHp=1,Team=new Unit?[6]});
-        Assert.Equal(4,result.PersistentTeam[3]!.Bonuses[0]);
+        var own=Board("watcher","amp","caster");var result=Match([amp,watcher,caster],own,own with {MaxHp=1,Team=new Unit?[6]});
+        Assert.Equal(4,result.PersistentTeam[0]!.Bonuses[0]);
     }
 
     [Fact]
@@ -94,9 +94,9 @@ public sealed class LevelTimerAmplifierTests
         var amp=Species("amp",null,Effects("The ally behind applies its Ongoing abilities 2 additional time(s)."),0);
         var first=Species("first",null,Effects("Evolve after your team deals 1 non-status Damage.",Trigger.None),0) with {EvolutionId="middle"};
         var middle=first with {Id="middle",EvolutionId="final"};var final=Species("final",null,[],0);
-        var caster=Species("caster",1,[],1,Trigger.None);var own=Board("amp","caster",null,"first");
+        var caster=Species("caster",1,[],1,Trigger.None);var own=Board("first","amp","caster");
         var result=Match([amp,first,middle,final,caster],own,own with {MaxHp=1,Team=new Unit?[6]});
-        Assert.Equal("middle",result.PersistentTeam[3]!.SpeciesId);
-        Assert.False(result.PersistentTeam[3]!.Counters.ContainsKey("evolution:middle:damage"));
+        Assert.Equal("middle",result.PersistentTeam[0]!.SpeciesId);
+        Assert.False(result.PersistentTeam[0]!.Counters.ContainsKey("evolution:middle:damage"));
     }
 }

@@ -44,6 +44,17 @@ public sealed class GameStateBridgeTests
     }
 
     [Fact]
+    public async Task Normalizes_a_game_rank_above_fourteen_to_the_maximum_rank()
+    {
+        var json = Fixture();
+        json["board"]!["shopRank"] = 15;
+
+        var board = GameStateBridge.Parse(json.ToJsonString(), await Catalog(), Time(json)).Board;
+
+        Assert.Equal(14, board!.ShopRank);
+    }
+
+    [Fact]
     public async Task Rejects_stale_future_and_unsupported_messages()
     {
         var json = Fixture(); var now = Time(json); var catalog = await Catalog();

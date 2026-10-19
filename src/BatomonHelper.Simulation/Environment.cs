@@ -446,7 +446,8 @@ public sealed partial class GameEnvironment(RulesManifest rules)
             case Operation.Devour:
                 if(source is null)throw new InvalidOperationException("Devouring needs a source creature.");
                 if(source.Counters.GetValueOrDefault("born-day")==State.Day)return;
-                var actorSlot=Array.IndexOf(State.Units,source);var front=actorSlot is >=3 and <6?actorSlot-3:-1;
+                var actorSlot=Array.IndexOf(State.Units,source);
+                var front=actorSlot is >=0 and <6?Combat.Targets(actorSlot,effect.Target).SingleOrDefault(-1):-1;
                 if(front<0 || State.Units[front] is not { } devoured)return;
                 source.Devoured=devoured.Clone();State.Units[front]=null;source.SpeciesId=effect.DefinitionId??throw new InvalidDataException("Devour evolution target missing.");return;
             case Operation.ProgressEvolution:
