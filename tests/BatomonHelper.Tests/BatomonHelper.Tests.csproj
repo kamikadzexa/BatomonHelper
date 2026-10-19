@@ -17,7 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\BatomonHelper.Core\BatomonHelper.Core.csproj" />
-    <ProjectReference Include="..\..\src\BatomonHelper.ScreenReader\BatomonHelper.ScreenReader.csproj" />
     <ProjectReference Include="..\..\src\BatomonHelper.Overlay\BatomonHelper.Overlay.csproj" />
   </ItemGroup>
   <ItemGroup>
@@ -25,6 +24,5 @@
     <None Update="Fixtures\*.png" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\assets\wiki\batomon-wiki.db" Link="Fixtures\batomon-wiki.db" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\assets\wiki\**\*" Link="assets\wiki\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\assets\recognition\digits.json" Link="assets\recognition\digits.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

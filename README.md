@@ -15,10 +15,10 @@ A Windows companion for **Batomon Showdown**. View your live team, bench, shop, 
 
 ## Install and connect
 
-1. Run `BatomonHelper-Setup-1.0.1.exe`. It includes .NET and creates a Start Menu shortcut and offers an optional desktop shortcut. Requires Windows 11 22H2 (build 22621) or newer, x64.
-2. The helper opens **Game setup** automatically if the game is stopped or its mod setup is incomplete. Confirm the Steam folder or **Browse…** to the folder containing `batomon_showdown.exe` and `batomon_showdown.pck`.
-3. Close the game. If the Mod Loader checkmark is empty, use **Download Mod Loader**, extract version 1.2.2, and choose **Select downloaded loader…**. Then select **Install mod** to install the loader and helper bridge. The loader is not bundled; its author does not permit redistribution.
-4. Select **Launch game**, then start or resume a run. Board updates when live bridge data arrives.
+1. Download the latest `BatomonHelper-Setup-<version>.exe` and matching `.sha256` file from [GitHub Releases](https://github.com/kamikadzexa/BatomonHelper/releases). Verify the installer checksum, then run the installer. It includes .NET, creates a Start Menu shortcut, and can add a desktop shortcut. Requires Windows 11 22H2 (build 22621) or newer, x64.
+2. Open the helper. It opens **Game setup** automatically when the game or mod setup needs attention. Confirm the Steam folder or use **Browse…** to select the folder containing `batomon_showdown.exe` and `batomon_showdown.pck`.
+3. Close the game. If **Mod Loader installed and enabled** is unchecked, choose **Download Mod Loader**, download and extract community Mod Loader 1.2.2, choose **Select downloaded loader…**, and select the extracted folder. Then choose **Install mod** to install the loader and Batomon Helper bridge. The loader is not bundled; its author does not permit redistribution.
+4. Choose **Launch game**, then start or resume a run. The helper reads live state from the bridge mod.
 
 ![Game setup](docs/images/helper-setup.png)
 
@@ -65,7 +65,7 @@ dotnet test BatomonHelper.sln -c Release
 
 Needs .NET 10 SDK; installer creation also needs [Inno Setup 6](https://jrsoftware.org/isinfo.php). Pass `-CompilerPath` for a custom compiler location. Output includes installer, checksum, and [release notes](docs/release-1.0.1.md). Publish the installer and its `.sha256` file as identically versioned GitHub Release assets for in-app updating.
 
-[Training Lab](docs/strategic-training.md) is separate and excluded from the installer. See [data/development details](docs/development.md), [training](docs/training.md), and [historical screenshot reader](docs/legacy-screenshot-reader.md).
+[Training Lab](docs/strategic-training.md) is separate and excluded from the installer. See [data/development details](docs/development.md) and [training](docs/training.md).
 
 ## License
 

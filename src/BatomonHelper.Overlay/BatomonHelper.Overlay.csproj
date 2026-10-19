@@ -13,7 +13,6 @@
     <Resource Include="Assets\batomon-helper-logo.png" />
     <ProjectReference Include="..\BatomonHelper.Core\BatomonHelper.Core.csproj" />
     <ProjectReference Include="..\BatomonHelper.Simulation\BatomonHelper.Simulation.csproj" />
-    <ProjectReference Include="..\BatomonHelper.ScreenReader\BatomonHelper.ScreenReader.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\README.md" Link="README.md" CopyToOutputDirectory="PreserveNewest" />
@@ -24,7 +23,6 @@
     <Content Include="..\..\assets\simulation\rules.json" Link="assets\simulation\rules.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\mods\BatomonHelperBridge\**\*" Link="mods\BatomonHelperBridge\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\tools\Install-GameBridge.ps1" Link="tools\Install-GameBridge.ps1" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="..\..\assets\recognition\**\*" Link="assets\recognition\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\assets\wiki\**\*">
       <Link>assets\wiki\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

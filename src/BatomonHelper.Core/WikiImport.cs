@@ -70,8 +70,8 @@ public sealed partial class WikiImporter(IWikiSource source)
             var trinkets = (await ImportReferencesAsync(trinketIds, "/trinkets/", ParseTrinket, cancellationToken)).Select(trinket => trinket with { SpritePath = $"assets/wiki/trinkets/{trinket.Id}.png" }).ToImmutableArray();
             var warnings = ImmutableArray.CreateBuilder<string>();
             if (valid.Any(m => m.ActiveSets.IsEmpty)) warnings.Add("Some catalog entries have no declared active set and will not be rolled.");
-            if (trainers.IsEmpty) warnings.Add("The trainer reference list was unavailable; trainer OCR will require review.");
-            if (items.IsEmpty) warnings.Add("The item reference list was unavailable; item OCR will require review.");
+            if (trainers.IsEmpty) warnings.Add("The trainer reference list was unavailable.");
+            if (items.IsEmpty) warnings.Add("The item reference list was unavailable.");
             if (trinkets.IsEmpty) warnings.Add("The trinket reference list was unavailable.");
             var raw = string.Concat(pages) + string.Join('\n', monsters.Select(m => m?.Id));
             var snapshot = new CatalogSnapshot(

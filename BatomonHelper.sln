@@ -5,8 +5,6 @@ VisualStudioVersion = 18.0.0.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatomonHelper.Core", "src\BatomonHelper.Core\BatomonHelper.Core.csproj", "{8D10BFA9-09B2-4A0A-9E3D-11BB51FE5C91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatomonHelper.ScreenReader", "src\BatomonHelper.ScreenReader\BatomonHelper.ScreenReader.csproj", "{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatomonHelper.Overlay", "src\BatomonHelper.Overlay\BatomonHelper.Overlay.csproj", "{CBAD0D86-A0C4-4EBF-B00D-DC6B7417C583}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatomonHelper.Tests", "tests\BatomonHelper.Tests\BatomonHelper.Tests.csproj", "{D679515B-CC41-426D-B9A0-F28DCD2E821A}"
@@ -43,18 +41,6 @@ Global
 		{8D10BFA9-09B2-4A0A-9E3D-11BB51FE5C91}.Release|x64.Build.0 = Release|Any CPU
 		{8D10BFA9-09B2-4A0A-9E3D-11BB51FE5C91}.Release|x86.ActiveCfg = Release|Any CPU
 		{8D10BFA9-09B2-4A0A-9E3D-11BB51FE5C91}.Release|x86.Build.0 = Release|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Debug|x64.Build.0 = Debug|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Debug|x86.Build.0 = Debug|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Release|x64.ActiveCfg = Release|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Release|x64.Build.0 = Release|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Release|x86.ActiveCfg = Release|Any CPU
-		{7A6F46F9-91B3-4FE1-90F0-A42F4CD38D3C}.Release|x86.Build.0 = Release|Any CPU
 		{CBAD0D86-A0C4-4EBF-B00D-DC6B7417C583}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CBAD0D86-A0C4-4EBF-B00D-DC6B7417C583}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBAD0D86-A0C4-4EBF-B00D-DC6B7417C583}.Debug|x64.ActiveCfg = Debug|Any CPU

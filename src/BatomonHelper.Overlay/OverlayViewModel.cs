@@ -1,5 +1,4 @@
 using BatomonHelper.Core;
-using BatomonHelper.ScreenReader;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -13,7 +12,7 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
 {
     private readonly SnapshotRepository _repository;
     private readonly GameStateBridge _bridge = new();
-    private readonly CaptureRefreshQueue _captureQueue;
+    private readonly BridgeRefreshQueue _captureQueue;
     private readonly CancellationTokenSource _captureCancellation = new();
     private string? _lastBoardSignature;
     private bool _manualScenario;
