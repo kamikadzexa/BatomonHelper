@@ -45,6 +45,7 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     private long _lastLiveSequence;
     private GameCombatState? _lastLiveCombat;
     private GameBattleState? _lastLiveBattle;
+    private (bool Dps, bool Positions, bool Outcome) _analysisOptions;
     private RegionFilterOption _selectedRegionFilter = new(MonsterRegionFilter.Pantra, "Pantra region");
     private RarityFilterOption _selectedRarityFilter = new(null, "All rarities");
     private RarityFilterOption _selectedItemRarityFilter = new(null, "All rarities");
@@ -58,6 +59,7 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         DecreaseRankCommand = new RelayCommand(() => ChangeRank(-1));
         IncreaseRankCommand = new RelayCommand(() => ChangeRank(1));
         ResetCommand = new RelayCommand(ResetManualState);
+        _analysisOptions = (Setup.ShowDpsCounters, Setup.ShowBestDpsBoardSuggestions, Setup.ShowBattleOutcome);
         Setup.PropertyChanged += (_, args) =>
         {
             if (string.IsNullOrEmpty(args.PropertyName) || args.PropertyName is nameof(GameSetupViewModel.ShowDpsCounters)
@@ -236,6 +238,7 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
             if (_captureRun && _runCaptureStore is not null)
                 await SaveRunChangeAsync(_runCaptureStore, message.Sequence, capturedBoard, message.Combat);
             board = capturedBoard;
+            _lastLiveBattle = null;
             SyncCapturedRegion(board.RegionFilter);
             var signature = System.Text.Json.JsonSerializer.Serialize(board with { CapturedAt = default }, GameStateBridge.JsonOptions);
             if (signature != _lastBoardSignature)
@@ -272,6 +275,11 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     }
     private void ApplyAnalysisOptions()
     {
+        // Setup also raises all-properties notifications for heartbeat/readiness
+        // updates. Those must not cancel analysis or clear the displayed results.
+        var options = (Setup.ShowDpsCounters, Setup.ShowBestDpsBoardSuggestions, Setup.ShowBattleOutcome);
+        if (_analysisOptions == options) return;
+        _analysisOptions = options;
         if (!Setup.ShowBattleOutcome) BattleSummary = "";
         if (!Setup.ShowDpsCounters)
         {

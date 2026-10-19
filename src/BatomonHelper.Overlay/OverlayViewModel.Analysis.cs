@@ -49,7 +49,11 @@ public sealed partial class OverlayViewModel
                 slot.Level is null ? "" : $"Lv. {slot.Level}", monster is null ? "" : slot.Variant.ToString(),
                 slot.Stats.IsDefault ? "" : string.Join(" / ", slot.Stats.Select(stat => $"{stat.Kind} {stat.Value}")), ""));
         }
-        if (!Setup.ShowDpsCounters) return;
+        if (!Setup.ShowDpsCounters)
+        {
+            _damageCancellation = null;
+            return;
+        }
         try
         {
             _damageRules ??= JsonSerializer.Deserialize<RulesManifest>(await File.ReadAllTextAsync(
