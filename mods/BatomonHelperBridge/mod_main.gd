@@ -54,7 +54,7 @@ func _publish() -> void:
 		else:
 			if _battle_player_id != player.get_instance_id():
 				_battle_snapshot = {"player": read_battle_side(player, int(player.current_round)),
-					"opponent": read_battle_side(opponent, int(player.current_round))}
+					"opponent": read_battle_side(opponent, int(player.current_round), true)}
 				_battle_player_id = player.get_instance_id()
 			message.battle = _battle_snapshot.duplicate()
 			message.battle.outcome = read_battle_outcome(player)
@@ -126,10 +126,14 @@ func read_region(run) -> String:
 	push_warning("BatomonHelper Bridge: Cannot read the active run region or set.")
 	return "All"
 
-func read_slots(source: Array, count: int, shop: bool, gold: int, reverse_visual_order := false) -> Array:
+func read_slots(source: Array, count: int, shop: bool, gold: int, reverse_visual_order := false, opponent := false) -> Array:
 	var slots := []
 	for i in range(count):
 		var source_index := count - 1 - i if reverse_visual_order else i
+		if opponent and count == 6:
+			# Opponent data is stored in the opponent's perspective. Flip columns
+			# so exported slots use the player's screen coordinates.
+			source_index = (i + 3) % 6
 		var value = source[source_index] if source_index < source.size() else null
 		var slot := {"index": i, "occupancy": "Empty", "stats": []}
 		if value != null:
@@ -158,14 +162,14 @@ func read_slots(source: Array, count: int, shop: bool, gold: int, reverse_visual
 func read_combat(run) -> Dictionary:
 	return {"team": read_combat_units(run.team), "bench": read_combat_units(run.bench), "trinkets": run.trinket_ids}
 
-func read_battle_side(run, day: int) -> Dictionary:
+func read_battle_side(run, day: int, opponent := false) -> Dictionary:
 	# Replay templates omit passive caches. Rebuild them only on an isolated copy,
 	# so player_hp includes the game's trainer/trinket HP without changing the run.
 	run = run.duplicate_deep(RunData.CopyMode.BATTLE)
 	return {"day": day, "teamHp": int(run.player_hp), "trainerId": str(run.trainer_id),
 		"rank": int(run.shop_rank), "wins": int(run.current_wins),
-		"team": read_slots(run.team, 6, false, int(run.gold), true),
-		"combat": {"team": read_combat_units(run.team), "trinkets": run.trinket_ids}}
+		"team": read_slots(run.team, 6, false, int(run.gold), true, opponent),
+		"combat": {"team": read_combat_units(run.team, opponent), "trinkets": run.trinket_ids}}
 
 func read_battle_outcome(player):
 	# The game's ghost simulation promotes the completed run before the visual
@@ -178,7 +182,7 @@ func read_battle_outcome(player):
 		return null
 	return {"playerWon": int(completed.current_wins) > int(player.current_wins)}
 
-func read_combat_units(source: Array) -> Array:
+func read_combat_units(source: Array, opponent := false) -> Array:
 	var units := []
 	# Simulator order: damage/heal/shield/burn/poison/shock/speed/multicast/sell.
 	var stat_ids := [1, 2, 3, 4, 5, 6, 10, 7, "bonus_sell_value"]
@@ -193,7 +197,12 @@ func read_combat_units(source: Array) -> Array:
 				value = round(value * (1.0 + monster.get_base_permanent_stat(multipliers[stat])))
 			stats.append(value)
 		var cooldown = monster.get_base_cooldown()
-		units.append({"slot": source.size() - 1 - i, "permanentStats": stats, "baseCooldown": cooldown if cooldown > 0 else null,
+		var slot := source.size() - 1 - i
+		if opponent and source.size() == 6:
+			# Opponent data is stored in the opponent's perspective. Flip columns
+			# so exported slots use the player's screen coordinates.
+			slot = (i + 3) % 6
+		units.append({"slot": slot, "permanentStats": stats, "baseCooldown": cooldown if cooldown > 0 else null,
 			"addedTypes": monster.get_extra_types()})
 	return units
 
