@@ -21,12 +21,14 @@ public sealed partial class OverlayViewModel
     private string _battleSummary = "";
     public ObservableCollection<BoardCardRow> OpponentRows { get; } = [];
     public string BattleSummary { get => _battleSummary; private set => Set(ref _battleSummary, value); }
+    public Visibility DpsCountersVisibility => Setup.ShowDpsCounters ? Visibility.Visible : Visibility.Collapsed;
 
     private async Task RefreshBattleAsync(GameBattleState battle)
     {
-        BattleSummary = BattleOutcomePresentation.Summary(battle.Outcome);
+        BattleSummary = Setup.ShowBattleOutcome ? BattleOutcomePresentation.Summary(battle.Outcome) : "";
         var identity = "battle:" + JsonSerializer.Serialize(battle with { Outcome = null });
         if (_damageIdentity == identity) return;
+        AnalysisWarning = "";
         _damageIdentity = identity;
         _positionIdentity = null;
         _damageCancellation?.Cancel();
@@ -47,6 +49,7 @@ public sealed partial class OverlayViewModel
                 slot.Level is null ? "" : $"Lv. {slot.Level}", monster is null ? "" : slot.Variant.ToString(),
                 slot.Stats.IsDefault ? "" : string.Join(" / ", slot.Stats.Select(stat => $"{stat.Kind} {stat.Value}")), ""));
         }
+        if (!Setup.ShowDpsCounters) return;
         try
         {
             _damageRules ??= JsonSerializer.Deserialize<RulesManifest>(await File.ReadAllTextAsync(
@@ -60,12 +63,12 @@ public sealed partial class OverlayViewModel
             foreach (var row in DamagePresentation.Rows(result.Opponent)) OpponentDamageRows.Add(row);
         }
         catch (OperationCanceledException) { }
-        catch (Exception error) { if (!cancellation.IsCancellationRequested) Warning = "Battle output unavailable: " + error.Message; }
+        catch (Exception error) { if (!cancellation.IsCancellationRequested) AnalysisWarning = "Battle output unavailable: " + error.Message; }
         finally { if (ReferenceEquals(_damageCancellation, cancellation)) _damageCancellation = null; }
     }
     public string DamageSummary { get => _damageSummary; private set => Set(ref _damageSummary, value); }
     public string PositionHint { get => _positionHint; private set => Set(ref _positionHint, value); }
-    public Visibility RecommendedPositionsVisibility => RecommendedTeamRows.Count == 6 ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility RecommendedPositionsVisibility => Setup.ShowBestDpsBoardSuggestions && RecommendedTeamRows.Count == 6 ? Visibility.Visible : Visibility.Collapsed;
     public PointCollection DamageCurve { get => _damageCurve; private set => Set(ref _damageCurve, value); }
     public PointCollection DamageHpLine { get => _damageHpLine; private set => Set(ref _damageHpLine, value); }
 
@@ -75,6 +78,7 @@ public sealed partial class OverlayViewModel
         if (_damageIdentity == identity) return;
         var positionIdentity = identity;
         var refreshPositionAdvice = _positionIdentity != positionIdentity;
+        AnalysisWarning = "";
         _damageIdentity = identity;
         _damageCancellation?.Cancel();
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_captureCancellation.Token);
@@ -87,15 +91,22 @@ public sealed partial class OverlayViewModel
         {
             RecommendedTeamRows.Clear(); OnPropertyChanged(nameof(RecommendedPositionsVisibility));
         }
+        if (!Setup.ShowDpsCounters && !Setup.ShowBestDpsBoardSuggestions)
+        {
+            DamageSummary = "";
+            PositionHint = "";
+            _damageCancellation = null;
+            return;
+        }
         if (data is null)
         {
-            DamageSummary = "Restart the game to load the updated bridge and enable DPS analysis.";
-            if (refreshPositionAdvice) PositionHint = "Position advice needs the live combat stats from the bridge.";
+            DamageSummary = Setup.ShowDpsCounters ? "Restart the game to load the updated bridge and enable DPS analysis." : "";
+            if (refreshPositionAdvice && Setup.ShowBestDpsBoardSuggestions) PositionHint = "Position advice needs the live combat stats from the bridge.";
             _damageCancellation = null;
             return;
         }
         DamageSummary = "";
-        if (refreshPositionAdvice) PositionHint = data.Bench is null ? "Restart the game after updating the bridge to compare board and bench positions." : "Optimizing the final board and bench placement…";
+        if (refreshPositionAdvice && Setup.ShowBestDpsBoardSuggestions) PositionHint = data.Bench is null ? "Restart the game after updating the bridge to compare board and bench positions." : "Optimizing the final board and bench placement…";
         try
         {
             _damageRules ??= JsonSerializer.Deserialize<RulesManifest>(await File.ReadAllTextAsync(
@@ -107,7 +118,7 @@ public sealed partial class OverlayViewModel
             {
                 var projection = LiveBoardImport.Create(board, data, rules);
                 var result = new BoardAnalyzer(projection.Rules).TryAnalyze(projection.Board, samples: 32, cancellation: cancellation.Token);
-                var advice = result is not null && refreshPositionAdvice && projection.Bench is not null
+                var advice = result is not null && Setup.ShowBestDpsBoardSuggestions && refreshPositionAdvice && projection.Bench is not null
                     ? new PositionAdvisor(projection.Rules).TryFindBetterPosition(projection.Board, projection.Bench, cancellation: cancellation.Token)
                     : null;
                 return (projection, result, advice);
@@ -115,11 +126,14 @@ public sealed partial class OverlayViewModel
             if (cancellation.IsCancellationRequested || output.result is null) return;
             if (refreshPositionAdvice) _positionIdentity = positionIdentity;
             var result = output.result;
-            DamageSummary = DamagePresentation.Summary(result);
-            foreach (var row in DamagePresentation.Rows(result)) DamageRows.Add(row);
-            var maximum = Math.Max(result.TargetHp, result.Curve.Max(point => point.Damage)) * 1.05;
-            DamageCurve = new(result.Curve.Select(point => new Point(point.Seconds / 30 * 600, 150 - point.Damage / maximum * 145)));
-            DamageHpLine = new([new Point(0, 150 - result.TargetHp / maximum * 145), new Point(600, 150 - result.TargetHp / maximum * 145)]);
+            if (Setup.ShowDpsCounters)
+            {
+                DamageSummary = DamagePresentation.Summary(result);
+                foreach (var row in DamagePresentation.Rows(result)) DamageRows.Add(row);
+                var maximum = Math.Max(result.TargetHp, result.Curve.Max(point => point.Damage)) * 1.05;
+                DamageCurve = new(result.Curve.Select(point => new Point(point.Seconds / 30 * 600, 150 - point.Damage / maximum * 145)));
+                DamageHpLine = new([new Point(0, 150 - result.TargetHp / maximum * 145), new Point(600, 150 - result.TargetHp / maximum * 145)]);
+            }
             if (refreshPositionAdvice && output.advice is { } advice)
             {
                 PositionHint = $"Final placement reaches target HP {Timing(advice.Recommended)} instead of {Timing(advice.Current)}.";

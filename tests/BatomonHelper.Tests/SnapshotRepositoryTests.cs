@@ -12,7 +12,7 @@ public sealed class SnapshotRepositoryTests
         var catalog = await new SnapshotRepository(database, readOnly: true).GetLatestAsync();
 
         Assert.NotNull(catalog);
-        Assert.Equal(149, catalog!.Monsters.Length);
+        Assert.Equal(148, catalog!.Monsters.Length);
         Assert.All(Enum.GetValues<Rarity>(), rarity => Assert.Contains(catalog.Monsters, monster => monster.Rarity == rarity));
         Assert.Contains(catalog.Monsters, monster => monster.Rarity != Rarity.Common);
     }

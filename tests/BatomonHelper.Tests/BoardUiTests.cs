@@ -29,12 +29,16 @@ public sealed class BoardUiTests
             {
                 var app = new App(); app.InitializeComponent(); app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 var window = new MainWindow();
+                app.MainWindow = window;
                 Assert.Equal(1440, window.Width);
                 Assert.Equal(900, window.Height);
                 Assert.Equal(960, window.MinWidth);
                 Assert.Equal(640, window.MinHeight);
                 window.Width = 1300; window.Height = 1000;
                 var viewModel = (OverlayViewModel)window.DataContext;
+                var initialTabs = (TabControl)window.FindName("BoardTabs");
+                Assert.Equal(viewModel.Setup.NeedsSetup ? 4 : 0, initialTabs.SelectedIndex);
+                initialTabs.SelectedIndex = 0;
                 viewModel.AutoUpdate = false;
                 typeof(OverlayViewModel).GetField("_catalog", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(viewModel, catalog);
                 typeof(OverlayViewModel).GetMethod("RenderBoard", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(viewModel, [result.Snapshot]);
@@ -61,7 +65,7 @@ public sealed class BoardUiTests
                 Assert.Equal("WIN", viewModel.BattleSummary);
                 Assert.Equal(6, viewModel.OpponentRows.Count);
                 Assert.Contains(viewModel.OpponentRows, row => row.Name.Contains("Dribblet", StringComparison.OrdinalIgnoreCase));
-                Assert.NotEmpty(viewModel.OpponentDamageRows);
+                Assert.True(viewModel.OpponentDamageRows.Count > 0, viewModel.AnalysisWarning);
                 Assert.Equal(Visibility.Collapsed, viewModel.RecommendedPositionsVisibility);
                 var changedOutcome = battle with { Outcome = new(false) };
                 ((Task)typeof(OverlayViewModel).GetMethod("RefreshBattleAsync", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(viewModel, [changedOutcome])!).GetAwaiter().GetResult();
@@ -86,7 +90,7 @@ public sealed class BoardUiTests
                 cancelled.GetAwaiter().GetResult();
                 Assert.Equal(0, cancellationExceptions.Count);
                 Assert.Equal(Dock.Top, tabs.TabStripPlacement);
-                Assert.Equal(new[] { "Board", "Creatures", "Items", "Trinkets" }, tabs.Items.OfType<TabItem>().Select(tab => (string)tab.Header));
+                Assert.Equal(new[] { "Board", "Creatures", "Items", "Trinkets", "Game setup" }, tabs.Items.OfType<TabItem>().Select(tab => (string)tab.Header));
                 Render((FrameworkElement)window.Content, 1440, 900, "dashboard-wide.png");
                 var analysis = (FrameworkElement)window.FindName("BoardAnalysis");
                 Assert.Equal(1, Grid.GetColumn(analysis));
@@ -113,6 +117,38 @@ public sealed class BoardUiTests
                             Assert.Contains(ability, creature.Ability);
                     }
                 }
+                var readinessField = typeof(GameSetupViewModel).GetField("_readiness", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                var notifySetup = typeof(GameSetupViewModel).GetMethod("NotifyAll", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                void SetReadiness(GameReadiness readiness)
+                {
+                    readinessField.SetValue(viewModel.Setup, readiness);
+                    notifySetup.Invoke(viewModel.Setup, null);
+                }
+                SetReadiness(new(true, true, true, true, true, true, false));
+                tabs.SelectedIndex = 0;
+                SetReadiness(new(true, false, true, true, true, true, false));
+                Assert.Equal(4, tabs.SelectedIndex);
+                tabs.SelectedIndex = 1;
+                notifySetup.Invoke(viewModel.Setup, null);
+                Assert.Equal(1, tabs.SelectedIndex); // Polling must still allow offline catalog browsing.
+                SetReadiness(new(true, true, true, true, true, true, false));
+                tabs.SelectedIndex = 0;
+                SetReadiness(new(true, true, false, false, false, true, false));
+                Assert.Equal(4, tabs.SelectedIndex);
+                Assert.False(viewModel.Setup.LoaderInstalled);
+                Assert.False(viewModel.Setup.CanInstall);
+                viewModel.Setup.Refresh();
+                tabs.SelectedIndex = 4;
+                Render((FrameworkElement)window.Content, 1440, 900, "game-setup-wide.png");
+                Render((FrameworkElement)window.Content, 960, 640, "game-setup-compact.png");
+                Render((FrameworkElement)window.Content, 960, 640, "game-setup-150.png", 1.5);
+                var loaderCheck = Descendants((FrameworkElement)window.Content).OfType<CheckBox>()
+                    .Single(check => Equals(check.Content, "Mod Loader installed and enabled"));
+                Assert.Equal(viewModel.Setup.LoaderInstalled, loaderCheck.IsChecked);
+                Assert.False(loaderCheck.IsHitTestVisible);
+                viewModel.ReportHotkeyConflict("Test hotkey conflict");
+                typeof(OverlayViewModel).GetProperty(nameof(OverlayViewModel.BridgeNotice))!.SetValue(viewModel, "");
+                Assert.Equal("Test hotkey conflict", viewModel.HotkeyWarning);
                 viewModel.SearchText = "no-such-creature-for-ui-test";
                 Assert.Empty(viewModel.CreatureRows);
                 tabs.SelectedIndex = 1;
@@ -184,10 +220,15 @@ public sealed class BoardUiTests
             window.RaiseEvent(args);
             Assert.True(args.Handled);
         }
-        ToggleVisibility();
+        var hide = Descendants((FrameworkElement)window.Content).OfType<Button>()
+            .Single(button => Equals(button.Content, "Hide  ·  F8"));
+        hide.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Assert.False(window.IsVisible);
         ToggleVisibility();
         Assert.True(window.IsVisible);
+        var refreshArgs = new object[] { hwnd, 0x0312, new IntPtr(0xB471), IntPtr.Zero, false };
+        typeof(MainWindow).GetMethod("WndProc", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, refreshArgs);
+        Assert.True((bool)refreshArgs[4]);
         var monitors = new List<IntPtr>();
         MonitorCallback callback = (IntPtr monitor, IntPtr dc, ref NativeRect rect, IntPtr data) => { monitors.Add(monitor); return true; };
         Assert.True(EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, callback, IntPtr.Zero));
@@ -199,7 +240,13 @@ public sealed class BoardUiTests
             Assert.True(SetWindowPos(hwnd, IntPtr.Zero, info.Work.Left + 20, info.Work.Top + 20, 700, 500, 0x0014));
             window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             var before = window.RestoreBounds;
-            Press(System.Windows.Input.Key.F11);
+            var removedKey = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,
+                System.Windows.PresentationSource.FromVisual(window), Environment.TickCount, System.Windows.Input.Key.F11)
+                { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent };
+            window.RaiseEvent(removedKey);
+            Assert.False(removedKey.Handled);
+            Assert.Equal(WindowState.Normal, window.WindowState);
+            ((Button)window.FindName("MaximizeButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             Assert.True(window.IsFullscreen);
             Assert.True(GetWindowRect(hwnd, out var bounds));

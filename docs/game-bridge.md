@@ -4,15 +4,11 @@ The helper now reads the original `mods/BatomonHelperBridge` companion mod inste
 
 ## Install
 
-Close the game. From the repository (or installed helper directory), run:
+Use **Game setup** in the helper: confirm the game directory and close the game. The checkmark shows whether the loader is installed and enabled. If needed, download and extract [community Mod Loader 1.2.2](https://www.nexusmods.com/batomonshowdown/mods/1?tab=files), choose **Select downloaded loader…**, then select **Install mod**. Use **Launch game** when checks pass.
 
-```powershell
-.\tools\Install-GameBridge.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Batomon Showdown' -LoaderDirectory 'C:\path\to\extracted\modloader'
-```
+The loader is not bundled because its published permissions prohibit redistribution. Setup preserves existing loader files, other mods, and configuration, backs up replaced files, and rolls back failures. **Uninstall mod** removes only the bridge's two shipped files, retaining custom files and the loader.
 
-If the loader is installed, omit `-LoaderDirectory`. The script installs the bridge into `Mods/BatomonHelperBridge`, preserves other mods, and backs up an existing `override.cfg` before adding a missing loader autoload. It does not replace an existing loader. The third-party loader is not bundled with this repository. Download: [community Mod Loader](https://www.nexusmods.com/batomonshowdown/mods/1?tab=description).
-
-Start the game normally and run the helper. The Board tab updates every 500 ms in the shop, including when the game is behind another window. F9 / **Refresh Game State** requests a refresh. The helper no longer captures images or opens OCR correction dialogs. Legacy screenshot readers and fixtures remain in the solution for historical regression coverage.
+The installed `tools/Install-GameBridge.ps1` uses the same installation service (PowerShell 7 required). Supply `-GameDirectory`, optional `-LoaderDirectory`, or `-Uninstall`. From source also supply `-HelperExecutable` pointing to a published helper. Close the game before changing mods; restart after repairs.
 
 Bridge 1.4 selects the captured region in the helper automatically, as well as showing team output and enemy information in the Board tab. Restart the game after updating the installed bridge. Game IDs such as `red_coin` resolve to the catalog's `red-coin`.
 

@@ -1,61 +1,72 @@
-# BatomonHelper
+# Batomon Helper
 
-Personal Windows helper for Batomon Showdown: a .NET 10 WPF overlay with a read-only companion mod. The mod exports game objects directly; the helper no longer captures screenshots or uses OCR.
+A Windows companion for **Batomon Showdown**. View your live team, bench, shop, and battles alongside an offline creature, item, and trinket reference. A read-only companion mod exports state locally; the helper reads it every half second.
 
-## Run
+![Board overview](docs/images/helper-board.png)
+
+## Features
+
+- Live stats, shop prices, trainer, rank, gold, lives, and run counters.
+- Damage, healing, shielding, and status projections over 0–30 seconds, with team/bench position suggestions.
+- Enemy lineups and the game's committed **WIN/LOSS** result.
+- Searchable creatures, items, and trinkets, region filters, and shop odds.
+- Optional run recording from the clean Day 1 opening.
+- Steam discovery, readiness checks, mod installation/removal, and game launch.
+
+## Install and connect
+
+1. Run `BatomonHelper-Setup-1.0.1.exe`. It includes .NET and creates a Start Menu shortcut and offers an optional desktop shortcut. Requires Windows 11 22H2 (build 22621) or newer, x64.
+2. The helper opens **Game setup** automatically if the game is stopped or its mod setup is incomplete. Confirm the Steam folder or **Browse…** to the folder containing `batomon_showdown.exe` and `batomon_showdown.pck`.
+3. Close the game. If the Mod Loader checkmark is empty, use **Download Mod Loader**, extract version 1.2.2, and choose **Select downloaded loader…**. Then select **Install mod** to install the loader and helper bridge. The loader is not bundled; its author does not permit redistribution.
+4. Select **Launch game**, then start or resume a run. Board updates when live bridge data arrives.
+
+![Game setup](docs/images/helper-setup.png)
+
+The helper does not attach to the game process, capture screenshots, send gameplay inputs, or change saves. The bridge exports local JSON and makes no network requests. Reference browsing works with the game closed.
+
+## Controls
+
+| Control | Action |
+| --- | --- |
+| **Hide · F8** / global **F8** | Hide/show; F8 also restores a minimized helper |
+| **Refresh · F9** / global **F9** | Refresh manually |
+| **Auto update** | Read state every 500 ms |
+| **Capture run** | Record from the clean Day 1 opening |
+| Window buttons / title-bar double-click | Minimize, maximize/restore, close |
+| **Escape** | Restore a maximized window |
+
+## Update and removal
+
+Close the game and use **Game setup → Update/repair mod** or **Uninstall mod**. Other mods and configuration are preserved. Replaced files are backed up under the game's `.batomon-helper-backups` folder; failed changes roll back. Windows may request permission for protected game folders.
+
+The helper checks the project's GitHub Releases on startup and can check on demand from **Game setup → Helper updates**. When a matching installer and SHA-256 checksum are published, choose **Install update**; optionally enable automatic installation. The installer is downloaded only after its checksum matches the release asset.
+
+Bridge removal keeps the shared loader. Uninstalling the helper through Windows leaves game mods and per-user settings in place; remove the bridge first if desired.
+
+## Troubleshooting and limits
+
+- **Game not running:** use Game setup → Launch game. This is a normal disconnected state.
+- **Missing loader/bridge:** install with the game closed.
+- **Stale heartbeat:** repair the bridge and restart the game. The last board stays visible and is labelled disconnected.
+- **Conflicting ModLoader:** resolve `override.cfg`; the helper preserves a different loader's entry.
+- **Invalid/incompatible snapshot:** update helper and bridge together. Invalid boards are not applied.
+- **Shortcut conflict:** another app owns F8/F9; use the on-screen controls.
+
+WIN/LOSS comes from the game. Projections and position advice use a passive-target simulator and are estimates, not win probabilities. The offline wiki bundle targets **Balance 25**, Steam build **25738032**. Live stats and prices take precedence. See [bridge protocol and verified limits](docs/game-bridge.md).
+
+## Development
 
 ```powershell
-dotnet restore BatomonHelper.sln --source https://api.nuget.org/v3/index.json
+dotnet restore BatomonHelper.sln
 dotnet run --project src/BatomonHelper.Overlay -c Release
-dotnet test BatomonHelper.sln --no-restore
-```
-
-## Helper layout and window controls
-
-The helper opens at 1440 � 900 (clamped to the current monitor's usable area), stays above the game, and has standard minimize, maximize/restore, and close buttons. Drag the title bar to move or snap it; double-click it or press F11 to maximize. Escape restores a maximized window. F8 hides/shows the helper and restores it when minimized.
-
-Use the tabs across the top for Board, Creatures, Items, and Trinkets. Board uses two columns on wide windows and stacks its analysis below the team on smaller windows. Creature search, pool filters, rank controls, and shop odds live on the Creatures page; shop odds start collapsed in compact layouts. The separate Training Lab is unchanged.
-
-## Windows release installer
-
-Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then run:
-
-```powershell
+dotnet test BatomonHelper.sln -c Release
 .\Installer\Build-Installer.ps1
 ```
 
-The script publishes a framework-dependent x64 build, downloads and embeds the required .NET 10 Windows Desktop Runtime when it is not already staged, and creates `Installer\output\BatomonHelper-Setup-1.0.0.exe`. The installer is machine-wide, creates Start Menu and desktop shortcuts, and has no automatic update capability.
+Needs .NET 10 SDK; installer creation also needs [Inno Setup 6](https://jrsoftware.org/isinfo.php). Pass `-CompilerPath` for a custom compiler location. Output includes installer, checksum, and [release notes](docs/release-1.0.1.md). Publish the installer and its `.sha256` file as identically versioned GitHub Release assets for in-app updating.
 
-## Direct game state
+[Training Lab](docs/strategic-training.md) is separate and excluded from the installer. See [data/development details](docs/development.md), [training](docs/training.md), and [historical screenshot reader](docs/legacy-screenshot-reader.md).
 
-Install the supplied community Mod Loader 1.2.2 and the companion bridge with the game closed:
+## License
 
-```powershell
-.\tools\Install-GameBridge.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Batomon Showdown' -LoaderDirectory 'C:\path\to\extracted\modloader'
-```
-
-Omit `-LoaderDirectory` if the loader is already installed. Start the game and helper normally. The Board page refreshes automatically every 500 ms from actual team, bench, shop, prices, final stats and run counters. `F8` toggles visibility, `F9` / **Refresh** refreshes manually, and `F11` toggles maximize/restore without covering the taskbar. No focused game window or screenshot corrections are needed. Stale, incompatible and invalid data preserve the last accepted board with an explicit status.
-
-The bridge and installation script ship with the helper; the third-party loader is a separate download. BatoEyes is optional. See [installation, protocol, verified fields and limitations](docs/game-bridge.md). The old screenshot code and fixtures remain for [historical regression coverage](docs/legacy-screenshot-reader.md).
-
-The Board panel shows team DPS, healing, shielding and status output at 0/5/10/15/20/30 seconds, plus useful board and bench position suggestions.
-
-Bridge 1.4 captures the active game set and selects its matching region filter automatically. It also loads the enemy lineup and HP when battle starts and displays **WIN** or **LOSS** from the game's own completed ghost battle. There is no sampled win probability or separate DPS tab. While the game is still calculating, the result remains pending. Team output tables use the helper's passive-target simulator independently of the authoritative outcome. Update the companion bridge and restart the game to enable the latest bridge features.
-
-## Data and limits
-
-The app ships an offline wiki **1.2.0** snapshot for Steam build **25600878 / Balance 24**, with 149 normal creature sprites, 144 separately declared shiny sprites, and 24 trainer portraits. The [wiki](https://batomon.com/) still declares that version when refreshed on 2026-10-07. A separate [1.3.0 reference layer](assets/catalog-patches/1.3.0.json) records all 18 balance changes from the [official patch notes](https://store.steampowered.com/news/app/4557380/view/686392527015643351?l=english). Creature tooltips show optional cost, cooldown, ability values, changes, and provenance; the catalog header shows both versions. Prices, stats, and percentages received from the game remain authoritative.
-
-Five creatures have no shiny asset declared by the wiki; those omissions are reported in the bundle warnings. Runtime game-state reading stays offline. To deliberately refresh the Git-tracked bundle, run `dotnet run --project tools/BatomonHelper.CatalogBundler`. The bundler imports normal reference data, validates override IDs, values, source, and baseline, and retires the layer when all changed wiki values match. A changed baseline or conflicting value stops publication. It extracts actual asset URLs, stages downloads, checks PNG structure and CRCs, validates the staged catalog, and restores replaced assets if publication fails. `--apply-patch` applies the verified layer to the existing baseline without downloading assets. Older snapshots load with empty patch/reference defaults.
-
-The odds engine starts from the game-provided rarity weights and retains the existing region, level-three, and item controls. It does not simulate purchases or infer hidden stat effects.
-
-## Standalone training lab
-
-The LLM advice route and F10 advice shortcut have been removed. A separate WPF training/history application is available:
-
-```powershell
-dotnet run --project src/BatomonHelper.Training -c Release
-```
-
-The Pantra rules audit has zero missing handlers. The lab now defaults to strategic search and expert iteration, using wiki pairs/compositions, scripted opponents and full-run outcomes. Play Session and history include board DPS, stacking snapshots and time to upcoming-battle HP. Legacy PPO remains available for comparison. Unsourced mechanics remain explicitly labelled guesses; executable coverage does not certify exact game parity or stronger play. See [strategic training and validation gates](docs/strategic-training.md).
+Original helper and bridge code use [0BSD](LICENSE.txt): use, modify, copy, and redistribute for any purpose, including commercially, without an attribution requirement. Third-party material retains its own terms; see [notices and provenance](THIRD-PARTY-NOTICES.md). This is an unofficial community helper.

@@ -26,8 +26,8 @@
             </StackPanel>
           </StackPanel>
         </Border>
-        <Expander Header="Team output · 0–30 seconds" IsExpanded="True">
-        <StackPanel>
+        <Expander Header="Team output · 0–30 seconds" IsExpanded="True" Visibility="{Binding DpsCountersVisibility}">
+        <StackPanel Visibility="{Binding DpsCountersVisibility}">
         <TextBlock Text="YOUR TEAM OUTPUT" FontWeight="SemiBold" Foreground="#FFD34D" Margin="8,0,0,8" />
         <Grid Margin="8,0,8,5">
           <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>

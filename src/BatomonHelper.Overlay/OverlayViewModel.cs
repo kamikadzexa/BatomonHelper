@@ -45,6 +45,7 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     private string _runCaptureStatus = "Run capture is off.";
     private long _lastLiveSequence;
     private GameCombatState? _lastLiveCombat;
+    private GameBattleState? _lastLiveBattle;
     private RegionFilterOption _selectedRegionFilter = new(MonsterRegionFilter.Pantra, "Pantra region");
     private RarityFilterOption _selectedRarityFilter = new(null, "All rarities");
     private RarityFilterOption _selectedItemRarityFilter = new(null, "All rarities");
@@ -58,9 +59,22 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         DecreaseRankCommand = new RelayCommand(() => ChangeRank(-1));
         IncreaseRankCommand = new RelayCommand(() => ChangeRank(1));
         ResetCommand = new RelayCommand(ResetManualState);
+        Setup.PropertyChanged += (_, args) =>
+        {
+            if (string.IsNullOrEmpty(args.PropertyName) || args.PropertyName is nameof(GameSetupViewModel.ShowDpsCounters)
+                or nameof(GameSetupViewModel.ShowBestDpsBoardSuggestions) or nameof(GameSetupViewModel.ShowBattleOutcome))
+                ApplyAnalysisOptions();
+        };
         _ = Application.Current.Dispatcher.InvokeAsync(InitializeAsync);
     }
 
+    public GameSetupViewModel Setup { get; } = new();
+    private string _bridgeNotice = "Open Game setup to check installation and launch the game.";
+    private string _analysisWarning = "";
+    private string _hotkeyWarning = "";
+    public string BridgeNotice { get => _bridgeNotice; private set { Set(ref _bridgeNotice, value); Setup.SetConnection(value); } }
+    public string AnalysisWarning { get => _analysisWarning; private set => Set(ref _analysisWarning, value); }
+    public string HotkeyWarning { get => _hotkeyWarning; private set => Set(ref _hotkeyWarning, value); }
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<CreatureBrowserRow> CreatureRows { get; } = [];
     public ObservableCollection<ItemBrowserRow> ItemRows { get; } = [];
@@ -169,12 +183,13 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         await _captureQueue.RequestAsync();
     }
 
-    public void ReportHotkeyConflict(string message) => Warning = message;
+    public void ReportHotkeyConflict(string message) => HotkeyWarning = message;
 
     public void StopCaptures()
     {
         if (CaptureRun) StopRunCapture();
         _captureCancellation.Cancel();
+        Setup.Stop();
     }
 
     private async Task PollGameStateAsync()
@@ -194,17 +209,23 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         try
         {
             if (_catalog == CatalogSnapshot.Empty) return;
+            if (!GameInstallation.IsGameRunning())
+            {
+                BridgeUnavailable("Game not running. Open Game setup to check installation and launch the game.");
+                return;
+            }
             var message = await _bridge.ReadAsync(_catalog, _captureCancellation.Token);
             if (message.Phase == "battle" && message.Battle is { } battle)
             {
+                _lastLiveBattle = battle;
                 _ = RefreshBattleAsync(battle);
-                Warning = "";
+                BridgeNotice = "";
                 Status = "Live battle · analysis uses both teams at battle start";
                 return;
             }
             if (message.Board is not { } board)
             {
-                Warning = "";
+                BridgeNotice = "";
                 Status = "Game connected; outside the shop. Showing the last received board, if any.";
                 return;
             }
@@ -233,20 +254,42 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(CanToggleRunCapture));
             }
             _ = RefreshDamageAsync(board, message.Combat);
-            Warning = "";
+            BridgeNotice = "";
             Status = _manualScenario ? "Manual odds preview · game bridge connected · F9 restores live values"
                 : $"Live game state · updated {board.CapturedAt.ToLocalTime():HH:mm:ss} · automatic refresh";
         }
         catch (OperationCanceledException) { }
-        catch (FileNotFoundException) { BridgeUnavailable("Install the BatomonHelper bridge mod and start the game."); }
-        catch (DirectoryNotFoundException) { BridgeUnavailable("Install the BatomonHelper bridge mod and start the game."); }
+        catch (FileNotFoundException) { BridgeUnavailable("Game running, but no bridge snapshot found. Open Game setup to install or repair the mod; restart the game afterward."); }
+        catch (DirectoryNotFoundException) { BridgeUnavailable("Game running, but no bridge snapshot found. Open Game setup to install or repair the mod; restart the game afterward."); }
+        catch (System.Text.Json.JsonException) { BridgeUnavailable("The bridge snapshot is invalid or incomplete. Open Game setup to repair the mod, then restart the game."); }
+        catch (UnauthorizedAccessException) { BridgeUnavailable("The bridge snapshot cannot be read. Check its file permissions, then use Refresh to reconnect."); }
         catch (Exception exception) { BridgeUnavailable(exception.Message); }
     }
 
     private void BridgeUnavailable(string reason)
     {
-        Warning = reason;
-        Status = "Game bridge disconnected or unavailable. Displayed board is the last received state.";
+        BridgeNotice = reason;
+        Status = "Game bridge disconnected or unavailable. Showing the last received board, if any.";
+    }
+    private void ApplyAnalysisOptions()
+    {
+        if (!Setup.ShowBattleOutcome) BattleSummary = "";
+        if (!Setup.ShowDpsCounters)
+        {
+            DamageRows.Clear(); OpponentDamageRows.Clear(); DamageCurve = []; DamageHpLine = [];
+            DamageSummary = "";
+        }
+        if (!Setup.ShowBestDpsBoardSuggestions)
+        {
+            RecommendedTeamRows.Clear();
+            PositionHint = "";
+        }
+        OnPropertyChanged(nameof(DpsCountersVisibility));
+        OnPropertyChanged(nameof(RecommendedPositionsVisibility));
+        _damageIdentity = null;
+        _positionIdentity = null;
+        if (_lastLiveBattle is { } battle) _ = RefreshBattleAsync(battle);
+        else if (_acceptedBoard is { } board) _ = RefreshDamageAsync(board, _lastLiveCombat);
     }
     private void RenderBoard(BoardSnapshot board)
     {

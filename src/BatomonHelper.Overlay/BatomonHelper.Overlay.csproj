@@ -8,6 +8,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="..\..\third-party-licenses\*" Link="third-party-licenses\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Resource Include="Assets\batomon-helper.ico" />
     <Resource Include="Assets\batomon-helper-logo.png" />
     <ProjectReference Include="..\BatomonHelper.Core\BatomonHelper.Core.csproj" />
@@ -15,6 +16,11 @@
     <ProjectReference Include="..\BatomonHelper.ScreenReader\BatomonHelper.ScreenReader.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\README.md" Link="README.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\LICENSE.txt" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\docs\*.md" Link="docs\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\docs\images\*.png" Link="docs\images\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\assets\simulation\rules.json" Link="assets\simulation\rules.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\mods\BatomonHelperBridge\**\*" Link="mods\BatomonHelperBridge\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\tools\Install-GameBridge.ps1" Link="tools\Install-GameBridge.ps1" CopyToOutputDirectory="PreserveNewest" />

@@ -1,5 +1,6 @@
 using System.Windows.Interop;
 using System.Windows.Controls;
+using System.Diagnostics;
 
 namespace BatomonHelper.Overlay;
 
@@ -33,18 +34,27 @@ public partial class MainWindow : Window
         InitializeComponent();
         VersionLabel.Text = $"v{typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}";
         DataContext = new OverlayViewModel();
+        var setup = ((OverlayViewModel)DataContext).Setup;
+        var neededSetup = setup.NeedsSetup;
+        if (neededSetup) BoardTabs.SelectedItem = GameSetupTab;
+        setup.PropertyChanged += (_, _) =>
+        {
+            var needsSetup = setup.NeedsSetup;
+            if (needsSetup && !neededSetup) BoardTabs.SelectedItem = GameSetupTab;
+            neededSetup = needsSetup;
+        };
         SizeChanged += (_, _) => UpdateBoardLayout();
         StateChanged += (_, _) =>
         {
             if (WindowState != WindowState.Minimized) _lastVisibleState = WindowState;
             IsFullscreen = WindowState == WindowState.Maximized;
             MaximizeButton.Content = IsFullscreen ? "\uE923" : "\uE922";
-            MaximizeButton.ToolTip = IsFullscreen ? "Restore (F11)" : "Maximize (F11)";
+            MaximizeButton.ToolTip = IsFullscreen ? "Restore" : "Maximize";
             System.Windows.Automation.AutomationProperties.SetName(MaximizeButton, IsFullscreen ? "Restore" : "Maximize");
         };
         PreviewKeyDown += (_, e) =>
         {
-            if (e.Key == Key.F11 || (e.Key == Key.Escape && IsFullscreen))
+            if (e.Key == Key.Escape && IsFullscreen)
             {
                 ToggleMaximize(this, new RoutedEventArgs());
                 e.Handled = true;
@@ -99,6 +109,8 @@ public partial class MainWindow : Window
         return IntPtr.Zero;
     }
 
+    private void HideHelper(object sender, RoutedEventArgs e) => ToggleVisibility();
+
     internal void ToggleVisibility()
     {
         if (IsVisible && WindowState != WindowState.Minimized) Hide();
@@ -113,4 +125,6 @@ public partial class MainWindow : Window
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     private void MinimizeWindow(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void CloseWindow(object sender, RoutedEventArgs e) => Close();
+    private void OpenReleasesPage(object sender, RoutedEventArgs e) =>
+        Process.Start(new ProcessStartInfo(GitHubReleaseUpdater.ReleasesPage) { UseShellExecute = true });
 }

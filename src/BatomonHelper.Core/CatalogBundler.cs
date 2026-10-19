@@ -8,7 +8,11 @@ public sealed class CatalogBundler(HttpClient client)
         var importer = new WikiImporter(new BatomonWikiSource(client));
         var result = await importer.ImportAsync(cancellationToken);
         var snapshot = result.Snapshot ?? throw new InvalidDataException(string.Join(" ", result.Errors));
-        if (patch is not null) snapshot = CatalogPatches.Apply(snapshot, patch);
+        // The Balance 24 reference layer was only needed while the wiki lagged the
+        // game. A current Balance 25 snapshot is authoritative and must not keep
+        // advertising the old baseline plus an overlay.
+        if (patch is not null && snapshot.DeclaredSteamBuild == patch.RequiredWikiBuild)
+            snapshot = CatalogPatches.Apply(snapshot, patch);
 
         var staging = Path.Combine(assetDirectory, ".staging-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(staging);

@@ -13,7 +13,16 @@
     <ResourceDictionary><ResourceDictionary.MergedDictionaries>
       <ResourceDictionary Source="Themes/Dashboard.xaml" />
       <ResourceDictionary Source="Themes/BoardTemplates.xaml" />
-    </ResourceDictionary.MergedDictionaries></ResourceDictionary>
+    </ResourceDictionary.MergedDictionaries>
+      <Style x:Key="InlineNotice" TargetType="TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,4"/>
+        <Style.Triggers>
+          <Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed"/></Trigger>
+          <Trigger Property="Text" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></Trigger>
+        </Style.Triggers>
+      </Style>
+    </ResourceDictionary>
   </Window.Resources>
   <Border x:Name="ShellRoot" Background="#125F70" SizeChanged="DashboardSizeChanged" BorderBrush="#4D8C9A" BorderThickness="1">
     <Grid>
@@ -26,23 +35,29 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" shell:WindowChrome.IsHitTestVisibleInChrome="True">
           <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="MinimizeWindow" ToolTip="Minimize" AutomationProperties.Name="Minimize"/>
-          <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="ToggleMaximize" ToolTip="Maximize (F11)" AutomationProperties.Name="Maximize"/>
+          <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="ToggleMaximize" ToolTip="Maximize" AutomationProperties.Name="Maximize"/>
           <Button Style="{StaticResource CloseCaptionButton}" Content="&#xE8BB;" Click="CloseWindow" ToolTip="Close" AutomationProperties.Name="Close"/>
         </StackPanel>
       </Grid>
       <Border Grid.Row="1" Background="#103F50" BorderBrush="#4D8C9A" BorderThickness="0,1,0,1" Padding="18,12">
         <DockPanel LastChildFill="True">
           <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Refresh  ·  F9" Command="{Binding CaptureShopCommand}"/>
+          <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Hide  ·  F8" Margin="0,0,10,0" Click="HideHelper" ToolTip="Hide the helper. Press F8 to show it again."/>
           <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0">
             <CheckBox Content="Auto update" IsChecked="{Binding AutoUpdate, Mode=TwoWay}" ToolTip="Refresh live game state every half second"/>
             <CheckBox Content="Capture run" Margin="20,0,0,0" IsChecked="{Binding CaptureRun, Mode=TwoWay}" IsEnabled="{Binding CanToggleRunCapture}" ToolTip="Start recording from a clean Day 1 opening with Auto update enabled"/>
           </StackPanel>
-          <StackPanel VerticalAlignment="Center"><TextBlock Text="LIVE COMPANION" FontSize="10" FontWeight="SemiBold" Foreground="#FFD34D"/><TextBlock Text="F8 · Show / hide helper" Margin="0,2,0,0" Foreground="#BCDDE4" FontSize="12"/></StackPanel>
+          <StackPanel VerticalAlignment="Center"><TextBlock Text="LIVE COMPANION" FontSize="10" FontWeight="SemiBold" Foreground="#FFD34D"/></StackPanel>
         </DockPanel>
       </Border>
       <Grid Grid.Row="2">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <Border Margin="20,12,20,0" Padding="12" Background="#5A4320" CornerRadius="6" Visibility="{Binding WarningVisibility}"><TextBlock Text="{Binding Warning}" TextWrapping="Wrap" Foreground="#FFE18B"/></Border>
+        <StackPanel Margin="20,8,20,0">
+          <TextBlock Text="{Binding BridgeNotice}" Style="{StaticResource InlineNotice}" Foreground="#E0F5F8" Margin="0,4"/>
+          <TextBlock Text="{Binding Warning}" Style="{StaticResource InlineNotice}" Foreground="#FFE18B" Margin="0,2"/>
+          <TextBlock Text="{Binding AnalysisWarning}" Style="{StaticResource InlineNotice}" Foreground="#FFE18B" Margin="0,2"/>
+          <TextBlock Text="{Binding HotkeyWarning}" Style="{StaticResource InlineNotice}" Foreground="#FFE18B" Margin="0,2"/>
+        </StackPanel>
         <TabControl x:Name="BoardTabs" Grid.Row="1" SelectedIndex="0" Style="{StaticResource TopTabs}">
           <TabItem Header="Board" Tag="&#xE80F;">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -53,7 +68,7 @@
                   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <Image Source="{Binding TrainerSpritePath}" Height="64" Width="72" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,16,0"/>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="{Binding BoardSummary}" TextWrapping="Wrap" FontSize="15" FontWeight="SemiBold"/><TextBlock Text="{Binding RunSummary}" TextWrapping="Wrap" Foreground="#BCDDE4" Margin="0,6,0,0"/></StackPanel>
-                    <TextBlock Grid.Column="2" Text="{Binding BattleSummary}" FontSize="28" FontWeight="Bold" Margin="16,0,0,0" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#FFD34D"/><Style.Triggers><DataTrigger Binding="{Binding BattleSummary}" Value="LOSS"><Setter Property="Foreground" Value="#FF94B1"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                    <TextBlock Grid.Column="2" Text="{Binding BattleSummary}" FontSize="28" FontWeight="Bold" Margin="16,0,0,0" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#FFD34D"/><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding BattleSummary}" Value="WIN"><Setter Property="Visibility" Value="Visible"/></DataTrigger><DataTrigger Binding="{Binding BattleSummary}" Value="LOSS"><Setter Property="Visibility" Value="Visible"/><Setter Property="Foreground" Value="#FF94B1"/></DataTrigger><DataTrigger Binding="{Binding BattleSummary}" Value="Calculating fight result..."><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
                   </Grid>
                 </Border>
                 <Grid x:Name="BoardColumns">
@@ -188,12 +203,59 @@
               </DataGrid.Columns></DataGrid><TextBlock Style="{StaticResource EmptyResults}" Tag="{Binding TrinketRows.Count}"/></Grid>
             </Grid>
           </TabItem>
+          <TabItem x:Name="GameSetupTab" Header="Game setup" Tag="&#xE713;">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+              <StackPanel DataContext="{Binding Setup}" Margin="0,0,4,12">
+                <TextBlock Text="Game setup" Style="{StaticResource PageTitle}"/>
+                <TextBlock Text="Install the companion mod, check readiness, and launch Batomon Showdown." Style="{StaticResource PageSubtitle}" TextWrapping="Wrap"/>
+                <Border Style="{StaticResource Surface}" Margin="0,16,0,12"><StackPanel>
+                  <TextBlock Text="Battle helper options" Style="{StaticResource SectionTitle}"/>
+                  <TextBlock Text="Choose which live battle insights the helper shows. Changes are saved automatically." TextWrapping="Wrap" Foreground="#BCDDE4" Margin="0,0,0,10"/>
+                  <CheckBox Content="Show DPS counters" IsChecked="{Binding ShowDpsCounters, Mode=TwoWay}" ToolTip="Show team and enemy damage-per-second counters during battles." Margin="0,4"/>
+                  <CheckBox Content="Suggest the best DPS board" IsChecked="{Binding ShowBestDpsBoardSuggestions, Mode=TwoWay}" ToolTip="Show a faster board and bench arrangement when one is found." Margin="0,4"/>
+                  <CheckBox Content="Show WIN / LOSS at battle start" IsChecked="{Binding ShowBattleOutcome, Mode=TwoWay}" ToolTip="Show the battle result indicator when the game supplies it." Margin="0,4"/>
+                </StackPanel></Border>
+                <Border Style="{StaticResource Surface}" Margin="0,0,0,12"><StackPanel>
+                  <TextBlock Text="Helper updates" Style="{StaticResource SectionTitle}"/>
+                  <TextBlock Text="{Binding UpdateStatus}" TextWrapping="Wrap" Margin="0,8,0,10"/>
+                  <CheckBox Content="Automatically install verified GitHub Releases" IsChecked="{Binding AutoInstallUpdates, Mode=TwoWay}" ToolTip="On startup, download the release installer only after its published SHA-256 checksum is verified." Margin="0,0,0,10"/>
+                  <WrapPanel>
+                    <Button Content="Check for updates" Command="{Binding CheckForUpdatesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/>
+                    <Button Content="Install update" Command="{Binding InstallUpdateCommand}" IsEnabled="{Binding CanInstallUpdate}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/>
+                    <Button Content="Open releases page" Click="OpenReleasesPage" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/>
+                  </WrapPanel>
+                </StackPanel></Border>
+                <Border Style="{StaticResource Surface}" Margin="0,16,0,12"><StackPanel>
+                  <TextBlock Text="Game folder" Style="{StaticResource SectionTitle}"/>
+                  <TextBlock Text="{Binding GameDirectory}" TextWrapping="Wrap" Margin="0,8"/>
+                  <WrapPanel><Button Content="Browse…" Command="{Binding BrowseCommand}" IsEnabled="{Binding CanBrowse}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/><Button Content="Check again" Command="{Binding RefreshCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/></WrapPanel>
+                  <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8"/>
+                  <TextBlock Text="{Binding Connection}" TextWrapping="Wrap" Foreground="#BCDDE4" Margin="0,4,0,12"/>
+                  <CheckBox Content="Mod Loader installed and enabled" IsChecked="{Binding LoaderInstalled, Mode=OneWay}" IsHitTestVisible="False" Focusable="False" Margin="0,0,0,10" AutomationProperties.Name="Mod Loader installation status"/>
+                  <TextBlock Text="The community Mod Loader is not bundled. Download and extract it, select its folder, then install the mod." TextWrapping="Wrap" Margin="0,0,0,10"/>
+                  <WrapPanel>
+                    <Button Content="Download Mod Loader" Command="{Binding DownloadLoaderCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/>
+                    <Button Content="Select downloaded loader…" Command="{Binding SelectLoaderCommand}" IsEnabled="{Binding CanBrowse}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/>
+                  </WrapPanel>
+                  <TextBlock Text="{Binding LoaderDirectory}" TextWrapping="Wrap" Foreground="#BCDDE4" Margin="0,0,0,12"/>
+                  <WrapPanel>
+                    <Button Content="{Binding InstallLabel}" Command="{Binding InstallCommand}" IsEnabled="{Binding CanInstall}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/>
+                    <Button Content="Uninstall mod" Command="{Binding UninstallCommand}" IsEnabled="{Binding CanUninstall}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/>
+                    <Button Content="Launch game" Command="{Binding LaunchCommand}" IsEnabled="{Binding CanLaunch}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,8"/>
+                  </WrapPanel>
+                  <TextBlock Text="{Binding Checks}" TextWrapping="Wrap" Foreground="#BCDDE4" Margin="0,0,0,12"/>
+                  <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Foreground="#FFE18B" Margin="0,8"/>
+                </StackPanel></Border>
+                <TextBlock Text="Close the game before changing mods. Uninstall removes only the helper bridge; the shared Mod Loader stays installed." TextWrapping="Wrap" Foreground="#BCDDE4" Margin="0,8"/>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
         </TabControl>
       </Grid>
       <Border Grid.Row="3" BorderBrush="#4D8C9A" BorderThickness="0,1,0,0" Background="#103F50" Padding="18,8">
         <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
           <StackPanel><TextBlock Text="{Binding Status}" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="{Binding RunCaptureStatus}" FontSize="11" Foreground="#BCDDE4" Margin="0,3,0,0"/></StackPanel>
-          <TextBlock Grid.Column="1" Text="F8  Show / hide   ·   F11  Maximize" Foreground="#BCDDE4" FontSize="11" VerticalAlignment="Center" Margin="16,0,0,0"/>
+
         </Grid>
       </Border>
     </Grid>

@@ -52,7 +52,7 @@ public sealed class CreatureCatalogFilterTests
         var catalog = await new SnapshotRepository(database).GetLatestAsync();
 
         Assert.NotNull(catalog);
-        Assert.Equal(149, catalog!.Monsters.Length);
+        Assert.Equal(148, catalog!.Monsters.Length);
         Assert.All(catalog.Monsters, monster => Assert.Equal($"assets/wiki/monsters/{monster.Id}.png", monster.SpritePath));
         Assert.Equal(0, catalog.Items.Single(item => item.Name == "Green Stone").Price);
     }

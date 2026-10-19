@@ -52,7 +52,7 @@ public sealed class GameStateBridge
         if (message.ProtocolVersion != 1) throw new InvalidDataException("Unsupported bridge protocol. Update the helper and companion mod together.");
         if (message.ProcessId <= 0 || message.Sequence < 1 || now - message.UpdatedAt > TimeSpan.FromSeconds(5)
             || message.UpdatedAt - now > TimeSpan.FromSeconds(5))
-            throw new InvalidDataException("Game state is stale. Start the game with the BatomonHelper bridge mod enabled.");
+            throw new InvalidDataException("Bridge heartbeat is stale or invalid. Open Game setup to repair the mod, then restart the game.");
         if (message.Error is { Length: > 0 }) throw new InvalidDataException(message.Error);
         if (message.Phase == "other") return message with { Board = null };
         if (message.Phase == "battle")

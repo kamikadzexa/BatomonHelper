@@ -8,11 +8,24 @@ public sealed class CatalogPatchTests
 {
     private static CatalogPatch Patch() => JsonSerializer.Deserialize<CatalogPatch>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "1.3.0.json")))!;
 
+    private static CatalogSnapshot Balance24Baseline(CatalogSnapshot catalog, CatalogPatch patch) => catalog with
+    {
+        DeclaredSteamBuild = patch.RequiredWikiBuild,
+        Balance = "24",
+        ReferencePatchVersion = null,
+        Monsters = catalog.Monsters.Select(monster => monster with
+        {
+            ReferenceValues = patch.Changes.Where(change => change.MonsterId == monster.Id)
+                .Aggregate(monster.ReferenceValues, (values, change) => values.SetItem(change.Property, change.PreviousValue)),
+            ReferenceNotes = []
+        }).ToImmutableArray()
+    };
+
     [Fact]
     public async Task Bundled_patch_contains_all_eighteen_changes_and_preserves_wiki_identity()
     {
         var patch = Patch();
-        var catalog = (await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db"), true).GetLatestAsync())!;
+        var catalog = Balance24Baseline((await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db"), true).GetLatestAsync())!, patch);
         var updated = CatalogPatches.Apply(catalog, patch);
         Assert.Equal(updated.ContentHash, CatalogPatches.Apply(updated, patch).ContentHash);
         Assert.Equal(18, patch.Changes.Length); Assert.Equal(15, patch.Changes.Select(change => change.MonsterId).Distinct().Count());
@@ -30,8 +43,8 @@ public sealed class CatalogPatchTests
     [Fact]
     public async Task Conflicts_unknown_entities_and_changed_baselines_reject_the_patch()
     {
-        var catalog = (await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db"), true).GetLatestAsync())!;
         var patch = Patch();
+        var catalog = Balance24Baseline((await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db"), true).GetLatestAsync())!, patch);
         Assert.Throws<InvalidDataException>(() => CatalogPatches.Apply(catalog, patch with { Changes = [patch.Changes[0] with { MonsterId = "missing" }] }));
         Assert.Throws<InvalidDataException>(() => CatalogPatches.Apply(catalog with { DeclaredSteamBuild = "changed" }, patch));
         var conflict = catalog with { Monsters = catalog.Monsters.Select(monster => monster.Id == "sarudo" ? monster with { ReferenceValues = monster.ReferenceValues.SetItem("Cost","999") } : monster).ToImmutableArray() };
@@ -45,7 +58,12 @@ public sealed class CatalogPatchTests
         var patch = Patch();
         var catalog = (await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db"), true).GetLatestAsync())!;
         var wiki = catalog with { ReferencePatchVersion = null, DeclaredSteamBuild = "newer", WikiVersion = "1.3.0",
-            Monsters = catalog.Monsters.Select(monster => monster with { ReferenceNotes = [] }).ToImmutableArray() };
+            Monsters = catalog.Monsters.Select(monster => monster with
+            {
+                ReferenceValues = patch.Changes.Where(change => change.MonsterId == monster.Id)
+                    .Aggregate(monster.ReferenceValues, (values, change) => values.SetItem(change.Property, change.Value)),
+                ReferenceNotes = []
+            }).ToImmutableArray() };
         Assert.Same(wiki, CatalogPatches.Apply(wiki, patch));
         var old = JsonSerializer.Deserialize<CatalogSnapshot>("""
             {"SnapshotId":"old","DeclaredSteamBuild":"old","Balance":null,"RetrievedAt":"2026-01-01T00:00:00Z","SourceUrls":[],"ContentHash":"old","Warnings":[],"Monsters":[{"Id":"old","Name":"Old","Rarity":0,"BaseSpeciesId":null,"ActiveSets":[]}]}

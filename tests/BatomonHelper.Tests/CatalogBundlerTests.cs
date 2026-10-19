@@ -57,8 +57,8 @@ public sealed class CatalogBundlerTests
     public async Task Every_declared_offline_asset_exists_including_portraits_and_shiny_art()
     {
         var catalog = (await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db"), true).GetLatestAsync())!;
-        Assert.Equal("25600878", catalog.DeclaredSteamBuild); Assert.Equal("24", catalog.Balance);
-        Assert.Equal(24, catalog.Trainers.Length); Assert.Equal(144, catalog.Monsters.Count(monster => monster.ShinySpritePath is not null));
+        Assert.Equal("25738032", catalog.DeclaredSteamBuild); Assert.Equal("25", catalog.Balance);
+        Assert.Equal(24, catalog.Trainers.Length); Assert.Equal(143, catalog.Monsters.Count(monster => monster.ShinySpritePath is not null));
         var paths = catalog.Monsters.SelectMany(monster => new[] { monster.SpritePath, monster.ShinySpritePath })
             .Concat(catalog.Trainers.Select(trainer => trainer.SpritePath)).Concat(catalog.Items.Select(item => item.SpritePath));
         foreach (var path in paths.Where(path => path is not null)) Assert.True(File.Exists(Path.Combine(AppContext.BaseDirectory, path!)), path);
