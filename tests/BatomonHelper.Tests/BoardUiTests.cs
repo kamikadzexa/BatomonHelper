@@ -28,7 +28,12 @@ public sealed class BoardUiTests
             try
             {
                 var app = new App(); app.InitializeComponent(); app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-                var window = new MainWindow { Width = 1300, Height = 1000 };
+                var window = new MainWindow();
+                Assert.Equal(1440, window.Width);
+                Assert.Equal(900, window.Height);
+                Assert.Equal(960, window.MinWidth);
+                Assert.Equal(640, window.MinHeight);
+                window.Width = 1300; window.Height = 1000;
                 var viewModel = (OverlayViewModel)window.DataContext;
                 viewModel.AutoUpdate = false;
                 typeof(OverlayViewModel).GetField("_catalog", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(viewModel, catalog);
@@ -69,6 +74,7 @@ public sealed class BoardUiTests
                 var exportedShop = System.Text.Json.JsonSerializer.Deserialize<GameStateMessage>(shopRaw, GameStateBridge.JsonOptions)!;
                 var shop = GameStateBridge.Parse(shopRaw, catalog, exportedShop.UpdatedAt);
                 var damageRefresh = typeof(OverlayViewModel).GetMethod("RefreshDamageAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                using var cancellationExceptions = new CancellationExceptionTracker();
                 var cancelled = (Task)damageRefresh.Invoke(viewModel, [shop.Board, shop.Combat])!;
                 var latest = (Task)damageRefresh.Invoke(viewModel, [shop.Board, shop.Combat! with { Trinkets = ["haste-orb"] }])!;
                 var adviceFrame = new System.Windows.Threading.DispatcherFrame();
@@ -78,6 +84,41 @@ public sealed class BoardUiTests
                 Assert.Contains("haste-orb", (string?)typeof(OverlayViewModel).GetField("_positionIdentity", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(viewModel));
                 Assert.DoesNotContain("Checking", viewModel.PositionHint);
                 cancelled.GetAwaiter().GetResult();
+                Assert.Equal(0, cancellationExceptions.Count);
+                Assert.Equal(Dock.Top, tabs.TabStripPlacement);
+                Assert.Equal(new[] { "Board", "Creatures", "Items", "Trinkets" }, tabs.Items.OfType<TabItem>().Select(tab => (string)tab.Header));
+                Render((FrameworkElement)window.Content, 1440, 900, "dashboard-wide.png");
+                var analysis = (FrameworkElement)window.FindName("BoardAnalysis");
+                Assert.Equal(1, Grid.GetColumn(analysis));
+                Render((FrameworkElement)window.Content, 960, 640, "dashboard-compact.png");
+                Assert.Equal(0, Grid.GetColumn(analysis));
+                Assert.Equal(1, Grid.GetRow(analysis));
+                for (var page = 1; page < 4; page++)
+                {
+                    tabs.SelectedIndex = page;
+                    Render((FrameworkElement)window.Content, 1440, 900, $"dashboard-page-{page}.png");
+                    Render((FrameworkElement)window.Content, 960, 640, $"dashboard-page-{page}-compact.png");
+                    Render((FrameworkElement)window.Content, 960, 640, $"dashboard-page-{page}-150.png", 1.5);
+                    var grid = Descendants((FrameworkElement)window.Content).OfType<DataGrid>().Single();
+                    Assert.Same(page switch { 1 => (object)viewModel.CreatureRows, 2 => viewModel.ItemRows, _ => viewModel.TrinketRows }, grid.ItemsSource);
+                    Assert.True(grid.CanUserSortColumns);
+                    var columns = grid.Columns.Select(column => column.Header?.ToString()).ToList();
+                    var nameHeader = page switch { 1 => "Creature", 2 => "Item", _ => "Trinket" };
+                    Assert.Equal(page == 1 ? "Ability" : "Effect", columns[columns.IndexOf(nameHeader) + 1]);
+                    if (page == 1)
+                    {
+                        var creature = viewModel.CreatureRows.First(row => catalog.Monsters.Single(monster => monster.Id == row.Id).Rules?.Abilities.Count > 0);
+                        var rules = catalog.Monsters.Single(monster => monster.Id == creature.Id).Rules!;
+                        foreach (var ability in rules.Abilities.Values.Where(value => !string.IsNullOrWhiteSpace(value)))
+                            Assert.Contains(ability, creature.Ability);
+                    }
+                }
+                viewModel.SearchText = "no-such-creature-for-ui-test";
+                Assert.Empty(viewModel.CreatureRows);
+                tabs.SelectedIndex = 1;
+                Render((FrameworkElement)window.Content, 960, 640, "dashboard-empty.png");
+                Assert.Contains(Descendants((FrameworkElement)window.Content).OfType<TextBlock>(), text => text.Text.StartsWith("No results.") && text.Visibility == Visibility.Visible);
+                viewModel.SearchText = "";
                 tabs.SelectedIndex = 0;
                 var review = new CaptureReviewWindow(result, catalog);
                 var correction = (CaptureReviewViewModel)review.DataContext;
@@ -119,16 +160,106 @@ public sealed class BoardUiTests
                 editor.IsDropDownOpen = false; editor.IsEnabled = false;
                 Render((FrameworkElement)review.Content, 1180, 780, "board-review-disabled.png");
                 Assert.True(Contrast(text.Foreground, text.Background) >= 4.5);
+                VerifyWindowBehavior(window);
                 window.Close(); review.Close(); app.Shutdown(); completed.SetResult();
             }
             catch (Exception exception) { completed.SetException(exception); }
         });
         thread.SetApartmentState(ApartmentState.STA); thread.Start(); await completed.Task;
     }
+    private static void VerifyWindowBehavior(MainWindow window)
+    {
+        window.Opacity = 0;
+        window.ShowActivated = false;
+        window.ShowInTaskbar = false;
+        window.Topmost = false;
+        window.Show();
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+        void ToggleVisibility() => SendMessage(hwnd, 0x0312, new IntPtr(0xB470), IntPtr.Zero);
+        void Press(System.Windows.Input.Key key)
+        {
+            var args = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,
+                System.Windows.PresentationSource.FromVisual(window), Environment.TickCount, key)
+                { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent };
+            window.RaiseEvent(args);
+            Assert.True(args.Handled);
+        }
+        ToggleVisibility();
+        Assert.False(window.IsVisible);
+        ToggleVisibility();
+        Assert.True(window.IsVisible);
+        var monitors = new List<IntPtr>();
+        MonitorCallback callback = (IntPtr monitor, IntPtr dc, ref NativeRect rect, IntPtr data) => { monitors.Add(monitor); return true; };
+        Assert.True(EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, callback, IntPtr.Zero));
+        foreach (var monitor in monitors)
+        {
+            var info = new MonitorInfo { Size = System.Runtime.InteropServices.Marshal.SizeOf<MonitorInfo>() };
+            Assert.True(GetMonitorInfo(monitor, ref info));
+            window.WindowState = WindowState.Normal;
+            Assert.True(SetWindowPos(hwnd, IntPtr.Zero, info.Work.Left + 20, info.Work.Top + 20, 700, 500, 0x0014));
+            window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            var before = window.RestoreBounds;
+            Press(System.Windows.Input.Key.F11);
+            window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            Assert.True(window.IsFullscreen);
+            Assert.True(GetWindowRect(hwnd, out var bounds));
+            Assert.Equal(info.Work.Left, bounds.Left);
+            Assert.Equal(info.Work.Top, bounds.Top);
+            Assert.Equal(info.Work.Right, bounds.Right);
+            Assert.Equal(info.Work.Bottom, bounds.Bottom);
+            var minimize = Descendants((FrameworkElement)window.Content).OfType<Button>()
+                .Single(button => System.Windows.Automation.AutomationProperties.GetName(button) == "Minimize");
+            minimize.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.Equal(WindowState.Minimized, window.WindowState);
+            ToggleVisibility();
+            Assert.Equal(WindowState.Maximized, window.WindowState);
+            Press(System.Windows.Input.Key.Escape);
+            Assert.False(window.IsFullscreen);
+            Assert.Equal(before, window.RestoreBounds);
+        }
+        window.Hide();
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct NativeRect { public int Left, Top, Right, Bottom; }
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct MonitorInfo { public int Size; public NativeRect Monitor, Work; public uint Flags; }
+    private delegate bool MonitorCallback(IntPtr monitor, IntPtr dc, ref NativeRect rect, IntPtr data);
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool EnumDisplayMonitors(IntPtr dc, IntPtr clip, MonitorCallback callback, IntPtr data);
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam);
+
     private static IEnumerable<DependencyObject> Descendants(DependencyObject root)
     {
         for (var i=0; i<VisualTreeHelper.GetChildrenCount(root); i++)
         { var child=VisualTreeHelper.GetChild(root,i); yield return child; foreach(var descendant in Descendants(child)) yield return descendant; }
+    }
+    private sealed class CancellationExceptionTracker : IDisposable
+    {
+        private readonly AsyncLocal<bool> _enabled = new();
+        private int _count;
+        public int Count => Volatile.Read(ref _count);
+        public CancellationExceptionTracker()
+        {
+            _enabled.Value = true;
+            AppDomain.CurrentDomain.FirstChanceException += OnException;
+        }
+        private void OnException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs args)
+        {
+            if (_enabled.Value && args.Exception is OperationCanceledException) Interlocked.Increment(ref _count);
+        }
+        public void Dispose()
+        {
+            _enabled.Value = false;
+            AppDomain.CurrentDomain.FirstChanceException -= OnException;
+        }
     }
     private static double Contrast(System.Windows.Media.Brush foreground, System.Windows.Media.Brush background)
     {
@@ -139,10 +270,13 @@ public sealed class BoardUiTests
         static double Channel(byte value)
         { var s=value/255d; return s<=.04045?s/12.92:Math.Pow((s+.055)/1.055,2.4); }
     }
-    private static void Render(FrameworkElement content, int width, int height, string filename)
+    private static void Render(FrameworkElement content, int width, int height, string filename, double scale = 1)
     {
         content.Measure(new System.Windows.Size(width, height)); content.Arrange(new Rect(0, 0, width, height)); content.UpdateLayout();
-        var target = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); target.Render(content);
+        // DataGrid resolves star column widths on the dispatcher after first layout.
+        content.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        content.Measure(new System.Windows.Size(width, height)); content.Arrange(new Rect(0, 0, width, height)); content.UpdateLayout();
+        var target = new RenderTargetBitmap((int)(width * scale), (int)(height * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32); target.Render(content);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(target));
         using var file = File.Create(Path.Combine(AppContext.BaseDirectory, filename)); encoder.Save(file);
     }

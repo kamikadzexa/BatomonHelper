@@ -1,280 +1,201 @@
 <Window x:Class="BatomonHelper.Overlay.MainWindow" x:Name="OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Batomon Helper" Icon="pack://application:,,,/BatomonHelper.Overlay;component/Assets/batomon-helper.ico" Width="980" Height="720" MinWidth="720" MinHeight="480" Topmost="True"
-        WindowStyle="None" ResizeMode="CanResizeWithGrip" Background="#141A25">
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="Batomon Helper" Icon="pack://application:,,,/BatomonHelper.Overlay;component/Assets/batomon-helper.ico"
+        Width="1440" Height="900" MinWidth="960" MinHeight="640" Topmost="True"
+        WindowStyle="None" ResizeMode="CanResize" Background="#125F70" FontFamily="Segoe UI" FontSize="13"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+  <shell:WindowChrome.WindowChrome>
+    <shell:WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+  </shell:WindowChrome.WindowChrome>
   <Window.Resources>
-    <Style x:Key="OverlayButton" TargetType="Button">
-      <Setter Property="Margin" Value="4,0" />
-      <Setter Property="Padding" Value="10,5" />
-      <Setter Property="Foreground" Value="#F7FAFF" />
-      <Setter Property="Background" Value="#30465D" />
-      <Setter Property="BorderBrush" Value="#7390AE" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="FontSize" Value="13" />
-      <Setter Property="Cursor" Value="Hand" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Button">
-            <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" />
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonBorder" Property="Background" Value="#42627F" /><Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#9CC8EF" /></Trigger>
-              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#78E2B8" /><Setter TargetName="ButtonBorder" Property="BorderThickness" Value="2" /></Trigger>
-              <Trigger Property="IsPressed" Value="True"><Setter TargetName="ButtonBorder" Property="Background" Value="#223447" /></Trigger>
-              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ButtonBorder" Property="Background" Value="#27323E" /><Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#465462" /><Setter Property="Foreground" Value="#AAB7CA" /><Setter Property="Cursor" Value="Arrow" /></Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding IsFullscreen, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True">
-          <Setter Property="FontSize" Value="15" />
-          <Setter Property="Padding" Value="14,8" />
-        </DataTrigger>
-      </Style.Triggers>
-    </Style>
-    <Style x:Key="GridCell" TargetType="DataGridCell"><Setter Property="Background" Value="#10202E" /><Setter Property="Foreground" Value="#F4F8FF" /><Setter Property="BorderBrush" Value="#3C4B5F" /><Setter Property="Padding" Value="10,6" /><Setter Property="FontSize" Value="13" /><Style.Triggers><DataTrigger Binding="{Binding IsFullscreen, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True"><Setter Property="Padding" Value="14,8" /><Setter Property="FontSize" Value="16" /></DataTrigger></Style.Triggers></Style>
-    <Style x:Key="GridRow" TargetType="DataGridRow"><Setter Property="Background" Value="#10202E" /><Setter Property="Foreground" Value="#F4F8FF" /><Setter Property="MinHeight" Value="46" /><Style.Triggers><DataTrigger Binding="{Binding IsFullscreen, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True"><Setter Property="MinHeight" Value="62" /></DataTrigger></Style.Triggers></Style>
-    <Style x:Key="CreatureGridRow" TargetType="DataGridRow" BasedOn="{StaticResource GridRow}"><Setter Property="ToolTip" Value="{Binding ReferenceTooltip}" /></Style>
-    <Style x:Key="GridHeader" TargetType="DataGridColumnHeader"><Setter Property="Background" Value="#26384B" /><Setter Property="Foreground" Value="#F4F8FF" /><Setter Property="BorderBrush" Value="#536278" /><Setter Property="Padding" Value="10,7" /><Setter Property="FontSize" Value="13" /><Setter Property="FontWeight" Value="SemiBold" /><Style.Triggers><DataTrigger Binding="{Binding IsFullscreen, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True"><Setter Property="Padding" Value="14,9" /><Setter Property="FontSize" Value="15" /></DataTrigger></Style.Triggers></Style>
-    <Style x:Key="CatalogIcon" TargetType="Image"><Setter Property="Width" Value="42" /><Setter Property="Height" Value="42" /><Setter Property="Stretch" Value="Uniform" /><Setter Property="HorizontalAlignment" Value="Center" /><Setter Property="VerticalAlignment" Value="Center" /><Style.Triggers><DataTrigger Binding="{Binding IsFullscreen, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True"><Setter Property="Width" Value="56" /><Setter Property="Height" Value="56" /></DataTrigger></Style.Triggers></Style>
-    <Style x:Key="BrowserTabs" TargetType="TabControl">
-      <Setter Property="Background" Value="#10202E" /><Setter Property="BorderBrush" Value="#34516A" /><Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabControl"><Grid KeyboardNavigation.TabNavigation="Local" SnapsToDevicePixels="True"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions><TabPanel x:Name="HeaderPanel" IsItemsHost="True" Margin="6,6,6,0" /><Border Grid.Row="1" Margin="6" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"><ContentPresenter x:Name="SelectedContentHost" Margin="1" ContentSource="SelectedContent" /></Border></Grid></ControlTemplate></Setter.Value></Setter>
-    </Style>
-    <Style TargetType="TabItem">
-      <Setter Property="Foreground" Value="#D9E5F2" /><Setter Property="Background" Value="#203246" /><Setter Property="Padding" Value="16,8" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="FontSize" Value="13" />
-      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabItem"><Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="#34516A" BorderThickness="1,1,1,0" Padding="{TemplateBinding Padding}" Margin="0,0,3,0"><ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#2C755F" /><Setter Property="Foreground" Value="#FFFFFF" /></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#42627F" /></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Foreground" Value="#718196" /></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
-    </Style>
-    <Style x:Key="FilterTextBox" TargetType="TextBox" BasedOn="{StaticResource DarkTextBox}"><Setter Property="Background" Value="#132536" /><Setter Property="Foreground" Value="#F7FAFF" /><Setter Property="CaretBrush" Value="#F7FAFF" /><Setter Property="BorderBrush" Value="#7390AE" /><Setter Property="BorderThickness" Value="1" /><Setter Property="FontSize" Value="13" /><Style.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="BorderBrush" Value="#78E2B8" /><Setter Property="BorderThickness" Value="2" /></Trigger><DataTrigger Binding="{Binding IsFullscreen, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True"><Setter Property="FontSize" Value="15" /><Setter Property="Padding" Value="12,7" /></DataTrigger></Style.Triggers></Style>
-    <Style x:Key="FilterComboBox" TargetType="ComboBox" BasedOn="{StaticResource DarkComboBox}">
-      <Setter Property="Background" Value="#30465D" /><Setter Property="Foreground" Value="#F7FAFF" /><Setter Property="BorderBrush" Value="#7390AE" /><Setter Property="BorderThickness" Value="1" /><Setter Property="Padding" Value="8,4" /><Setter Property="Cursor" Value="Hand" />
-
-    </Style>
-    <Style TargetType="ComboBoxItem"><Setter Property="Foreground" Value="#F7FAFF" /><Setter Property="Background" Value="#1B2D40" /><Setter Property="Padding" Value="8,6" /><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem"><Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><ContentPresenter /></Border><ControlTemplate.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#42627F" /></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#2C755F" /></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
-            <DataTemplate x:Key="BoardCard">
-              <Border Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="5" Padding="8" Margin="3">
-                <Grid MinHeight="68"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition /></Grid.ColumnDefinitions>
-                  <Image Source="{Binding SpritePath}" Height="48" Width="48" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,8,0" VerticalAlignment="Center" />
-                  <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                    <StackPanel Orientation="Horizontal"><TextBlock Text="{Binding Level}" Foreground="#FFCE79" Margin="0,0,7,0" FontSize="11" /><TextBlock Text="{Binding Variant}" Foreground="#78E2B8" FontSize="11" /></StackPanel>
-                    <TextBlock Text="{Binding Stats}" TextWrapping="Wrap" FontSize="11" />
-                    <TextBlock Text="{Binding Price}" TextWrapping="Wrap" Foreground="#B7C7D9" FontSize="12" />
-                  </StackPanel>
-                </Grid>
-              </Border>
-            </DataTemplate>
-    <DataTemplate x:Key="DamagePanel">
-      <StackPanel>
-        <TextBlock Text="{Binding BattleSummary}" FontWeight="Bold" Foreground="#FFD580" FontSize="16" Margin="0,0,0,10" TextWrapping="Wrap">
-          <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding BattleSummary}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-        </TextBlock>
-        <TextBlock Text="{Binding DamageSummary}" FontWeight="SemiBold" Foreground="#78E2B8" FontSize="15" Margin="0,0,0,10" TextWrapping="Wrap">
-          <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding DamageSummary}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-        </TextBlock>
-        <Border Background="#1B3141" BorderBrush="#4C8FB5" BorderThickness="1" CornerRadius="5" Padding="8" Margin="0,0,0,10" Visibility="{Binding RecommendedPositionsVisibility}">
-          <StackPanel>
-            <TextBlock Text="{Binding PositionHint}" TextWrapping="Wrap" Foreground="#CBEAFF" />
-            <StackPanel Visibility="{Binding RecommendedPositionsVisibility}">
-              <TextBlock Text="RECOMMENDED BOARD" FontWeight="Bold" Foreground="#FFCE79" Margin="0,7,0,2" />
-              <ItemsControl ItemsSource="{Binding RecommendedTeamRows}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="3" Padding="4" Margin="2"><StackPanel Orientation="Horizontal"><Image Source="{Binding SpritePath}" Height="30" Width="30" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,4,0" /><StackPanel><TextBlock Text="{Binding Name}" FontSize="11" TextWrapping="Wrap" /><TextBlock Text="{Binding Level}" Foreground="#FFCE79" FontSize="10" /></StackPanel></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
-              <TextBlock Text="RECOMMENDED BENCH" FontWeight="Bold" Foreground="#FFCE79" Margin="0,7,0,2" />
-              <ItemsControl ItemsSource="{Binding RecommendedBenchRows}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="3" Padding="4" Margin="2"><StackPanel Orientation="Horizontal"><Image Source="{Binding SpritePath}" Height="30" Width="30" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,4,0" /><StackPanel><TextBlock Text="{Binding Name}" FontSize="11" TextWrapping="Wrap" /><TextBlock Text="{Binding Level}" Foreground="#FFCE79" FontSize="10" /></StackPanel></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
-            </StackPanel>
-          </StackPanel>
-        </Border>
-        <TextBlock Text="YOUR TEAM OUTPUT" FontWeight="SemiBold" Foreground="#78E2B8" Margin="8,0,0,8" />
-        <Grid Margin="8,0,8,5">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-          <TextBlock Text="PER SECOND" Foreground="#AAB7CA" FontWeight="SemiBold" />
-          <TextBlock Grid.Column="1" Text="0s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="2" Text="5s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="3" Text="10s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="4" Text="15s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="5" Text="20s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="6" Text="30s" TextAlignment="Center" Foreground="#AAB7CA" />
-        </Grid>
-        <ItemsControl ItemsSource="{Binding DamageRows}" HorizontalContentAlignment="Stretch">
-          <ItemsControl.ItemTemplate><DataTemplate>
-            <Border BorderBrush="#34516A" BorderThickness="0,1,0,0" Padding="8,9">
-              <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Metric}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding Second0}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="2" Text="{Binding Second5}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="3" Text="{Binding Second10}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="4" Text="{Binding Second15}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="5" Text="{Binding Second20}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="6" Text="{Binding Second30}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" Foreground="#78E2B8" />
-              </Grid>
-            </Border>
-          </DataTemplate></ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <StackPanel>
-          <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><DataTrigger Binding="{Binding OpponentRows.Count}" Value="0"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-        <TextBlock Text="ENEMY" FontWeight="SemiBold" Foreground="#FFD580" Margin="8,18,0,8" />
-        <ItemsControl ItemsSource="{Binding OpponentRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
-        <Grid Margin="8,0,8,5">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-          <TextBlock Text="PER SECOND" Foreground="#AAB7CA" FontWeight="SemiBold" />
-          <TextBlock Grid.Column="1" Text="0s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="2" Text="5s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="3" Text="10s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="4" Text="15s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="5" Text="20s" TextAlignment="Center" Foreground="#AAB7CA" />
-          <TextBlock Grid.Column="6" Text="30s" TextAlignment="Center" Foreground="#AAB7CA" />
-        </Grid>
-        <ItemsControl ItemsSource="{Binding OpponentDamageRows}" HorizontalContentAlignment="Stretch">
-          <ItemsControl.ItemTemplate><DataTemplate>
-            <Border BorderBrush="#34516A" BorderThickness="0,1,0,0" Padding="8,9">
-              <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Metric}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding Second0}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="2" Text="{Binding Second5}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="3" Text="{Binding Second10}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="4" Text="{Binding Second15}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="5" Text="{Binding Second20}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Grid.Column="6" Text="{Binding Second30}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" Foreground="#78E2B8" />
-              </Grid>
-            </Border>
-          </DataTemplate></ItemsControl.ItemTemplate>
-        </ItemsControl>
-        </StackPanel>
-      </StackPanel>
-    </DataTemplate>
+    <ResourceDictionary><ResourceDictionary.MergedDictionaries>
+      <ResourceDictionary Source="Themes/Dashboard.xaml" />
+      <ResourceDictionary Source="Themes/BoardTemplates.xaml" />
+    </ResourceDictionary.MergedDictionaries></ResourceDictionary>
   </Window.Resources>
-  <Border Margin="3" Background="{StaticResource PanelBackground}" BorderBrush="#34516A" BorderThickness="1" CornerRadius="8" Padding="14" SnapsToDevicePixels="True">
+  <Border x:Name="ShellRoot" Background="#125F70" SizeChanged="DashboardSizeChanged" BorderBrush="#4D8C9A" BorderThickness="1">
     <Grid>
-      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-      <Border Grid.Row="0" Margin="-4,-4,-4,0" Padding="10,7" Background="#162638" BorderBrush="#34516A" BorderThickness="0,0,0,1" CornerRadius="7,7,0,0">
-        <Grid>
-        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <StackPanel x:Name="DragSurface" Background="Transparent" MouseLeftButtonDown="DragWindow">
-          <TextBlock FontWeight="Bold" FontSize="21" Text="Batomon Helper" />
-          <TextBlock x:Name="VersionLabel" Margin="0,1,0,0" FontSize="10" Foreground="#8495A9" />
-          <TextBlock FontSize="12" Foreground="#AAB7CA" Text="F8 visibility · F9 refresh · F11 fullscreen" />
+      <Grid.RowDefinitions><RowDefinition Height="44"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Grid Background="#103F50">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0">
+          <Image Source="Assets/batomon-helper-logo.png" Width="24" Height="24" Margin="0,0,10,0"/>
+          <TextBlock Text="Batomon Helper" FontWeight="SemiBold" VerticalAlignment="Center"/>
+          <TextBlock x:Name="VersionLabel" Foreground="#BCDDE4" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="11"/>
         </StackPanel>
-        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-          <CheckBox VerticalAlignment="Center" Margin="4,0,8,0" Foreground="#F4F8FF" Content="Auto update" IsChecked="{Binding AutoUpdate, Mode=TwoWay}" ToolTip="Refresh the live game state every half second. Manual F9 refresh stays available when this is off." />
-          <CheckBox VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#F4F8FF" Content="Capture run" IsChecked="{Binding CaptureRun, Mode=TwoWay}" IsEnabled="{Binding CanToggleRunCapture}" ToolTip="Records each changed live board to one training-run JSON file. It can start only with Auto update on from the clean, unlocked Day 1 opening state." />
-          <Button Style="{StaticResource OverlayButton}" Content="Refresh Game State (F9)" Command="{Binding CaptureShopCommand}" />
-          <Button x:Name="ExpandButton" Style="{StaticResource OverlayButton}" Content="Expand" Click="ToggleExpanded" ToolTip="Toggle a roomy second-screen layout" />
-          <Button x:Name="FullscreenButton" Style="{StaticResource OverlayButton}" Content="Fullscreen" Click="ToggleFullscreen" ToolTip="Toggle fullscreen (F11; Escape to exit)" />
-          <Button Style="{StaticResource OverlayButton}" Content="×" Click="CloseWindow" ToolTip="Close" />
-        </StackPanel>
-        </Grid>
-      </Border>
-      <Border Grid.Row="1" Margin="0,12,0,4" Padding="8" Background="#372B1C" CornerRadius="5" Visibility="{Binding WarningVisibility}"><TextBlock TextWrapping="Wrap" Foreground="#FFD58B" Text="{Binding Warning}" /></Border>
-      <Grid Grid.Row="2" Margin="0,8,0,8">
-        <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="150"/><ColumnDefinition Width="150"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <TextBox Grid.Column="0" Margin="0,0,8,0" Padding="7,4" Style="{StaticResource FilterTextBox}" ToolTip="Search creature name" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
-        <ComboBox Grid.Column="1" Margin="0,0,8,0" Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RegionFilters}" SelectedItem="{Binding SelectedRegionFilter}" DisplayMemberPath="Name" ToolTip="Uses the region reported by the game when available. Select a region here for game builds that do not expose it." />
-        <ComboBox Grid.Column="2" Margin="0,0,8,0" Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RarityFilters}" SelectedItem="{Binding SelectedRarityFilter}" DisplayMemberPath="Name" />
-        <TextBlock Grid.Column="3" VerticalAlignment="Center" Foreground="#AAB7CA" Text="{Binding CreatureCount}" />
-        <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="10,0,0,0">
-          <CheckBox VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#F4F8FF" Content="Item available" IsChecked="{Binding ItemAvailable, Mode=TwoWay}" ToolTip="When checked, the fifth shop slot is an item." />
-          <Button Style="{StaticResource OverlayButton}" Content="−" Command="{Binding DecreaseRankCommand}" ToolTip="Calculate one rank lower" />
-          <TextBlock VerticalAlignment="Center" MinWidth="54" TextAlignment="Center" Text="{Binding RankLabel}" />
-          <Button Style="{StaticResource OverlayButton}" Content="+" Command="{Binding IncreaseRankCommand}" ToolTip="Calculate one rank higher" />
-          <Button Style="{StaticResource OverlayButton}" Content="Reset" Command="{Binding ResetCommand}" ToolTip="Reset browsing to Rank 1 with an item available" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+          <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="MinimizeWindow" ToolTip="Minimize" AutomationProperties.Name="Minimize"/>
+          <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="ToggleMaximize" ToolTip="Maximize (F11)" AutomationProperties.Name="Maximize"/>
+          <Button Style="{StaticResource CloseCaptionButton}" Content="&#xE8BB;" Click="CloseWindow" ToolTip="Close" AutomationProperties.Name="Close"/>
         </StackPanel>
       </Grid>
-      <Border Grid.Row="3" Margin="0,0,0,8" Padding="10,8" Background="#162638" BorderBrush="#34516A" BorderThickness="1" CornerRadius="6">
+      <Border Grid.Row="1" Background="#103F50" BorderBrush="#4D8C9A" BorderThickness="0,1,0,1" Padding="18,12">
+        <DockPanel LastChildFill="True">
+          <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Refresh  ·  F9" Command="{Binding CaptureShopCommand}"/>
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0">
+            <CheckBox Content="Auto update" IsChecked="{Binding AutoUpdate, Mode=TwoWay}" ToolTip="Refresh live game state every half second"/>
+            <CheckBox Content="Capture run" Margin="20,0,0,0" IsChecked="{Binding CaptureRun, Mode=TwoWay}" IsEnabled="{Binding CanToggleRunCapture}" ToolTip="Start recording from a clean Day 1 opening with Auto update enabled"/>
+          </StackPanel>
+          <StackPanel VerticalAlignment="Center"><TextBlock Text="LIVE COMPANION" FontSize="10" FontWeight="SemiBold" Foreground="#FFD34D"/><TextBlock Text="F8 · Show / hide helper" Margin="0,2,0,0" Foreground="#BCDDE4" FontSize="12"/></StackPanel>
+        </DockPanel>
+      </Border>
+      <Grid Grid.Row="2">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Border Margin="20,12,20,0" Padding="12" Background="#5A4320" CornerRadius="6" Visibility="{Binding WarningVisibility}"><TextBlock Text="{Binding Warning}" TextWrapping="Wrap" Foreground="#FFE18B"/></Border>
+        <TabControl x:Name="BoardTabs" Grid.Row="1" SelectedIndex="0" Style="{StaticResource TopTabs}">
+          <TabItem Header="Board" Tag="&#xE80F;">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+              <StackPanel Margin="0,0,4,12">
+                <TextBlock Text="Board overview" Style="{StaticResource PageTitle}"/>
+                <TextBlock Text="Your team, shop, and battle insights in one place." Style="{StaticResource PageSubtitle}"/>
+                <Border Style="{StaticResource Surface}" Margin="0,16,0,16">
+                  <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <Image Source="{Binding TrainerSpritePath}" Height="64" Width="72" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,16,0"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="{Binding BoardSummary}" TextWrapping="Wrap" FontSize="15" FontWeight="SemiBold"/><TextBlock Text="{Binding RunSummary}" TextWrapping="Wrap" Foreground="#BCDDE4" Margin="0,6,0,0"/></StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding BattleSummary}" FontSize="28" FontWeight="Bold" Margin="16,0,0,0" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#FFD34D"/><Style.Triggers><DataTrigger Binding="{Binding BattleSummary}" Value="LOSS"><Setter Property="Foreground" Value="#FF94B1"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                  </Grid>
+                </Border>
+                <Grid x:Name="BoardColumns">
+                  <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                  <StackPanel>
+                    <Border Style="{StaticResource Surface}" Margin="0,0,0,16"><StackPanel>
+                      <TextBlock Text="Your team" Foreground="#FF94B1" Style="{StaticResource SectionTitle}"/>
+                      <ItemsControl ItemsSource="{Binding TeamRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+                    </StackPanel></Border>
+                    <Border Style="{StaticResource Surface}" Margin="0,0,0,16"><StackPanel>
+                      <TextBlock Text="Bench" Style="{StaticResource SectionTitle}"/>
+                      <ItemsControl ItemsSource="{Binding BenchRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+                    </StackPanel></Border>
+                    <Border Style="{StaticResource Surface}" Margin="0,0,0,16"><StackPanel>
+                      <TextBlock Text="Shop" Style="{StaticResource SectionTitle}"/>
+                      <ItemsControl ItemsSource="{Binding OfferRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+                    </StackPanel></Border>
+                  </StackPanel>
+                  <Border x:Name="BoardAnalysis" Grid.Column="1" Style="{StaticResource Surface}" Margin="16,0,0,0" VerticalAlignment="Top">
+                    <StackPanel><TextBlock Text="Battle insights" Style="{StaticResource SectionTitle}"/>
+                      <TextBlock Text="Passive-target output and positioning suggestions" Foreground="#BCDDE4" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                      <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DamagePanel}" HorizontalContentAlignment="Stretch"/>
+                      <TextBlock Text="Insights appear when game state is available." Foreground="#BCDDE4" TextWrapping="Wrap" Margin="0,8,0,0"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding DamageRows.Count}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                    </StackPanel>
+                  </Border>
+                </Grid>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+          <TabItem Header="Creatures" Tag="&#xE8D4;">
+            <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+              <StackPanel><TextBlock Text="Creatures" Style="{StaticResource PageTitle}"/><TextBlock Text="Browse the pool and explore your next shop." Style="{StaticResource PageSubtitle}"/></StackPanel>
+              <Border Grid.Row="1" Style="{StaticResource Surface}" Margin="0,16,0,12">
+                <StackPanel>
+                  <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="160"/><ColumnDefinition Width="145"/></Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,12,0"><TextBlock Text="Search creatures" Style="{StaticResource FieldLabel}"/><TextBox Style="{StaticResource FilterTextBox}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Search creatures"/></StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,12,0"><TextBlock Text="Region" Style="{StaticResource FieldLabel}"/><ComboBox Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RegionFilters}" SelectedItem="{Binding SelectedRegionFilter}" DisplayMemberPath="Name" AutomationProperties.Name="Creature region"/></StackPanel>
+                    <StackPanel Grid.Column="2"><TextBlock Text="Rarity" Style="{StaticResource FieldLabel}"/><ComboBox Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RarityFilters}" SelectedItem="{Binding SelectedRarityFilter}" DisplayMemberPath="Name" AutomationProperties.Name="Creature rarity"/></StackPanel>
+                  </Grid>
+                  <WrapPanel Margin="0,14,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Shop rank" VerticalAlignment="Center" Foreground="#BCDDE4" Margin="0,0,12,0"/>
+                    <Button Style="{StaticResource OverlayButton}" Content="−" Command="{Binding DecreaseRankCommand}" AutomationProperties.Name="Decrease rank"/>
+                    <TextBlock Text="{Binding RankLabel}" MinWidth="72" TextAlignment="Center" VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource OverlayButton}" Content="+" Command="{Binding IncreaseRankCommand}" AutomationProperties.Name="Increase rank"/>
+                    <CheckBox Content="Item available" IsChecked="{Binding ItemAvailable, Mode=TwoWay}" Margin="18,0" ToolTip="The fifth shop slot is an item"/>
+                    <Button Style="{StaticResource OverlayButton}" Content="Reset" Command="{Binding ResetCommand}"/>
+                    <TextBlock Text="{Binding CreatureCount}" VerticalAlignment="Center" Margin="16,0,0,0" Foreground="#BCDDE4"/>
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+              <Expander Grid.Row="2" Header="{Binding ShopOddsLabel}" Margin="0,0,0,12">
+                <Expander.Style><Style TargetType="Expander"><Setter Property="Foreground" Value="#E8EDF2"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="IsExpanded" Value="True"/><Style.Triggers><DataTrigger Binding="{Binding IsCompact, ElementName=OverlayWindow}" Value="True"><Setter Property="IsExpanded" Value="False"/></DataTrigger></Style.Triggers></Style></Expander.Style>
+      <Border Margin="0,8,0,0" Padding="10,8" Background="#103F50" BorderBrush="#4D8C9A" BorderThickness="1" CornerRadius="6">
         <Grid>
           <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
           <StackPanel Width="128" VerticalAlignment="Center" Margin="0,0,10,0">
             <TextBlock FontWeight="SemiBold" FontSize="14" Text="{Binding ShopOddsLabel}" />
-            <TextBlock Margin="0,3,0,0" FontSize="11" Foreground="#AAB7CA" Text="Per Batomon slot" />
+            <TextBlock Margin="0,3,0,0" FontSize="11" Foreground="#BCDDE4" Text="Per Batomon slot" />
           </StackPanel>
           <ItemsControl Grid.Column="1" ItemsSource="{Binding ShopOddsRows}">
             <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate><DataTemplate>
-              <Border Margin="3,0" Padding="9,6" Background="#203246" BorderBrush="#42627F" BorderThickness="1" CornerRadius="4">
+              <Border Margin="3,0" Padding="9,6" Background="#1B5D6E" BorderBrush="#5894A2" BorderThickness="1" CornerRadius="4">
                 <Grid>
-                  <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                   <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="{Binding Rarity}" />
-                    <TextBlock Margin="0,2,0,0" FontSize="10" Foreground="#B7C7D9" Text="{Binding PoolDescription}" />
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Rarity}" TextWrapping="Wrap" />
+                    <TextBlock Margin="0,2,0,0" FontSize="10" Foreground="#BCDDE4" Text="{Binding PoolDescription}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="19" FontWeight="Bold" Foreground="#78E2B8" Text="{Binding Percentage}" />
+                  <TextBlock Grid.Row="1" VerticalAlignment="Center" Margin="0,6,0,0" FontSize="17" FontWeight="Bold" Foreground="#FFD34D" Text="{Binding Percentage}" />
                 </Grid>
               </Border>
             </DataTemplate></ItemsControl.ItemTemplate>
           </ItemsControl>
         </Grid>
       </Border>
-      <Grid Grid.Row="4">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <StackPanel><TextBlock FontWeight="SemiBold" Text="{Binding Status}" /><TextBlock FontSize="11" Foreground="#AAB7CA" TextWrapping="Wrap" Text="{Binding RunSummary}" /><TextBlock FontSize="11" Foreground="#78E2B8" TextWrapping="Wrap" Text="{Binding RunCaptureStatus}" /></StackPanel>
-        <TabControl x:Name="BoardTabs" SelectedIndex="0" Grid.Row="1" Margin="0,8,0,0" Style="{StaticResource BrowserTabs}">
-
-          <TabItem Header="Board">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-              <StackPanel Margin="5">
-                <Grid Margin="3,8"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition /></Grid.ColumnDefinitions>
-                  <Image Source="{Binding TrainerSpritePath}" Height="64" Width="88" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="0,0,12,0" />
-                  <TextBlock Grid.Column="1" Text="{Binding BoardSummary}" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" />
-                </Grid>
-                <Border Margin="3,6" Padding="10" Background="#162638" BorderBrush="#34516A" BorderThickness="1" CornerRadius="5">
-                  <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DamagePanel}" HorizontalContentAlignment="Stretch" />
-                </Border>
-                <TextBlock Text="MY TEAM" FontWeight="Bold" Margin="3,10,3,3" Foreground="#FFCE79" />
-                <ItemsControl ItemsSource="{Binding TeamRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
-                <TextBlock Text="BENCH" FontWeight="Bold" Margin="3,10,3,3" Foreground="#FFCE79" />
-                <ItemsControl ItemsSource="{Binding BenchRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
-                <TextBlock Text="SHOP" FontWeight="Bold" Margin="3,10,3,3" Foreground="#FFCE79" />
-                <ItemsControl ItemsSource="{Binding OfferRows}" ItemTemplate="{StaticResource BoardCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
-              </StackPanel>
-            </ScrollViewer>
-          </TabItem>
-
-          <TabItem Header="Creatures">
-            <DataGrid ItemsSource="{Binding CreatureRows}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="True" HeadersVisibility="Column" Background="#10202E" Foreground="White" BorderThickness="0" CellStyle="{StaticResource GridCell}" RowStyle="{StaticResource CreatureGridRow}" ColumnHeaderStyle="{StaticResource GridHeader}">
+              </Expander>
+<Grid Grid.Row="3"><DataGrid ItemsSource="{Binding CreatureRows}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="True" HeadersVisibility="Column" Background="#103F50" Foreground="White" BorderThickness="0" CellStyle="{StaticResource GridCell}" RowStyle="{StaticResource CreatureGridRow}" ColumnHeaderStyle="{StaticResource GridHeader}">
               <DataGrid.Columns>
                 <DataGridTemplateColumn Header="Icon" Width="76" CanUserSort="False"><DataGridTemplateColumn.CellTemplate><DataTemplate><Image Source="{Binding SpritePath}" Style="{StaticResource CatalogIcon}" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                <DataGridCheckBoxColumn Header="Lv. 3" Binding="{Binding IsLevelThree, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SortMemberPath="IsLevelThree" Width="66" />
-                <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Creature" Binding="{Binding Name}" SortMemberPath="Name" Width="2*" IsReadOnly="True" />
-                <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Rarity" Binding="{Binding Rarity}" SortMemberPath="RarityOrder" Width="125" IsReadOnly="True" />
-                <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Region" Binding="{Binding Regions}" SortMemberPath="Regions" Width="180" IsReadOnly="True" />
+                <DataGridCheckBoxColumn ElementStyle="{StaticResource GridCheckBox}" EditingElementStyle="{StaticResource GridCheckBox}" Header="Lv. 3" Binding="{Binding IsLevelThree, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SortMemberPath="IsLevelThree" Width="66" />
+                <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Creature" Binding="{Binding Name}" SortMemberPath="Name" Width="2*" MinWidth="140" IsReadOnly="True" />
+                <DataGridTextColumn ElementStyle="{StaticResource AbilityText}" Header="Ability" Binding="{Binding Ability}" SortMemberPath="Ability" Width="3*" MinWidth="260" IsReadOnly="True" />
+                <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" ElementStyle="{StaticResource RarityText}" Header="Rarity" Binding="{Binding Rarity}" SortMemberPath="RarityOrder" Width="110" IsReadOnly="True" />
+                <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Region" Binding="{Binding Regions}" SortMemberPath="Regions" Width="140" IsReadOnly="True" />
                 <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Roll" Binding="{Binding PerRoll}" SortMemberPath="PerRollValue" Width="90" IsReadOnly="True" />
                 <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Next shop" Binding="{Binding NextShop}" SortMemberPath="NextShopValue" Width="100" IsReadOnly="True" />
               </DataGrid.Columns>
-            </DataGrid>
+            </DataGrid><TextBlock Style="{StaticResource EmptyResults}" Tag="{Binding CreatureRows.Count}"/></Grid>
+            </Grid>
           </TabItem>
-          <TabItem Header="Items">
-            <Grid Margin="0,6,0,0">
-              <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-              <DockPanel Margin="0,0,0,6"><TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" Foreground="#AAB7CA" Text="{Binding ItemCount}" /><ComboBox DockPanel.Dock="Right" Width="145" Margin="0,0,8,0" Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RarityFilters}" SelectedItem="{Binding SelectedItemRarityFilter}" DisplayMemberPath="Name" ToolTip="Filter items by rarity" /><TextBox Margin="0,0,8,0" Padding="7,4" Style="{StaticResource FilterTextBox}" ToolTip="Search item name" Text="{Binding ItemSearchText, UpdateSourceTrigger=PropertyChanged}" /></DockPanel>
-              <DataGrid Grid.Row="1" ItemsSource="{Binding ItemRows}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="True" HeadersVisibility="Column" Background="#10202E" Foreground="White" BorderThickness="0" CellStyle="{StaticResource GridCell}" RowStyle="{StaticResource GridRow}" ColumnHeaderStyle="{StaticResource GridHeader}">
+          <TabItem Header="Items" Tag="&#xE719;">
+            <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+              <StackPanel><TextBlock Text="Items" Style="{StaticResource PageTitle}"/><TextBlock Text="Explore effects, availability, and shop odds." Style="{StaticResource PageSubtitle}"/></StackPanel>
+              <Border Grid.Row="1" Style="{StaticResource Surface}" Margin="0,16,0,16">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="160"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <StackPanel Margin="0,0,12,0"><TextBlock Text="Search items" Style="{StaticResource FieldLabel}"/><TextBox Style="{StaticResource FilterTextBox}" Text="{Binding ItemSearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Search items"/></StackPanel>
+                  <StackPanel Grid.Column="1"><TextBlock Text="Rarity" Style="{StaticResource FieldLabel}"/><ComboBox Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RarityFilters}" SelectedItem="{Binding SelectedItemRarityFilter}" DisplayMemberPath="Name" AutomationProperties.Name="Items rarity"/></StackPanel>
+                  <TextBlock Grid.Column="2" Text="{Binding ItemCount}" Foreground="#BCDDE4" VerticalAlignment="Bottom" Margin="16,0,0,10"/>
+                </Grid>
+              </Border>
+              <Grid Grid.Row="2"><DataGrid ItemsSource="{Binding ItemRows}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="True" HeadersVisibility="Column" Background="#103F50" Foreground="White" BorderThickness="0" CellStyle="{StaticResource GridCell}" RowStyle="{StaticResource GridRow}" ColumnHeaderStyle="{StaticResource GridHeader}">
                 <DataGrid.Columns>
                   <DataGridTemplateColumn Header="Icon" Width="76" CanUserSort="False"><DataGridTemplateColumn.CellTemplate><DataTemplate><Image Source="{Binding SpritePath}" Style="{StaticResource CatalogIcon}" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                  <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Item" Binding="{Binding Name}" SortMemberPath="Name" Width="2*" IsReadOnly="True" />
-                  <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Rarity" Binding="{Binding Rarity}" SortMemberPath="RarityOrder" Width="110" IsReadOnly="True" />
+                  <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Item" Binding="{Binding Name}" SortMemberPath="Name" Width="2*" MinWidth="140" IsReadOnly="True" />
+                  <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" ElementStyle="{StaticResource EffectText}" Header="Effect" Binding="{Binding Effect}" SortMemberPath="Effect" Width="3*" MinWidth="220" IsReadOnly="True" />
+                  <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" ElementStyle="{StaticResource RarityText}" Header="Rarity" Binding="{Binding Rarity}" SortMemberPath="RarityOrder" Width="110" IsReadOnly="True" />
                   <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Roll" Binding="{Binding PerRoll}" SortMemberPath="PerRollValue" Width="90" IsReadOnly="True" />
                   <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Next shop" Binding="{Binding NextShop}" SortMemberPath="NextShopValue" Width="100" IsReadOnly="True" />
                   <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Price" Binding="{Binding Price}" SortMemberPath="PriceValue" Width="80" IsReadOnly="True" />
-                  <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Effect" Binding="{Binding Effect}" SortMemberPath="Effect" Width="3*" IsReadOnly="True" />
+
                 </DataGrid.Columns>
-              </DataGrid>
+              </DataGrid><TextBlock Style="{StaticResource EmptyResults}" Tag="{Binding ItemRows.Count}"/></Grid>
             </Grid>
           </TabItem>
-          <TabItem Header="Trinkets">
-            <Grid Margin="0,6,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-              <DockPanel Margin="0,0,0,6"><TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" Foreground="#AAB7CA" Text="{Binding TrinketCount}" /><ComboBox DockPanel.Dock="Right" Width="145" Margin="0,0,8,0" Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RarityFilters}" SelectedItem="{Binding SelectedTrinketRarityFilter}" DisplayMemberPath="Name" ToolTip="Filter trinkets by rarity" /><TextBox Margin="0,0,8,0" Padding="7,4" Style="{StaticResource FilterTextBox}" ToolTip="Search trinket name" Text="{Binding TrinketSearchText, UpdateSourceTrigger=PropertyChanged}" /></DockPanel>
-              <DataGrid Grid.Row="1" ItemsSource="{Binding TrinketRows}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="True" HeadersVisibility="Column" Background="#10202E" Foreground="White" BorderThickness="0" CellStyle="{StaticResource GridCell}" RowStyle="{StaticResource GridRow}" ColumnHeaderStyle="{StaticResource GridHeader}"><DataGrid.Columns>
+          <TabItem Header="Trinkets" Tag="&#xE734;">
+            <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+              <StackPanel><TextBlock Text="Trinkets" Style="{StaticResource PageTitle}"/><TextBlock Text="Explore effects, availability, and shop odds." Style="{StaticResource PageSubtitle}"/></StackPanel>
+              <Border Grid.Row="1" Style="{StaticResource Surface}" Margin="0,16,0,16">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="160"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <StackPanel Margin="0,0,12,0"><TextBlock Text="Search trinkets" Style="{StaticResource FieldLabel}"/><TextBox Style="{StaticResource FilterTextBox}" Text="{Binding TrinketSearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Search trinkets"/></StackPanel>
+                  <StackPanel Grid.Column="1"><TextBlock Text="Rarity" Style="{StaticResource FieldLabel}"/><ComboBox Style="{StaticResource FilterComboBox}" ItemsSource="{Binding RarityFilters}" SelectedItem="{Binding SelectedTrinketRarityFilter}" DisplayMemberPath="Name" AutomationProperties.Name="Trinkets rarity"/></StackPanel>
+                  <TextBlock Grid.Column="2" Text="{Binding TrinketCount}" Foreground="#BCDDE4" VerticalAlignment="Bottom" Margin="16,0,0,10"/>
+                </Grid>
+              </Border>
+              <Grid Grid.Row="2"><DataGrid ItemsSource="{Binding TrinketRows}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="True" HeadersVisibility="Column" Background="#103F50" Foreground="White" BorderThickness="0" CellStyle="{StaticResource GridCell}" RowStyle="{StaticResource GridRow}" ColumnHeaderStyle="{StaticResource GridHeader}"><DataGrid.Columns>
                 <DataGridTemplateColumn Header="Icon" Width="76" CanUserSort="False"><DataGridTemplateColumn.CellTemplate><DataTemplate><Image Source="{Binding SpritePath}" Style="{StaticResource CatalogIcon}" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Have" Width="66" SortMemberPath="IsOwned"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox HorizontalAlignment="Center" VerticalAlignment="Center" IsEnabled="{Binding IsUnique}" IsChecked="{Binding IsOwned, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="Owned unique trinkets are removed from their rarity pool." /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Trinket" Binding="{Binding Name}" SortMemberPath="Name" Width="2*" IsReadOnly="True" /><DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Rarity" Binding="{Binding Rarity}" SortMemberPath="RarityOrder" Width="110" IsReadOnly="True" /><DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Pool" Binding="{Binding PoolCount}" SortMemberPath="PoolCount" Width="58" IsReadOnly="True" /><DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Chance" Binding="{Binding Chance}" SortMemberPath="ChanceValue" Width="90" IsReadOnly="True" /><DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Attribute" Binding="{Binding Attribute}" SortMemberPath="Attribute" Width="80" IsReadOnly="True" /><DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Effect" Binding="{Binding Effect}" SortMemberPath="Effect" Width="3*" IsReadOnly="True" />
-              </DataGrid.Columns></DataGrid>
+                <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Trinket" Binding="{Binding Name}" SortMemberPath="Name" Width="2*" MinWidth="140" IsReadOnly="True" />
+                  <DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" ElementStyle="{StaticResource EffectText}" Header="Effect" Binding="{Binding Effect}" SortMemberPath="Effect" Width="3*" MinWidth="220" IsReadOnly="True" /><DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" ElementStyle="{StaticResource RarityText}" Header="Rarity" Binding="{Binding Rarity}" SortMemberPath="RarityOrder" Width="110" IsReadOnly="True" /><DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Pool" Binding="{Binding PoolCount}" SortMemberPath="PoolCount" Width="58" IsReadOnly="True" /><DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Chance" Binding="{Binding Chance}" SortMemberPath="ChanceValue" Width="90" IsReadOnly="True" /><DataGridTextColumn EditingElementStyle="{StaticResource DarkTextBox}" Header="Attribute" Binding="{Binding Attribute}" SortMemberPath="Attribute" Width="80" IsReadOnly="True" />
+              </DataGrid.Columns></DataGrid><TextBlock Style="{StaticResource EmptyResults}" Tag="{Binding TrinketRows.Count}"/></Grid>
             </Grid>
           </TabItem>
         </TabControl>
       </Grid>
+      <Border Grid.Row="3" BorderBrush="#4D8C9A" BorderThickness="0,1,0,0" Background="#103F50" Padding="18,8">
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <StackPanel><TextBlock Text="{Binding Status}" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="{Binding RunCaptureStatus}" FontSize="11" Foreground="#BCDDE4" Margin="0,3,0,0"/></StackPanel>
+          <TextBlock Grid.Column="1" Text="F8  Show / hide   ·   F11  Maximize" Foreground="#BCDDE4" FontSize="11" VerticalAlignment="Center" Margin="16,0,0,0"/>
+        </Grid>
+      </Border>
     </Grid>
   </Border>
 </Window>

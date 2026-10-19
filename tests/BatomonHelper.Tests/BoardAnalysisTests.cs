@@ -22,6 +22,22 @@ public sealed class BoardAnalysisTests
         var (rules,board)=Board(0);var result=new BoardAnalyzer(rules).Analyze(board,100,1);
         Assert.All(result.Curve,p=>Assert.Equal(0,p.Damage));Assert.Null(result.MedianKillSeconds);Assert.Equal(0,result.ReachProbability);
     }
+    [Fact] public void Slow_burst_casts_between_markers_are_included_in_average_dps(){
+        var (rules,board)=Board();
+        var stats=(double[])rules.Species[0].Normal[0].Stats.Clone();stats[(int)Stat.Shock]=5;
+        rules=rules with {Species=[rules.Species[0] with {Normal=[new(1,4.5,stats,[])]}]};
+        var result=new BoardAnalyzer(rules).Analyze(board,samples:1);
+        Assert.Equal(0,result.Checkpoints[0].Dps);
+        Assert.Equal(2,result.Checkpoints[1].Dps,8);
+        Assert.Equal(2.5,result.Checkpoints[2].Dps,8);
+        Assert.Equal(135,result.Checkpoints[^1].Damage,8);
+        Assert.Equal(4.5,result.Checkpoints[^1].Dps,8);
+        Assert.All(result.Checkpoints.Skip(1),point=>{
+            Assert.True(point.Dps>0);
+            Assert.Equal(point.Damage/point.Seconds,point.Dps,8);
+            Assert.Equal(point.DamageByKind.Values.Sum(),point.Damage,8);
+        });
+    }
     [Fact] public void Poison_growth_uses_production_tick_order_and_matches_reference(){
         var (rules,board)=Board(0,2);var analyzer=new BoardAnalyzer(rules);
         var fast=analyzer.Analyze(board,100,1);var reference=analyzer.Analyze(board,100,1,reference:true);
@@ -46,6 +62,15 @@ public sealed class BoardAnalysisTests
         var (rules,board)=Board();var analyzer=new BoardAnalyzer(rules);
         Assert.Throws<ArgumentOutOfRangeException>(()=>analyzer.Analyze(board,0));
         Assert.Throws<OperationCanceledException>(()=>analyzer.Analyze(board,cancellation:new CancellationToken(true)));
+    }
+    [Fact] public void Live_analysis_cancels_without_throwing_or_caching_partial_results(){
+        var (rules,board)=Board();var analyzer=new BoardAnalyzer(rules);
+        Assert.Null(analyzer.TryAnalyze(board,samples:1,cancellation:new CancellationToken(true)));
+        var completed=analyzer.TryAnalyze(board,samples:1);
+        Assert.NotNull(completed);
+        Assert.Equal(300,completed.Checkpoints[^1].Damage);
+        Assert.Same(completed,analyzer.Analyze(board,samples:1));
+        Assert.Null(analyzer.TryAnalyze(board,samples:1,cancellation:new CancellationToken(true)));
     }
     [Fact] public void Measures_new_stacks_healing_and_shield_output_separately_from_damage(){
         var (rules,board)=Board();var stats=(double[])rules.Species[0].Normal[0].Stats.Clone();
@@ -89,6 +114,22 @@ public sealed class BoardAnalysisTests
         var advice=new PositionAdvisor(rules).FindBetterPosition(board,[new Unit{SpeciesId=support.Id,Instance=2},null,null,null],30);
         Assert.NotNull(advice);Assert.True(advice!.Recommended.MedianKillSeconds < advice.Current.MedianKillSeconds);
         Assert.Contains(advice.Slots.Take(6),unit=>unit?.SpeciesId==support.Id);
+    }
+    [Fact] public void Position_advisor_accounts_for_top_middle_trinket_cooldown_speed(){
+        var basis=RuleCompiler.Fixture();
+        var haste=InventoryRules.Definition("haste-crown")!.Value;
+        var rules=basis with {Trinkets=[new("haste-crown","Haste Crown",3,false,0,haste.Effects,"fixture",haste.Text)]};
+        var board=new FrozenBoard(1,100,"fixture",
+            [new Unit {SpeciesId="striker",Instance=1},new Unit {SpeciesId="guard",Instance=2},null,null,null,null],
+            [new BagEntry("haste-crown",1)],[]);
+
+        var current=new BoardAnalyzer(rules).Analyze(board,100,samples:1);
+        Assert.Equal(2.5,current.Checkpoints[0].Units.Single(unit=>unit.Slot==1).Cooldown);
+
+        var advice=new PositionAdvisor(rules).FindBetterPosition(board,new Unit?[4],100);
+        Assert.NotNull(advice);
+        Assert.Equal("striker",advice!.Slots[1]!.SpeciesId);
+        Assert.True(advice.Recommended.Checkpoints[^1].Dps>advice.Current.Checkpoints[^1].Dps);
     }
     [Theory]
     [InlineData(.025,"0.025")]

@@ -14,9 +14,9 @@ If the loader is installed, omit `-LoaderDirectory`. The script installs the bri
 
 Start the game normally and run the helper. The Board tab updates every 500 ms in the shop, including when the game is behind another window. F9 / **Refresh Game State** requests a refresh. The helper no longer captures images or opens OCR correction dialogs. Legacy screenshot readers and fixtures remain in the solution for historical regression coverage.
 
-Bridge 1.3 shows team output and enemy information in the Board tab. Restart the game after updating the installed bridge. Game IDs such as `red_coin` resolve to the catalog's `red-coin`.
+Bridge 1.4 selects the captured region in the helper automatically, as well as showing team output and enemy information in the Board tab. Restart the game after updating the installed bridge. Game IDs such as `red_coin` resolve to the catalog's `red-coin`.
 
-Output tables reuse BoardAnalyzer and the training combat resolver, with checkpoints at 0/5/10/15/20/30 seconds. These remain passive-target projections. The Board panel omits explanatory blocks; the shop summary shows estimated target time in seconds and as a percentage of 30 seconds, and position advice appears only when an improved arrangement is available. Live pre-aura stats, cooldowns, extra types and trinkets are imported; hidden progress and other simulator import limits affect these tables, not the game-provided outcome.
+Output tables reuse BoardAnalyzer and the training combat resolver, with checkpoints at 0/5/10/15/20/30 seconds. DPS is cumulative damage divided by elapsed battle time at each checkpoint; at 0s it is zero because no time has elapsed. This includes bursts between markers. These remain passive-target projections. The Board panel omits explanatory blocks; the shop summary shows estimated target time in seconds and as a percentage of 30 seconds, and position advice appears only when an improved arrangement is available. Live pre-aura stats, cooldowns, extra types and trinkets are imported; hidden progress and other simulator import limits affect these tables, not the game-provided outcome.
 
 ## Transport and fields
 
@@ -28,7 +28,7 @@ The mod reads objects on the Godot main thread and atomically replaces `user://b
 
 Verified against the installed Godot 4.7 build:
 
-- RunManager.data supplies trainer, active region, day, lives, wins, HP, gold, rank, free rerolls, team and bench. The helper uses the exported run region for pool calculations and recorded runs.
+- RunManager.data supplies trainer, active species set, day, lives, wins, HP, gold, rank, free rerolls, team and bench. The bridge maps the current game's `starter` and `oshima` set IDs to Pantra and Jinto respectively, then the helper uses that exported region for pool calculations and recorded runs.
 - The active shop state's manager supplies its five offers, frozen state and actual reroll cost.
 - Creature IDs, levels and shiny flags come from instances. `get_stat` supplies final buffed stats, using the same badge selection rules as the game UI. `get_gold_cost` includes discounts. Item prices come from priced shop instances.
 - The rank UI's cached weights supply actual modified probabilities, rather than the helper's rank table. The item-use and win-target label strings are read directly as structured game text, without image capture or OCR.

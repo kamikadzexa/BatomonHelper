@@ -15,7 +15,7 @@ public static class DamagePresentation
     public static DamageRateRow[] Rows(BoardAnalysisResult result)
     {
         var rows = new List<DamageRateRow>();
-        Add("DPS", point=>point.Dps, "All damage combined, including burn, poison and electricity.");
+        Add("DPS", point=>point.Dps, "Average damage per second since battle start, including burn, poison and electricity.");
         foreach(var (kind,label) in new[]{("Burn","Burn /s"),("Poison","Poison /s"),
             ("Shock","Electricity /s"),("Heal","Healing /s"),("Shield","Shield /s")})
         {

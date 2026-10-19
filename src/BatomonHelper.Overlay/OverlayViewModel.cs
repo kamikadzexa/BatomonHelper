@@ -70,7 +70,6 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     public ObservableCollection<BoardCardRow> BenchRows { get; } = [];
     public ObservableCollection<BoardCardRow> OfferRows { get; } = [];
     public ObservableCollection<BoardCardRow> RecommendedTeamRows { get; } = [];
-    public ObservableCollection<BoardCardRow> RecommendedBenchRows { get; } = [];
     public string BoardSummary { get => _boardSummary; private set => Set(ref _boardSummary, value); }
     public string? TrainerSpritePath { get => _trainerSpritePath; private set => Set(ref _trainerSpritePath, value); }
     public IReadOnlyList<RegionFilterOption> RegionFilters { get; } = [new(MonsterRegionFilter.All, "All regions"), new(MonsterRegionFilter.Jinto, "Jinto region"), new(MonsterRegionFilter.Pantra, "Pantra region")];
@@ -310,7 +309,13 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
             var sprite = monster.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, monster.SpritePath.Replace('/', Path.DirectorySeparatorChar));
             var reference = string.Join("\n", monster.ReferenceValues.Select(value => $"{value.Key}: {value.Value}"));
             if (!monster.ReferenceNotes.IsEmpty) reference += "\n\n" + string.Join("\n", monster.ReferenceNotes) + "\n" + _catalog.SourceUrls.LastOrDefault();
-            CreatureRows.Add(new(monster.Id, monster.Name, DisplayRarity(monster.Rarity), (int)monster.Rarity, string.Join(", ", monster.Regions.OrderBy(region => region)), odds?.PerBatomonRoll, odds?.NextShopChance, sprite, _poolContext?.LevelThreeMonsterIds.Contains(monster.Id) ?? _levelThreeCreatureIds.Contains(monster.Id), SetCreatureLevelThree, reference));
+            var abilities = monster.Rules?.Abilities.OrderBy(entry => entry.Key)
+                .Where(entry => !string.IsNullOrWhiteSpace(entry.Value))
+                .Select(entry => $"Lv. {entry.Key}: {entry.Value}").ToArray() ?? [];
+            var ability = abilities.Length == 0 ? "\u2014" : string.Join("\n", abilities);
+            if (abilities.Length > 0 && !string.IsNullOrWhiteSpace(monster.Rules?.AbilityTrigger))
+                ability = monster.Rules.AbilityTrigger + "\n" + ability;
+            CreatureRows.Add(new(monster.Id, monster.Name, DisplayRarity(monster.Rarity), (int)monster.Rarity, string.Join(", ", monster.Regions.OrderBy(region => region)), odds?.PerBatomonRoll, odds?.NextShopChance, sprite, _poolContext?.LevelThreeMonsterIds.Contains(monster.Id) ?? _levelThreeCreatureIds.Contains(monster.Id), SetCreatureLevelThree, reference) { Ability = ability });
         }
         OnPropertyChanged(nameof(CreatureCount));
     }
@@ -501,6 +506,7 @@ public sealed class CreatureBrowserRow(string id, string name, string rarity, in
     public event PropertyChangedEventHandler? PropertyChanged;
     public string Id { get; } = id;
     public string Name { get; } = name;
+    public string Ability { get; init; } = "\u2014";
     public string Rarity { get; } = rarity;
     public int RarityOrder { get; } = rarityOrder;
     public string Regions { get; } = regions;

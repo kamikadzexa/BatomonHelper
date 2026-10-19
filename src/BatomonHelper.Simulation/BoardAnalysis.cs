@@ -14,6 +14,7 @@ public sealed class CombatProbe
 {
     public double Duration {get;init;}=31;
     public CancellationToken Cancellation {get;init;}
+    internal bool StopQuietlyOnCancellation {get;init;}
     public List<DamagePacket> Damage {get;}=[];
     public List<DamagePacket> Output {get;}=[];
     public List<CombatFrame> Frames {get;}=[];
@@ -31,18 +32,23 @@ public sealed record BoardAnalysisResult(int Version,string RulesHash,string Ide
 /// <summary>Passive-target offensive projection using the production combat resolver, never a second damage formula.</summary>
 public sealed class BoardAnalyzer(RulesManifest rules)
 {
-    public const int Version=3;
+    public const int Version=4;
     private readonly Dictionary<string,BoardAnalysisResult> _cache=[];
     private readonly Queue<string> _order=[];
     private readonly object _gate=new();
     public BoardAnalysisResult Analyze(FrozenBoard board,double? targetHp=null,int samples=32,ulong seed=69,CancellationToken cancellation=default,bool reference=false)
+        => TryAnalyze(board,targetHp,samples,seed,cancellation,reference)
+            ?? throw new OperationCanceledException(cancellation);
+
+    /// <summary>Returns null on cancellation without throwing or caching partial results.</summary>
+    public BoardAnalysisResult? TryAnalyze(FrozenBoard board,double? targetHp=null,int samples=32,ulong seed=69,CancellationToken cancellation=default,bool reference=false)
     {
         if(samples<1||samples>256)throw new ArgumentOutOfRangeException(nameof(samples));
         var hp=targetHp??rules.Parameters.DailyHp[Math.Clamp(board.Day-1,0,rules.Parameters.DailyHp.Length-1)];
         if(!double.IsFinite(hp)||hp<=0)throw new ArgumentOutOfRangeException(nameof(targetHp));
         var provenance=targetHp.HasValue?"Manual target HP":rules.Parameters.HpEvidence?.FirstOrDefault(x=>x.Day==board.Day)?.Kind.ToString()??(rules.Parameters.Verified?"Verified rules HP":"Assumed rules HP");
         var identity=Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new {Version,rules.Hash,board,hp,samples,seed,reference,provenance})));
-        cancellation.ThrowIfCancellationRequested();
+        if(cancellation.IsCancellationRequested)return null;
         lock(_gate)if(_cache.TryGetValue(identity,out var cached))return cached;
         var probes=new List<CombatProbe>();var kills=new List<double>();
         var passive=new FrozenBoard(board.Day,hp,"__passive_target__",new Unit?[6],[],[]);
@@ -50,23 +56,24 @@ public sealed class BoardAnalyzer(RulesManifest rules)
         var projectionRules=rules with {Trainers=[..rules.Trainers,new("__passive_target__","Passive target",0,false,0,[],"analysis","")]};
         var resolver=new Combat(projectionRules);
         for(var sample=0;sample<samples;sample++){
-            cancellation.ThrowIfCancellationRequested();
-            var probe=new CombatProbe {Cancellation=cancellation};
+            if(cancellation.IsCancellationRequested)return null;
+            var probe=new CombatProbe {Cancellation=cancellation,StopQuietlyOnCancellation=true};
             resolver.ResolveBattle(StateSnapshots.Copy(board),passive,seed+(ulong)sample*0x9E3779B97F4A7C15UL,reference:reference,probe:probe);
+            if(cancellation.IsCancellationRequested)return null;
             probes.Add(probe);double cumulative=0;
             foreach(var group in probe.Damage.Where(x=>x.Seconds<=30+1e-8).GroupBy(x=>x.Seconds).OrderBy(x=>x.Key)){
                 cumulative+=group.Sum(x=>x.Amount);if(cumulative>=hp){kills.Add(group.Key);break;}
             }
         }
         DamagePoint Point(double time){
-            bool InWindow(double seconds) => time>=30 ? seconds>29+1e-8 && seconds<=30+1e-8 :
-                (time==0?seconds>=0:seconds>time+1e-8) && seconds<=time+1+1e-8;
             var totals=probes.Select(p=>p.Damage.Where(x=>x.Seconds<=time+1e-8).Sum(x=>x.Amount)).ToArray();var mean=totals.Average();
             var frames=probes.Select(p=>p.Frames.Last(x=>x.Seconds<=time+1e-8)).ToArray();
             var units=frames.SelectMany(f=>f.Units).GroupBy(x=>x.Slot).OrderBy(x=>x.Key).Select(g=>new CombatUnitSnapshot(g.Key,string.Join(" / ",g.Select(x=>x.Species).Distinct()),g.Any(x=>x.Alive),
                 Enumerable.Range(0,9).Select(i=>g.Sum(x=>x.Stats[i])/samples).ToArray(),g.Any(x=>x.Cooldown.HasValue)?g.Where(x=>x.Cooldown.HasValue).Average(x=>x.Cooldown!.Value):null,
                 g.SelectMany(x=>x.Counters.Keys).Distinct().ToDictionary(k=>k,k=>g.Sum(x=>x.Counters.GetValueOrDefault(k))/samples))).ToArray();
-            return new DamagePoint(time,probes.Average(p=>p.Damage.Where(x=>InWindow(x.Seconds)).Sum(x=>x.Amount)),mean,totals.Min(),totals.Max(),Math.Sqrt(totals.Average(x=>(x-mean)*(x-mean))),
+            // Average all damage so casts between timeline markers cannot disappear.
+            // At battle start no time has elapsed, so an average is not yet defined.
+            return new DamagePoint(time,time>0?mean/time:0,mean,totals.Min(),totals.Max(),Math.Sqrt(totals.Average(x=>(x-mean)*(x-mean))),
                 new[]{"Direct","Burn","Poison","Shock"}.ToDictionary(k=>k,k=>probes.Average(p=>p.Damage.Where(x=>x.Kind==k&&x.Seconds<=time+1e-8).Sum(x=>x.Amount))),
                 Enumerable.Range(0,3).Select(i=>frames.Average(x=>x.EnemyStatuses[i])).ToArray(),units)
             {
@@ -88,6 +95,7 @@ public sealed class BoardAnalyzer(RulesManifest rules)
         var features=checkpoints.SelectMany(p=>new[]{(float)Math.Log(1+p.Dps)/10,(float)Math.Log(1+p.Damage)/10}.Concat(p.StatusStacks.Select(s=>(float)Math.Log(1+s)/10)))
             .Concat(new[]{(float)kills.Count/samples,(float)(median??30)/30,(float)Math.Log(1+checkpoints[^1].Damage/hp)}).ToArray();
         var result=new BoardAnalysisResult(Version,rules.Hash,identity,samples,hp,provenance,(double)kills.Count/samples,median,median/30*100,checkpoints[^1].Damage/hp*100,checkpoints,curve,limitations.ToArray(),features);
+        if(cancellation.IsCancellationRequested)return null;
         lock(_gate){if(_cache.Count>=128)_cache.Remove(_order.Dequeue());if(!_cache.ContainsKey(identity)){_cache.Add(identity,result);_order.Enqueue(identity);}}
         return result;
     }

@@ -10,6 +10,12 @@ dotnet run --project src/BatomonHelper.Overlay -c Release
 dotnet test BatomonHelper.sln --no-restore
 ```
 
+## Helper layout and window controls
+
+The helper opens at 1440 × 900 (clamped to the current monitor's usable area), stays above the game, and has standard minimize, maximize/restore, and close buttons. Drag the title bar to move or snap it; double-click it or press F11 to maximize. Escape restores a maximized window. F8 hides/shows the helper and restores it when minimized.
+
+Use the tabs across the top for Board, Creatures, Items, and Trinkets. Board uses two columns on wide windows and stacks its analysis below the team on smaller windows. Creature search, pool filters, rank controls, and shop odds live on the Creatures page; shop odds start collapsed in compact layouts. The separate Training Lab is unchanged.
+
 ## Windows release installer
 
 Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then run:
@@ -28,13 +34,13 @@ Install the supplied community Mod Loader 1.2.2 and the companion bridge with th
 .\tools\Install-GameBridge.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Batomon Showdown' -LoaderDirectory 'C:\path\to\extracted\modloader'
 ```
 
-Omit `-LoaderDirectory` if the loader is already installed. Start the game and helper normally. The Board tab refreshes automatically every 500 ms from actual team, bench, shop, prices, final stats and run counters. `F8` toggles visibility, `F9` / **Refresh Game State** refreshes manually, and `F11` toggles fullscreen. No focused game window or screenshot corrections are needed. Stale, incompatible and invalid data preserve the last accepted board with an explicit status.
+Omit `-LoaderDirectory` if the loader is already installed. Start the game and helper normally. The Board page refreshes automatically every 500 ms from actual team, bench, shop, prices, final stats and run counters. `F8` toggles visibility, `F9` / **Refresh** refreshes manually, and `F11` toggles maximize/restore without covering the taskbar. No focused game window or screenshot corrections are needed. Stale, incompatible and invalid data preserve the last accepted board with an explicit status.
 
 The bridge and installation script ship with the helper; the third-party loader is a separate download. BatoEyes is optional. See [installation, protocol, verified fields and limitations](docs/game-bridge.md). The old screenshot code and fixtures remain for [historical regression coverage](docs/legacy-screenshot-reader.md).
 
 The Board panel shows team DPS, healing, shielding and status output at 0/5/10/15/20/30 seconds, plus useful board and bench position suggestions.
 
-Bridge 1.3 loads the enemy lineup and HP when battle starts and displays **WIN** or **LOSS** from the game's own completed ghost battle. There is no sampled win probability or separate DPS tab. While the game is still calculating, the result remains pending. Team output tables use the helper's passive-target simulator independently of the authoritative outcome. Update the companion bridge and restart the game to enable enemy loading and results.
+Bridge 1.4 captures the active game set and selects its matching region filter automatically. It also loads the enemy lineup and HP when battle starts and displays **WIN** or **LOSS** from the game's own completed ghost battle. There is no sampled win probability or separate DPS tab. While the game is still calculating, the result remains pending. Team output tables use the helper's passive-target simulator independently of the authoritative outcome. Update the companion bridge and restart the game to enable the latest bridge features.
 
 ## Data and limits
 

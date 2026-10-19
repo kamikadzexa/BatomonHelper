@@ -59,7 +59,11 @@ public sealed class Combat(RulesManifest rules)
         void Snapshot()
         {
             if(probe is null)return;
-            probe.Cancellation.ThrowIfCancellationRequested();
+            if(probe.StopQuietlyOnCancellation)
+            {
+                if(probe.Cancellation.IsCancellationRequested)return;
+            }
+            else probe.Cancellation.ThrowIfCancellationRequested();
             var units=new List<CombatUnitSnapshot>();
             for(var slot=0;slot<6;slot++)if(teams[0].Units[slot] is {} u){
                 var stats=Stats(0,slot).ToArray();
@@ -117,6 +121,7 @@ public sealed class Combat(RulesManifest rules)
         Snapshot();long nextSnapshot=Tick(.5);
         while (true)
         {
+            if(probe is {StopQuietlyOnCancellation:true} && probe.Cancellation.IsCancellationRequested)break;
             Invalidate();
             if (++operations > 1_000_000) throw new InvalidOperationException("Battle event limit exceeded; preserve the seed for a rules audit.");
             var next = now+1;

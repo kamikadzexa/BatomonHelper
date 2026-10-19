@@ -40,20 +40,61 @@ internal static class NativeOverlay
         SetWindowLongPtr(hwnd, GwlExstyle, (IntPtr)(enabled ? style | WsExTransparent : style & ~WsExTransparent));
     }
 
-    public static void FillCurrentMonitor(Window window)
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo
+    {
+        public NativePoint Reserved;
+        public NativePoint MaxSize;
+        public NativePoint MaxPosition;
+        public NativePoint MinTrackSize;
+        public NativePoint MaxTrackSize;
+    }
+
+    public static void ApplyWorkAreaMaximize(IntPtr hwnd, IntPtr lParam, ref bool handled)
+    {
+        var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref info)) return;
+        var bounds = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+        bounds.MaxPosition.X = info.Work.Left - info.Monitor.Left;
+        bounds.MaxPosition.Y = info.Work.Top - info.Monitor.Top;
+        bounds.MaxSize.X = info.Work.Right - info.Work.Left;
+        bounds.MaxSize.Y = info.Work.Bottom - info.Work.Top;
+        Marshal.StructureToPtr(bounds, lParam, false);
+        handled = true;
+    }
+
+    public static void ClampToCurrentWorkArea(Window window)
     {
         var hwnd = new System.Windows.Interop.WindowInteropHelper(window).Handle;
         var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
         var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
         if (monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref info)) return;
 
+        // Native monitor coordinates are pixels; WPF dimensions are DIPs.
+        var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(window);
+        var workWidth = (info.Work.Right - info.Work.Left) / dpi.DpiScaleX;
+        var workHeight = (info.Work.Bottom - info.Work.Top) / dpi.DpiScaleY;
+        window.MinWidth = Math.Min(960, workWidth);
+        window.MinHeight = Math.Min(640, workHeight);
+        window.Width = Math.Min(window.Width, workWidth);
+        window.Height = Math.Min(window.Height, workHeight);
+        var width = (int)Math.Round(window.Width * dpi.DpiScaleX);
+        var height = (int)Math.Round(window.Height * dpi.DpiScaleY);
         SetWindowPos(
             hwnd,
             IntPtr.Zero,
-            info.Monitor.Left,
-            info.Monitor.Top,
-            info.Monitor.Right - info.Monitor.Left,
-            info.Monitor.Bottom - info.Monitor.Top,
+            info.Work.Left + ((info.Work.Right - info.Work.Left - width) / 2),
+            info.Work.Top + ((info.Work.Bottom - info.Work.Top - height) / 2),
+            width,
+            height,
             SwpNoZOrder | SwpNoActivate);
     }
 

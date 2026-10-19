@@ -44,7 +44,7 @@ public partial class MainWindow
             DamageRows.Clear();
             DamageSummary=$"Passive-target damage · {result.Samples} samples · target {result.TargetHp:N0} HP ({result.TargetProvenance})\n"+
                 (result.MedianKillSeconds is {} seconds?$"Estimated win at {seconds:0.0}s ({seconds / 30:0%}), median among successful samples · reach rate {result.ReachProbability:P0}":"Target not defeated within 30 seconds")+
-                $"\nDamage at 30s: {result.DamagePercentAt30:0.#}% of target HP. DPS = damage in the following second; includes opening burst at 0s.";
+                $"\nDamage at 30s: {result.DamagePercentAt30:0.#}% of target HP. DPS = average damage per second since battle start.";
             foreach(var point in result.Checkpoints){
                 var units=string.Join("\n",point.Units.Select(u=>$"Slot {u.Slot+1} {u.Species}{(u.Alive?"":" (knocked out)")}: "+
                     string.Join(" · ",Enumerable.Range(0,8).Select(i=>$"{(Stat)i} {u.Stats[i]:0.##}"))+$" · cooldown {u.Cooldown:0.##}s\n"+

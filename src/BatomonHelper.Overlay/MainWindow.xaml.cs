@@ -1,4 +1,5 @@
 using System.Windows.Interop;
+using System.Windows.Controls;
 
 namespace BatomonHelper.Overlay;
 
@@ -8,20 +9,23 @@ public partial class MainWindow : Window
     private const int CaptureHotkeyId = 0xB471;
     private const int WmHotkey = 0x0312;
     private HwndSource? _source;
-    private bool _isExpanded;
-    private Size _compactSize;
-    private Rect _windowedBounds;
-    private WindowState _windowedState;
-    private WindowStyle _windowedStyle;
-    private ResizeMode _windowedResizeMode;
+    private WindowState _lastVisibleState = WindowState.Normal;
 
+    // Fullscreen now uses the same work-area bounds as standard maximize.
     public static readonly DependencyProperty IsFullscreenProperty = DependencyProperty.Register(
         nameof(IsFullscreen), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
-
     public bool IsFullscreen
     {
         get => (bool)GetValue(IsFullscreenProperty);
         private set => SetValue(IsFullscreenProperty, value);
+    }
+
+    public static readonly DependencyProperty IsCompactProperty = DependencyProperty.Register(
+        nameof(IsCompact), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+    public bool IsCompact
+    {
+        get => (bool)GetValue(IsCompactProperty);
+        private set => SetValue(IsCompactProperty, value);
     }
 
     public MainWindow()
@@ -29,36 +33,62 @@ public partial class MainWindow : Window
         InitializeComponent();
         VersionLabel.Text = $"v{typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}";
         DataContext = new OverlayViewModel();
+        SizeChanged += (_, _) => UpdateBoardLayout();
+        StateChanged += (_, _) =>
+        {
+            if (WindowState != WindowState.Minimized) _lastVisibleState = WindowState;
+            IsFullscreen = WindowState == WindowState.Maximized;
+            MaximizeButton.Content = IsFullscreen ? "\uE923" : "\uE922";
+            MaximizeButton.ToolTip = IsFullscreen ? "Restore (F11)" : "Maximize (F11)";
+            System.Windows.Automation.AutomationProperties.SetName(MaximizeButton, IsFullscreen ? "Restore" : "Maximize");
+        };
         PreviewKeyDown += (_, e) =>
         {
-            if (e.Key == Key.F11)
+            if (e.Key == Key.F11 || (e.Key == Key.Escape && IsFullscreen))
             {
-                ToggleFullscreen(this, new RoutedEventArgs());
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Escape && IsFullscreen)
-            {
-                ToggleFullscreen(this, new RoutedEventArgs());
+                ToggleMaximize(this, new RoutedEventArgs());
                 e.Handled = true;
             }
         };
         SourceInitialized += (_, _) =>
         {
             _source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
-            _source?.AddHook(WndProc);
-            var visibilityKey = NativeOverlay.RegisterHotKey(_source!.Handle, HotkeyId, 0x4000, 0x77); // F8
-            var captureKey = NativeOverlay.RegisterHotKey(_source.Handle, CaptureHotkeyId, 0x4000, 0x78); // F9
+            _source!.AddHook(WndProc);
+            NativeOverlay.ClampToCurrentWorkArea(this);
+            var visibilityKey = NativeOverlay.RegisterHotKey(_source.Handle, HotkeyId, 0x4000, 0x77);
+            var captureKey = NativeOverlay.RegisterHotKey(_source.Handle, CaptureHotkeyId, 0x4000, 0x78);
             if ((!visibilityKey || !captureKey) && DataContext is OverlayViewModel keyModel)
                 keyModel.ReportHotkeyConflict($"Could not register {(!visibilityKey ? "F8 visibility " : "")}{(!captureKey ? "F9 refresh" : "")}: another application owns the shortcut.");
         };
-        Closed += (_, _) => { if (DataContext is OverlayViewModel viewModel) viewModel.StopCaptures(); if (_source is not null) { NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId); NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId); } };
+        Closed += (_, _) =>
+        {
+            if (DataContext is OverlayViewModel viewModel) viewModel.StopCaptures();
+            if (_source is null) return;
+            NativeOverlay.UnregisterHotKey(_source.Handle, HotkeyId);
+            NativeOverlay.UnregisterHotKey(_source.Handle, CaptureHotkeyId);
+            _source.RemoveHook(WndProc);
+        };
+    }
+
+    private void DashboardSizeChanged(object sender, SizeChangedEventArgs e) => UpdateBoardLayout();
+
+    private void UpdateBoardLayout()
+    {
+        if (BoardColumns is null || BoardAnalysis is null) return;
+        var wide = ShellRoot.ActualWidth >= 1200;
+        IsCompact = !wide;
+        BoardColumns.ColumnDefinitions[1].Width = wide ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        Grid.SetColumn(BoardAnalysis, wide ? 1 : 0);
+        Grid.SetRow(BoardAnalysis, wide ? 0 : 1);
+        BoardAnalysis.Margin = wide ? new Thickness(16, 0, 0, 0) : new Thickness(0, 16, 0, 0);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if (message == 0x0024) NativeOverlay.ApplyWorkAreaMaximize(hwnd, lParam, ref handled);
         if (message == WmHotkey && wParam.ToInt32() == HotkeyId)
         {
-            Visibility = Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
+            ToggleVisibility();
             handled = true;
         }
         if (message == WmHotkey && wParam.ToInt32() == CaptureHotkeyId)
@@ -69,56 +99,18 @@ public partial class MainWindow : Window
         return IntPtr.Zero;
     }
 
-    private void DragWindow(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); }
-    private void ToggleExpanded(object sender, RoutedEventArgs e)
+    internal void ToggleVisibility()
     {
-        if (!_isExpanded)
+        if (IsVisible && WindowState != WindowState.Minimized) Hide();
+        else
         {
-            _compactSize = new Size(Width, Height);
-            WindowState = WindowState.Normal;
-            Width = Math.Min(1600, SystemParameters.WorkArea.Width);
-            Height = Math.Min(920, SystemParameters.WorkArea.Height);
-            ExpandButton.Content = "Compact";
-            _isExpanded = true;
-            return;
+            Show();
+            if (WindowState == WindowState.Minimized) WindowState = _lastVisibleState;
         }
-
-        Width = Math.Max(MinWidth, _compactSize.Width);
-        Height = Math.Max(MinHeight, _compactSize.Height);
-        ExpandButton.Content = "Expand";
-        _isExpanded = false;
     }
 
-    private void ToggleFullscreen(object sender, RoutedEventArgs e)
-    {
-        if (!IsFullscreen)
-        {
-            _windowedBounds = WindowState == WindowState.Normal
-                ? new Rect(Left, Top, ActualWidth, ActualHeight)
-                : RestoreBounds;
-            _windowedState = WindowState;
-            _windowedStyle = WindowStyle;
-            _windowedResizeMode = ResizeMode;
-            WindowState = WindowState.Normal;
-            WindowStyle = WindowStyle.None;
-            ResizeMode = ResizeMode.NoResize;
-            NativeOverlay.FillCurrentMonitor(this);
-            FullscreenButton.Content = "Exit Fullscreen";
-            IsFullscreen = true;
-            return;
-        }
-
-        WindowState = WindowState.Normal;
-        WindowStyle = _windowedStyle;
-        ResizeMode = _windowedResizeMode;
-        Left = _windowedBounds.Left;
-        Top = _windowedBounds.Top;
-        Width = _windowedBounds.Width;
-        Height = _windowedBounds.Height;
-        WindowState = _windowedState;
-        FullscreenButton.Content = "Fullscreen";
-        IsFullscreen = false;
-    }
-
+    private void ToggleMaximize(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    private void MinimizeWindow(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void CloseWindow(object sender, RoutedEventArgs e) => Close();
 }

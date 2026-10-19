@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Resource Include="Assets\batomon-helper.ico" />
+    <Resource Include="Assets\batomon-helper-logo.png" />
     <ProjectReference Include="..\BatomonHelper.Core\BatomonHelper.Core.csproj" />
     <ProjectReference Include="..\BatomonHelper.Simulation\BatomonHelper.Simulation.csproj" />
     <ProjectReference Include="..\BatomonHelper.ScreenReader\BatomonHelper.ScreenReader.csproj" />

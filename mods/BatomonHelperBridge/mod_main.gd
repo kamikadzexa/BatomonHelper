@@ -100,8 +100,7 @@ func read_board(run, manager, view) -> Dictionary:
 		"capturedAt": Time.get_datetime_string_from_system(true) + "Z"}
 
 func read_region(run) -> String:
-	# The run model has used both region and region_id across game builds.
-	# Export the active run region, never infer it from the current shop (which can contain foreign offers).
+	# Some builds expose the selected region directly.
 	for key in ["region", "region_id", "current_region", "selected_region"]:
 		if not _has(run, key):
 			continue
@@ -115,7 +114,16 @@ func read_region(run) -> String:
 		if value is int:
 			if value == 0: return "Pantra"
 			if value == 1: return "Jinto"
-	push_warning("BatomonHelper Bridge: Cannot read the active run region.")
+	# The current build stores the selection as the active species-set ID instead.
+	# Starter is the game's Pantra pool; Oshima is the Jinto pool. Do not infer
+	# a region from the offers, because effects can put foreign creatures in shop.
+	if _has(run, "active_set_id"):
+		match str(run.get("active_set_id")).to_lower():
+			"starter", "pantra":
+				return "Pantra"
+			"oshima", "jinto":
+				return "Jinto"
+	push_warning("BatomonHelper Bridge: Cannot read the active run region or set.")
 	return "All"
 
 func read_slots(source: Array, count: int, shop: bool, gold: int, reverse_visual_order := false) -> Array:

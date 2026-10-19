@@ -1,6 +1,6 @@
 {
   "id": "batomon_helper_bridge",
   "name": "BatomonHelper Bridge",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Exports read-only local shop and battle-start snapshots for BatomonHelper. No network, inputs, or save changes."
 }

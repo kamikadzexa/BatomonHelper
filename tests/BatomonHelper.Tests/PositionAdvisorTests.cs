@@ -7,6 +7,18 @@ namespace BatomonHelper.Tests;
 public sealed class PositionAdvisorTests
 {
     [Fact]
+    public void Superseded_live_search_returns_no_partial_advice_without_throwing()
+    {
+        var rules = RuleCompiler.Fixture();
+        var current = new FrozenBoard(1, 100, "fixture", [new() { SpeciesId = "striker" }, null, null, null, null, null], [], []);
+        var advisor = new PositionAdvisor(rules);
+        var token = new CancellationToken(true);
+        Assert.Null(advisor.TryFindBetterPosition(current, new Unit?[4], cancellation: token));
+        var error = Assert.Throws<OperationCanceledException>(() => advisor.FindBetterPosition(current, new Unit?[4], cancellation: token));
+        Assert.Equal(token, error.CancellationToken);
+    }
+
+    [Fact]
     public async Task Screenshot_board_keeps_Pylongs_left_ally_bonus_and_rejects_the_reported_swap()
     {
         var raw = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "game-bridge-pylong.json"));

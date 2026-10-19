@@ -14,7 +14,7 @@ public sealed partial class OverlayViewModel
     private string? _damageIdentity;
     private string? _positionIdentity;
     private string _damageSummary = "";
-    private string _positionHint = "Position advice appears when a stronger board or bench swap is found.";
+    private string _positionHint = "Final placement advice appears when a stronger board or bench layout is found.";
     private PointCollection _damageCurve = [], _damageHpLine = [];
     public ObservableCollection<DamageRateRow> DamageRows { get; } = [];
     public ObservableCollection<DamageRateRow> OpponentDamageRows { get; } = [];
@@ -33,7 +33,7 @@ public sealed partial class OverlayViewModel
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_captureCancellation.Token);
         _damageCancellation = cancellation;
         DamageRows.Clear(); OpponentDamageRows.Clear(); DamageCurve = []; DamageHpLine = [];
-        RecommendedTeamRows.Clear(); RecommendedBenchRows.Clear();
+        RecommendedTeamRows.Clear();
         OnPropertyChanged(nameof(RecommendedPositionsVisibility));
         PositionHint = "";
         DamageSummary = $"Your HP {battle.Player.TeamHp:N0} / Enemy HP {battle.Opponent.TeamHp:N0}";
@@ -50,11 +50,12 @@ public sealed partial class OverlayViewModel
         try
         {
             _damageRules ??= JsonSerializer.Deserialize<RulesManifest>(await File.ReadAllTextAsync(
-                Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json"), cancellation.Token))
+                Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json")))
                 ?? throw new InvalidDataException("Simulation rules are unavailable.");
-            var result = await Task.Run(() => LiveBattleAnalysis.Analyze(battle, _damageRules,
-                cancellation: cancellation.Token), cancellation.Token);
-            cancellation.Token.ThrowIfCancellationRequested();
+            if (cancellation.IsCancellationRequested) return;
+            var result = await Task.Run(() => LiveBattleAnalysis.TryAnalyze(battle, _damageRules,
+                cancellation: cancellation.Token));
+            if (cancellation.IsCancellationRequested || result is null) return;
             foreach (var row in DamagePresentation.Rows(result.Player)) DamageRows.Add(row);
             foreach (var row in DamagePresentation.Rows(result.Opponent)) OpponentDamageRows.Add(row);
         }
@@ -84,7 +85,7 @@ public sealed partial class OverlayViewModel
         DamageRows.Clear(); DamageCurve = []; DamageHpLine = [];
         if (refreshPositionAdvice)
         {
-            RecommendedTeamRows.Clear(); RecommendedBenchRows.Clear(); OnPropertyChanged(nameof(RecommendedPositionsVisibility));
+            RecommendedTeamRows.Clear(); OnPropertyChanged(nameof(RecommendedPositionsVisibility));
         }
         if (data is null)
         {
@@ -94,23 +95,24 @@ public sealed partial class OverlayViewModel
             return;
         }
         DamageSummary = "";
-        if (refreshPositionAdvice) PositionHint = data.Bench is null ? "Restart the game after updating the bridge to compare board and bench positions." : "Checking every board and bench swap…";
+        if (refreshPositionAdvice) PositionHint = data.Bench is null ? "Restart the game after updating the bridge to compare board and bench positions." : "Optimizing the final board and bench placement…";
         try
         {
             _damageRules ??= JsonSerializer.Deserialize<RulesManifest>(await File.ReadAllTextAsync(
-                Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json"), cancellation.Token))
+                Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json")))
                 ?? throw new InvalidDataException("Simulation rules are unavailable.");
+            if (cancellation.IsCancellationRequested) return;
             var rules = _damageRules;
             var output = await Task.Run(() =>
             {
                 var projection = LiveBoardImport.Create(board, data, rules);
-                var result = new BoardAnalyzer(projection.Rules).Analyze(projection.Board, samples: 32, cancellation: cancellation.Token);
-                var advice = refreshPositionAdvice && projection.Bench is not null
-                    ? new PositionAdvisor(projection.Rules).FindBetterPosition(projection.Board, projection.Bench, cancellation: cancellation.Token)
+                var result = new BoardAnalyzer(projection.Rules).TryAnalyze(projection.Board, samples: 32, cancellation: cancellation.Token);
+                var advice = result is not null && refreshPositionAdvice && projection.Bench is not null
+                    ? new PositionAdvisor(projection.Rules).TryFindBetterPosition(projection.Board, projection.Bench, cancellation: cancellation.Token)
                     : null;
                 return (projection, result, advice);
-            }, cancellation.Token);
-            cancellation.Token.ThrowIfCancellationRequested();
+            });
+            if (cancellation.IsCancellationRequested || output.result is null) return;
             if (refreshPositionAdvice) _positionIdentity = positionIdentity;
             var result = output.result;
             DamageSummary = DamagePresentation.Summary(result);
@@ -120,10 +122,10 @@ public sealed partial class OverlayViewModel
             DamageHpLine = new([new Point(0, 150 - result.TargetHp / maximum * 145), new Point(600, 150 - result.TargetHp / maximum * 145)]);
             if (refreshPositionAdvice && output.advice is { } advice)
             {
-                PositionHint = $"Target HP reached {Timing(advice.Recommended)} instead of {Timing(advice.Current)}.";
+                PositionHint = $"Final placement reaches target HP {Timing(advice.Recommended)} instead of {Timing(advice.Current)}.";
                 FillRecommendedPositions(advice.Slots);
             }
-            else if (refreshPositionAdvice && output.projection.Bench is not null) PositionHint = "No single board or bench swap improves the estimated win time or 30-second DPS.";
+            else if (refreshPositionAdvice && output.projection.Bench is not null) PositionHint = "No final board and bench placement improves the estimated win time or 30-second DPS.";
         }
         catch (OperationCanceledException) { }
         catch (Exception error) { if (!cancellation.IsCancellationRequested) DamageSummary = "DPS analysis unavailable: " + error.Message; }
@@ -136,7 +138,6 @@ public sealed partial class OverlayViewModel
     private void FillRecommendedPositions(Unit?[] slots)
     {
         Fill(RecommendedTeamRows, slots.Take(6), "Board");
-        Fill(RecommendedBenchRows, slots.Skip(6), "Bench");
         OnPropertyChanged(nameof(RecommendedPositionsVisibility));
         void Fill(ObservableCollection<BoardCardRow> rows, IEnumerable<Unit?> units, string area)
         {
