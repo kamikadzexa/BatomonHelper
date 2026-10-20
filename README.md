@@ -63,7 +63,7 @@ dotnet test BatomonHelper.sln -c Release
 .\Installer\Build-Installer.ps1
 ```
 
-Needs .NET 10 SDK; installer creation also needs [Inno Setup 6](https://jrsoftware.org/isinfo.php). Pass `-CompilerPath` for a custom compiler location. Output includes installer, checksum, and [release notes](docs/release-1.0.1.md). Publish the installer and its `.sha256` file as identically versioned GitHub Release assets for in-app updating.
+Needs .NET 10 SDK; installer creation also needs [Inno Setup 6](https://jrsoftware.org/isinfo.php). Pass `-CompilerPath` for a custom compiler location. Output includes installer, checksum, and [release notes](docs/release-1.0.3.md). Publish the installer and its `.sha256` file as identically versioned GitHub Release assets for in-app updating.
 
 [Training Lab](docs/strategic-training.md) is separate and excluded from the installer. See [data/development details](docs/development.md) and [training](docs/training.md).
 

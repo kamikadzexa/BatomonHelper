@@ -271,7 +271,10 @@ public sealed class Combat(RulesManifest rules)
             var kaleidoscope=BagCount(side,"kaleidoscope");
             if(kaleidoscope>0&&!teams[side].Units.Where((u,i)=>i!=slot && u is {Alive:true}).OfType<Fighter>().Any(u=>Types(u).Any(types.Contains)))values[6]+=.25*kaleidoscope;
             foreach(var trainer in teams[side].Trainers){
-                if(trainer=="musician" && types.Contains("electric") && teams[side].Units.OfType<Fighter>().Count(u=>u.Alive && Types(u).Contains("electric"))==1)percentages[5]+=1.5;
+                // Musician counts the active roster, including knocked-out units, as the
+                // game does in run_data.team. A self-knockout must neither remove its
+                // own Shock bonus nor unlock a bonus when two Electrics were fielded.
+                if(trainer=="musician" && types.Contains("electric") && teams[side].Units.OfType<Fighter>().Count(u=>Types(u).Contains("electric"))==1)percentages[5]+=1.5;
                 if(trainer=="chemist" && types.Contains("toxic"))values[4]+=3+teams[side].Counters.GetValueOrDefault("chemist-levels");
                 if(trainer=="pyromaniac" && types.Contains("fire"))values[3]+=2;
             }

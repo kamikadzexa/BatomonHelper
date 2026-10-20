@@ -1,4 +1,14 @@
-# Release validation: 1.0.1
+# Release validation: 1.0.3
+
+Validated locally on 2026-10-20.
+
+- `dotnet test BatomonHelper.sln -c Release --nologo`: **464 passed, 0 failed, 0 skipped**.
+- Four new Musician regression cases failed before the fix and passed afterward. They cover the single Electric self-knockout Shock cast in both cached and reference analysis, two Electric creatures losing the bonus, and rejection of a worse second-Electric placement.
+- Checked the game's Musician passive implementation: it counts Electric creatures in `run_data.team`, including knocked-out creatures. The simulator now uses the same roster rule.
+- The installer is built with `Installer/Build-Installer.ps1`, which verifies runtime, catalog, bridge, and license payloads and writes a SHA-256 checksum. No installed game files are changed by this fix.
+- Existing manual installation caveats below still apply; this patch does not repeat the administrator/UAC smoke check.
+
+## Historical validation: 1.0.1
 
 Prepared locally on 2026-10-19. No push, tag, or publication was performed.
 
