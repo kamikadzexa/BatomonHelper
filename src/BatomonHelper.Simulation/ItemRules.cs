@@ -39,7 +39,7 @@ public static class ItemRules
         "lootbox" => ("Get a random Legendary monster.", [E(Operation.GrantUnit, rarity: 4)]),
         "lucky-coin" => ("Gain $3. You can use 1 more item(s) today.", [E(Operation.Gold, amount: 3), E(Operation.ItemUses, amount: 1)]),
         "magic-lasso" => ("Gain an exact copy of the enemy's top middle Batomon in the next battle.", [E(Operation.NextCopyEnemy, amount: 1)]),
-        "mystic-pearl" => ("Give your Water monsters +10 Heal.", [E(Operation.Add, stat: Stat.Heal, amount: 10, type: "water")]),
+        "mystic-pearl" => ("Give your Water monsters +15 Heal.", [E(Operation.Add, stat: Stat.Heal, amount: 15, type: "water")]),
         "nana-berry" => ("Give the bottom right monster +5% Cooldown Speed. You can use 1 more item(s) today.", [E(Operation.Add, Target.BottomRight, Stat.Speed, .05), E(Operation.ItemUses, amount: 1)]),
         "pom-berry" => ("Give the bottom right monster +8 Damage. You can use 1 more item(s) today.", [E(Operation.Add, Target.BottomRight, amount: 8), E(Operation.ItemUses, amount: 1)]),
         "purple-gift" => ("Gain a random Super Rare Trinket.", [E(Operation.GrantTrinket, rarity: 3)]),

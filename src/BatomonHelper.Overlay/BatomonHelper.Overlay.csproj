@@ -21,6 +21,7 @@
     <Content Include="..\..\docs\*.md" Link="docs\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\docs\images\*.png" Link="docs\images\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\assets\simulation\rules.json" Link="assets\simulation\rules.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\assets\simulation\combat-rules.json" Link="assets\simulation\combat-rules.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\mods\BatomonHelperBridge\**\*" Link="mods\BatomonHelperBridge\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\tools\Install-GameBridge.ps1" Link="tools\Install-GameBridge.ps1" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\assets\wiki\**\*">

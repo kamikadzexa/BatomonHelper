@@ -222,6 +222,8 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
             if (message.Phase == "battle" && message.Battle is { } battle)
             {
                 _lastLiveBattle = battle;
+                if (_captureRun && _runCaptureStore is not null)
+                    await SaveFightAsync(_runCaptureStore, message.Sequence, message.UpdatedAt, battle);
                 _ = RefreshBattleAsync(battle);
                 BridgeNotice = "";
                 Status = "Live battle · analysis uses both teams at battle start";
@@ -501,6 +503,17 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         catch (Exception exception)
         {
             Warning = $"Run capture could not be saved: {exception.Message}";
+            if (ReferenceEquals(store, _runCaptureStore)) StopRunCapture();
+        }
+    }
+
+    private async Task SaveFightAsync(RunCaptureStore store, long sequence, DateTimeOffset capturedAt, GameBattleState battle)
+    {
+        try { await store.AppendFightAsync(sequence, capturedAt, battle, _captureCancellation.Token); }
+        catch (OperationCanceledException) { }
+        catch (Exception exception)
+        {
+            Warning = $"Fight capture could not be saved: {exception.Message}";
             if (ReferenceEquals(store, _runCaptureStore)) StopRunCapture();
         }
     }

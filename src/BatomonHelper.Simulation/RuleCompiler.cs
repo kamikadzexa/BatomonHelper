@@ -10,6 +10,21 @@ namespace BatomonHelper.Simulation;
 /// <summary>Build-time compiler. Unknown prose is an audit failure, never a silent no-op.</summary>
 public static class RuleCompiler
 {
+    /// <summary>Battle projections never buy items or execute shop-only trainer abilities.</summary>
+    public static RulesManifest CompileCombat(CatalogSnapshot catalog, StrategyKnowledge knowledge)
+    {
+        var full = Compile(catalog, knowledge);
+        var combat = full with {
+            CombatOnly = true,
+            Items = [],
+            Issues = full.Issues.Where(issue => issue.Kind != "items" &&
+                !(issue.Kind == "trainers" && (issue.Id, issue.Reason) is
+                    ("witch", "The first shop rolled each day contains a Potion.") or
+                    ("bug-catcher", "The first Bug monster you buy each day costs $10 less."))).ToArray()
+        };
+        return combat with { Hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(combat))) };
+    }
+
     public static RulesManifest Compile(CatalogSnapshot catalog, StrategyKnowledge knowledge,SimulationProfile? profile=null)
     {
         var issues = new List<RuleIssue>();
@@ -26,8 +41,8 @@ public static class RuleCompiler
             }
             else if (element.ValueKind == JsonValueKind.Array) foreach (var value in element.EnumerateArray()) Walk(value);
         }
-        if (catalog.DeclaredSteamBuild != "25738032" || catalog.Balance != "25")
-            issues.Add(new("catalog-build", "Source", $"Bundled build {catalog.DeclaredSteamBuild}/Balance {catalog.Balance} is not the verified target 25738032/25.", "https://batomon.com/status"));
+        if ((catalog.DeclaredSteamBuild, catalog.Balance) is not (("25738032", "25") or ("26078162", "26")))
+            issues.Add(new("catalog-build", "Source", $"Bundled build {catalog.DeclaredSteamBuild}/Balance {catalog.Balance} is not a reviewed catalog target.", "https://batomon.com/wiki"));
         if(!profile.AllowGuesses && settings.Evidence.Any(x=>x.Kind==EvidenceKind.Guessed))
             issues.Add(new("guesses-disabled","Source","This profile contains inferred rules while guesses are disabled.","user-profile.json"));
         var encounters=EncounterRules.Compile(knowledge,issues);

@@ -45,7 +45,7 @@
           <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Hide  ·  F8" Margin="0,0,10,0" Click="HideHelper" ToolTip="Hide the helper. Press F8 to show it again."/>
           <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0">
             <CheckBox Content="Auto update" IsChecked="{Binding AutoUpdate, Mode=TwoWay}" ToolTip="Refresh live game state every half second"/>
-            <CheckBox Content="Capture run" Margin="20,0,0,0" IsChecked="{Binding CaptureRun, Mode=TwoWay}" IsEnabled="{Binding CanToggleRunCapture}" ToolTip="Start recording from a clean Day 1 opening with Auto update enabled"/>
+            <CheckBox Content="Capture run" Margin="20,0,0,0" IsChecked="{Binding CaptureRun, Mode=TwoWay}" IsEnabled="{Binding CanToggleRunCapture}" ToolTip="Start from a clean Day 1 opening to record shop changes and game battle samples for simulator validation"/>
           </StackPanel>
           <StackPanel VerticalAlignment="Center"><TextBlock Text="LIVE COMPANION" FontSize="10" FontWeight="SemiBold" Foreground="#FFD34D"/></StackPanel>
         </DockPanel>

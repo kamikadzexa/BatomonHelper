@@ -8,6 +8,7 @@ internal static class EffectScaling
     {
         EffectScale.None => 1,
         EffectScale.Trinkets => bag.Sum(x => x.Quantity),
+        EffectScale.DistinctTrinkets => bag.Where(x => x.Quantity > 0).Select(x => x.Id).Distinct().Count(),
         EffectScale.CommonTrinkets => bag.Where(x => trinkets![x.Id].Rarity == 0).Sum(x => x.Quantity),
         EffectScale.UniqueTeamTypes => team.SelectMany(x => species[x.SpeciesId].Types.Concat(x.AddedTypes)).Distinct().Count(),
         EffectScale.Allies => team.Count(x => (source is null || !ReferenceEquals(x, source)) &&

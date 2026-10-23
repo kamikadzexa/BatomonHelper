@@ -1,4 +1,16 @@
-# Release validation: 1.0.3
+# Release validation: 1.0.4
+
+Validated locally on 2026-10-23.
+
+- Full Release suite: **474 passed, 0 failed, 0 skipped**. Includes new wiki-format/build matching, complete offline assets, Witch projections, Furnadon duplicate-trinket scaling in cached/reference combat, combat-only training refusal, and battle-frame capture/validation cases.
+- Wiki import: Steam build **26078162 / Balance 26**, 148 creatures with complete rules, 143 shiny sprites, 25 trainers, 55 items, 93 trinkets. Region membership: 81 Pantra, 85 Jinto. The five existing missing-shiny declarations remain explicit warnings.
+- The helper uses a separate generated `combat-rules.json`: zero unresolved combat rules, all imported creature/trinket rules, and no item-purchase actions. Witch and Bug Catcher exemptions require their exact reviewed shop-only text. Combat-only manifests are rejected by Training Lab. Historical training rules and strategy observations retain their original provenance.
+- Includes the concurrent Bridge 1.5.0 / captured-run schema v2 changes at the user's request. Recorded battle frames are game observations, not simulator output.
+- Installer build uses a clean checkout and verifies the self-contained runtime, wiki database, combat rules, bridge, and license payloads; writes a SHA-256 checksum; excludes training executables and the third-party loader.
+- No live-game run, administrator/UAC installation, or real Mod Loader import was repeated for this release. Historical installation checks below retain their original scope. The installer remains unsigned.
+
+## Historical validation: 1.0.3
+
 
 Validated locally on 2026-10-20.
 

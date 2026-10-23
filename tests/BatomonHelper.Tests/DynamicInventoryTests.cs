@@ -47,6 +47,7 @@ public sealed class DynamicInventoryTests
 
     [Theory]
     [InlineData("Has an additional +5 Burn for each Trinket that you own.", Trigger.Ongoing, EffectScale.Trinkets)]
+    [InlineData("Has an additional +2 Burn for each different Trinket that you own.", Trigger.Ongoing, EffectScale.DistinctTrinkets)]
     [InlineData("Has an additional +160 Damage and +160 Heal for each ally of level 3 or above.", Trigger.Ongoing, EffectScale.Allies)]
     [InlineData("+4 Damage permanently for each unique type on your team.", Trigger.Cast, EffectScale.UniqueTeamTypes)]
     [InlineData("+3 Damage and +3 Shield permanently for each Trinket that you own.", Trigger.Cast, EffectScale.Trinkets)]
@@ -78,6 +79,21 @@ public sealed class DynamicInventoryTests
         rules = rules with { Species = [actor], Trinkets = [new("junk", "Junk", 0, false, 0, [], "fixture", "")] };
         result = Match(rules, Board(actor.Id) with { Bag = [new("junk", 2, 1), new("junk", 3, 2)] });
         Assert.Equal(15, result.PersistentTeam[0]!.Bonuses[0]); Assert.Equal(15, result.PersistentTeam[0]!.Bonuses[2]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Furnadon_counts_different_trinkets_rather_than_duplicate_copies(bool reference)
+    {
+        var basis = RuleCompiler.Fixture();
+        var actor = Species(basis, "furnadon", "Has an additional +2 Burn for each different Trinket that you own.", Trigger.Ongoing);
+        var rules = basis with { Species = [actor], Trinkets = [
+            new("junk", "Junk", 0, false, 0, [], "fixture", ""),
+            new("other", "Other", 0, false, 0, [], "fixture", "")] };
+        var board = Board(actor.Id) with { Bag = [new("junk", 4, 1), new("junk", 3, 2), new("other", 2, 3)] };
+        var result = new BoardAnalyzer(rules).Analyze(board, 100_000, 1, reference: reference);
+        Assert.Equal(4, result.Checkpoints[0].Units[0].Stats[(int)Stat.Burn]);
     }
 
     [Fact]

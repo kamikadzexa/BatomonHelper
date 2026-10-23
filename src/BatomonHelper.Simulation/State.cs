@@ -12,7 +12,7 @@ public enum Operation { Add, Multiply, Charge, Trigger, Knockout, Protect, Reviv
     ShopRank, FreeReroll, ItemUses, DiscountShop, RollShop, TrinketGift, GrantUnit, RecruitOffer, Shiny, NextBattleStartRepeat, NextVictoryGold, NextCopyEnemy, LoseLife, ActivateAbility, AddedCooldown, ShopModifier, DiscardStats, Recombine, PendingPurchase, LinkAllies, CopyEnemyStats, Evolve, ProgressEvolution, Hatch, GrowAbility, ForceBerryItems, MergeRequirement, RepeatOngoing, Devour, SpawnDevoured, InventoryRule, TrainerRule }
 public enum ShopTrait { LegendaryWeight, MinimumRarity, ForcedShiny, ShinyMultiplier, ItemTierBonus, ItemDiscount,
     CreatureDiscount, FirstCommonFree, FirstBugFree, NoItems, Income, DailyItemUses, RepeatBought, RepeatZeroItem, MythicalItemChance }
-public enum EffectScale { None, Trinkets, CommonTrinkets, UniqueTeamTypes, Allies, EnemyStatus, SelfStat, LostLives, EventStat, AlliedStat, Badges, ItemsUsed }
+public enum EffectScale { None, Trinkets, CommonTrinkets, UniqueTeamTypes, Allies, EnemyStatus, SelfStat, LostLives, EventStat, AlliedStat, Badges, ItemsUsed, DistinctTrinkets }
 public sealed record Effect(Trigger Trigger, Operation Operation, Target Target, Stat Stat = Stat.Damage,
     double Amount = 0, bool Permanent = false, string? Type = null, string? ExcludeSpecies = null,
     int? Rarity = null, int? MinimumLevel = null, int? MaximumLevel = null, bool Percent = false,
@@ -35,16 +35,25 @@ public sealed record RuleIssue(string Id, string Kind, string Reason, string Sou
 public sealed record RulesManifest(string Build, string Balance, string Version, string Hash,
     Species[] Species, InventoryDefinition[] Items, InventoryDefinition[] Trinkets,
     InventoryDefinition[] Trainers, RuleIssue[] Issues, RunParameters Parameters, int SimulationRevision = 8,
-    RuleEvidence[]? Evidence = null, EncounterDefinition[]? Encounters = null, SimulationProfile? Profile = null)
+    RuleEvidence[]? Evidence = null, EncounterDefinition[]? Encounters = null, SimulationProfile? Profile = null,
+    bool CombatOnly = false)
 {
     public const int CurrentRevision = 8;
     public int GuessedRules => Evidence?.Count(x=>x.Kind==EvidenceKind.Guessed)??0;
-    public bool Ready => SimulationRevision == CurrentRevision && Issues.Length == 0 && Parameters.Usable && (GuessedRules==0 || Parameters.AllowGuesses);
+    public bool CombatReady => SimulationRevision == CurrentRevision && Issues.Length == 0 && Parameters.Usable && (GuessedRules==0 || Parameters.AllowGuesses);
+    public bool Ready => !CombatOnly && CombatReady;
     public bool FullFidelityReady => Build!="fixture" && Ready && Parameters.Verified && GuessedRules==0;
     public void RequireReady()
     {
+        if (CombatOnly) throw new InvalidOperationException("Combat-only reference rules cannot be used for shop simulation or training.");
         if(SimulationRevision!=CurrentRevision)throw new InvalidOperationException($"Simulation revision {SimulationRevision} is incompatible with runtime revision {CurrentRevision}.");
         if (!Ready) throw new InvalidOperationException($"Training blocked: {Issues.Length} unresolved rules. " +
+            string.Join("; ", Issues.Take(4).Select(x => x.Id + ": " + x.Reason)));
+    }
+    public void RequireCombatReady()
+    {
+        if (SimulationRevision != CurrentRevision) throw new InvalidOperationException($"Simulation revision {SimulationRevision} is incompatible with runtime revision {CurrentRevision}.");
+        if (!CombatReady) throw new InvalidOperationException($"Battle projections blocked: {Issues.Length} unresolved rules. " +
             string.Join("; ", Issues.Take(4).Select(x => x.Id + ": " + x.Reason)));
     }
 }

@@ -48,12 +48,12 @@ if(args.Length>0 && args[0]=="--refresh")
     return 0;
 }
 if(args.Length==0) { Console.Error.WriteLine("--audit <catalog.db> <knowledge.json> <rules.json> | --review-sources <directory> | --fixture <rules.json> | --serve <rules.json> <buffer> <count> <workers> <seed> | --benchmark"); return 1; }
-if(args[0]=="--audit")
+if(args[0] is "--audit" or "--combat-reference")
 {
     var catalog=await new SnapshotRepository(args[1],true).GetLatestAsync()??throw new InvalidDataException("Missing catalog.");
     var knowledge=JsonSerializer.Deserialize<StrategyKnowledge>(await File.ReadAllTextAsync(args[2]))!;
     var profile=await LoadProfile(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[3]))!,"user-profile.json"));
-    var compiled=RuleCompiler.Compile(catalog,knowledge,profile);
+    var compiled=args[0]=="--combat-reference" ? RuleCompiler.CompileCombat(catalog,knowledge) : RuleCompiler.Compile(catalog,knowledge,profile);
     await File.WriteAllTextAsync(args[3],JsonSerializer.Serialize(compiled,new JsonSerializerOptions { WriteIndented=true }));
     Console.WriteLine(JsonSerializer.Serialize(new { compiled.Build,compiled.Balance,compiled.Ready,compiled.FullFidelityReady,compiled.GuessedRules,Issues=compiled.Issues.Length })); return 0;
 }

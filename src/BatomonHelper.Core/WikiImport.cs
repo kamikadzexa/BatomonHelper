@@ -33,22 +33,33 @@ public sealed partial class WikiImporter(IWikiSource source)
             var pages = await Task.WhenAll(RequiredPages.Select(path => source.GetStringAsync(path, cancellationToken)));
             var build = FindBuild(pages) ?? throw new InvalidDataException("The wiki snapshot did not declare a Steam build.");
             var catalogRarities = ParseCatalogRarities(pages[1]);
-            var monsterIds = MonsterIdRegex().Matches(pages[1]).Select(m => m.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var monsterIds = MonsterIdRegex().Matches(pages[1]).Select(m => m.Groups["id"].Value).Where(id => id != "regions").Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             if (monsterIds.Length == 0) throw new InvalidDataException("The wiki catalog did not contain any Batomon links.");
             var monsterRegions = ParseMonsterRegions(pages[1]);
             AddRegionMonsters(monsterRegions, pages[5], "Jinto region");
             AddRegionMonsters(monsterRegions, pages[6], "Pantra region");
 
+            // Astro pages publish full level data in a shared, build-pinned hover snapshot.
+            var firstPage = await source.GetStringAsync($"/batomon/{monsterIds[0]}", cancellationToken);
+            var hoverPath = Regex.Match(firstPage, "\"path\":\"(?<path>/snapshots/batomon-hover/[^\"]+\\.json)\"").Groups["path"].Value;
+            using var hover = hoverPath.Length > 0 ? JsonDocument.Parse(await source.GetStringAsync(hoverPath, cancellationToken)) : null;
+            if (hover is not null && (hover.RootElement.GetProperty("steamBuild").GetString() != build ||
+                hover.RootElement.GetProperty("balanceVersion").ToString() != FindBalance(pages)))
+                throw new InvalidDataException("Hover snapshot does not match the catalog build and balance.");
             using var limiter = new SemaphoreSlim(8);
             var monsters = await Task.WhenAll(monsterIds.Select(async id =>
             {
                 await limiter.WaitAsync(cancellationToken);
                 try
                 {
-                    var monster = ParseMonster(id, await source.GetStringAsync($"/batomon/{id}", cancellationToken), catalogRarities.GetValueOrDefault(id));
+                    var html = id == monsterIds[0] ? firstPage : await source.GetStringAsync($"/batomon/{id}", cancellationToken);
+                    if (hover is not null) html = AddHoverModel(id, html, hover.RootElement.GetProperty("species"));
+                    var monster = ParseMonster(id, html, catalogRarities.GetValueOrDefault(id));
                     return monster is null ? null : monster with
                     {
                         Regions = monsterRegions.GetValueOrDefault(id, ImmutableHashSet<string>.Empty),
+                        ActiveSets = monsterRegions.GetValueOrDefault(id, ImmutableHashSet<string>.Empty).Contains("Pantra region")
+                            ? monster.ActiveSets.Add("starter") : monster.ActiveSets,
                         SpritePath = $"assets/wiki/monsters/{id}.png"
                     };
                 }
@@ -76,7 +87,7 @@ public sealed partial class WikiImporter(IWikiSource source)
             var raw = string.Concat(pages) + string.Join('\n', monsters.Select(m => m?.Id));
             var snapshot = new CatalogSnapshot(
                 $"wiki-{build}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}", build, FindBalance(pages), DateTimeOffset.UtcNow,
-                RequiredPages.Select(x => new Uri(new Uri("https://batomon.com"), x).ToString()).ToImmutableArray(),
+                RequiredPages.Concat(hoverPath.Length > 0 ? new[] { hoverPath } : []).Select(x => new Uri(new Uri("https://batomon.com"), x).ToString()).ToImmutableArray(),
                 Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(raw))), warnings.ToImmutable(), valid)
             {
                 Trainers = trainers,
@@ -92,6 +103,28 @@ public sealed partial class WikiImporter(IWikiSource source)
         }
     }
 
+    private static string AddHoverModel(string id, string html, JsonElement species)
+    {
+        if (!species.TryGetProperty(id, out var model)) throw new InvalidDataException($"Hover snapshot omitted {id}.");
+        object Ability(string key) => new {
+            trigger = model.GetProperty(key).GetArrayLength() > 0 ? model.GetProperty(key)[0].GetProperty("trigger").GetString() : null,
+            byLevel = model.GetProperty(key).EnumerateArray().ToDictionary(level => level.GetProperty("level").ToString(), level => level.GetProperty("text").GetString())
+        };
+        // Restrict the link search to the evolution list, away from site navigation.
+        var evolutionList = Regex.Match(html, "<ul class=\"mc-evolution\">(?<list>[\\s\\S]*?)</ul>").Groups["list"].Value;
+        var evolution = Regex.Match(evolutionList, "<li><a href=\"/batomon/(?<id>[a-z0-9-]+)\"(?:(?!</li>)[\\s\\S])*?Evolves into(?<detail>(?:(?!</li>)[\\s\\S])*)</li>");
+        var evolutionLevel = Regex.Match(evolution.Groups["detail"].Value, "at level (?<level>\\d+)");
+        var cost = Regex.Match(html, "<span class=\"mc-cost\">[\\s\\S]*?\\$(?<cost>\\d+)");
+        var payload = new { monster = new {
+            id, cost = cost.Success ? int.Parse(cost.Groups["cost"].Value) : (int?)null,
+            types = model.GetProperty("types"), levels = model.GetProperty("levels"), shinyLevels = model.GetProperty("shinyLevels"),
+            ability = Ability("levels"), shinyAbility = Ability("shinyLevels"),
+            evolution = evolution.Success ? new { targetId = evolution.Groups["id"].Value,
+                level = evolutionLevel.Success ? int.Parse(evolutionLevel.Groups["level"].Value) : (int?)null } : null
+        } };
+        return html + "<script>" + JsonSerializer.Serialize(payload) + "</script>";
+    }
+
     private static MonsterDefinition? ParseMonster(string id, string html, Rarity? catalogRarity = null)
     {
         var rarity = ParseRarity(html) ?? catalogRarity;
@@ -102,6 +135,7 @@ public sealed partial class WikiImporter(IWikiSource source)
         if (Regex.IsMatch(html, @"\bStarter\b", RegexOptions.IgnoreCase)) activeSets.Add("starter");
         var baseMatch = BaseSpeciesRegex().Match(html);
         if (!baseMatch.Success) baseMatch = EvolvesFromRegex().Match(html);
+        if (!baseMatch.Success) baseMatch = Regex.Match(html, "<li><a href=\"/batomon/(?<id>[a-z0-9-]+)\"(?:(?!</li>)[\\s\\S])*?Evolves from");
         var baseId = baseMatch.Success ? baseMatch.Groups["id"].Value : null;
         var sprite = FindSpriteUrl(html, "monster", name);
         var decoded = html.Replace("\\\"", "\"", StringComparison.Ordinal).Replace("\\/", "/", StringComparison.Ordinal);
@@ -195,7 +229,9 @@ public sealed partial class WikiImporter(IWikiSource source)
 
     private static void AddRegionMonsters(Dictionary<string, ImmutableHashSet<string>> regions, string html, string region)
     {
-        foreach (var id in MonsterCardIdRegex().Matches(html).Select(match => match.Groups["id"].Value).Distinct(StringComparer.OrdinalIgnoreCase))
+        var cards = Regex.Matches(html, "<li class=\"catalog-entry\"[^>]*>[\\s\\S]*?</li>")
+            .SelectMany(card => MonsterIdRegex().Matches(card.Value).Select(match => match.Groups["id"].Value));
+        foreach (var id in MonsterCardIdRegex().Matches(html).Select(match => match.Groups["id"].Value).Concat(cards).Distinct(StringComparer.OrdinalIgnoreCase))
             regions[id] = regions.GetValueOrDefault(id, ImmutableHashSet<string>.Empty).Add(region);
     }
 
@@ -243,6 +279,14 @@ public sealed partial class WikiImporter(IWikiSource source)
     }
     private static string? ParseReferenceEffect(string html, string heading)
     {
+        var card = Regex.Match(html, "<div class=\"game-ability\">(?<effect>[\\s\\S]*?)</div>", RegexOptions.IgnoreCase);
+        if (card.Success)
+        {
+            var effect = card.Groups["effect"].Value;
+            // Trainer ability/Item effect are labels; combat triggers are part of the rule.
+            effect = Regex.Replace(effect, "<span class=\"game-trigger\">(?:Trainer ability|Item effect|Trinket effect)</span>", "", RegexOptions.IgnoreCase);
+            return Regex.Replace(TagRegex().Replace(WebUtility.HtmlDecode(effect), " "), @"\s+", " ").Trim();
+        }
         var match = ReferenceEffectRegex().Matches(html).FirstOrDefault(candidate =>
             candidate.Groups["heading"].Value.Contains(heading, StringComparison.OrdinalIgnoreCase) || candidate.Groups["heading"].Value.Equals("Effect", StringComparison.OrdinalIgnoreCase));
         if (match is null) return null;

@@ -38,11 +38,11 @@ public static class AbilityRules
                 Type:nextBuy.Groups["type"].Success?nextBuy.Groups["type"].Value.ToLowerInvariant():null,
                 EventType:nextBuy.Groups["flying"].Success?"flying":null)];return true;
         }
-        var scaled=M("(?:Has an additional |Has additional |Gain )?(?<stats>\\+?"+Number+"(?<percent>%)? (?:Damage|Heal|Shield|Burn|Poison|Shock|Cooldown Speed)(?: and \\+?"+Number+" (?:Damage|Heal|Shield))?)(?<permanent> permanently)? for each (?<basis>Trinket that you own|Trinket that you have|unique type on your team|Fire ally|Rock ally|Flying ally|ally of level (?<level>[1-4]) or above)\\.");
+        var scaled=M("(?:Has an additional |Has additional |Gain )?(?<stats>\\+?"+Number+"(?<percent>%)? (?:Damage|Heal|Shield|Burn|Poison|Shock|Cooldown Speed)(?: and \\+?"+Number+" (?:Damage|Heal|Shield))?)(?<permanent> permanently)? for each (?<basis>Trinket that you own|Trinket that you have|different Trinket that you own|unique type on your team|Fire ally|Rock ally|Flying ally|ally of level (?<level>[1-4]) or above)\\.");
         if(scaled.Success)
         {
             var basis=scaled.Groups["basis"].Value;var type=basis is "Fire ally" or "Rock ally" or "Flying ally"?basis.Split(' ')[0].ToLowerInvariant():null;
-            var scale=basis.StartsWith("Trinket")?EffectScale.Trinkets:basis.StartsWith("unique")?EffectScale.UniqueTeamTypes:EffectScale.Allies;
+            var scale=basis.StartsWith("different Trinket")?EffectScale.DistinctTrinkets:basis.StartsWith("Trinket")?EffectScale.Trinkets:basis.StartsWith("unique")?EffectScale.UniqueTeamTypes:EffectScale.Allies;
             effects=Regex.Matches(scaled.Groups["stats"].Value,"(?<amount>\\+?"+Number+")(?<percent>%)? (?<stat>"+Stats+")").Select(match=>
             {
                 var stat=S(match.Groups["stat"].Value);var percent=match.Groups["percent"].Success;

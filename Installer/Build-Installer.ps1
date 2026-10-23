@@ -51,7 +51,7 @@ $installerNotices = Join-Path $stagingDirectory 'installer-notices'
 New-Item -ItemType Directory -Force -Path $installerNotices | Out-Null
 Copy-Item -LiteralPath (Join-Path (Split-Path $isccCandidates[0] -Parent) 'license.txt') -Destination (Join-Path $installerNotices 'Inno-Setup-license.txt') -Force
 
-foreach ($required in @('BatomonHelper.Overlay.exe', 'coreclr.dll', 'PresentationFramework.dll', 'LICENSE.txt', 'THIRD-PARTY-NOTICES.md', 'assets\wiki\batomon-wiki.db', 'mods\BatomonHelperBridge\mod_main.gd')) {
+foreach ($required in @('BatomonHelper.Overlay.exe', 'coreclr.dll', 'PresentationFramework.dll', 'LICENSE.txt', 'THIRD-PARTY-NOTICES.md', 'assets\wiki\batomon-wiki.db', 'assets\simulation\combat-rules.json', 'mods\BatomonHelperBridge\mod_main.gd')) {
     if (-not (Test-Path -LiteralPath (Join-Path $stagingDirectory $required))) { throw "Release payload is missing $required" }
 }
 if (Get-ChildItem -LiteralPath $stagingDirectory -Recurse -File | Where-Object { $_.Name -match '^BatomonHelper\.(Training|TrainingHost)\.(exe|dll)$|HelperInspector|^mod_(loader|settings_menu|title_state)\.gd$' }) { throw 'Unexpected release payload: Training/inspection tools and community Mod Loader scripts must not be bundled.' }

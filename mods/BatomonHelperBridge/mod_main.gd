@@ -58,6 +58,11 @@ func _publish() -> void:
 				_battle_player_id = player.get_instance_id()
 			message.battle = _battle_snapshot.duplicate()
 			message.battle.outcome = read_battle_outcome(player)
+			# These are observations of the game's visual replay, never a second
+			# simulation. They make captured runs useful for auditing simulator rules.
+			var frame := read_battle_frame(state)
+			if frame != null:
+				message.battle.frame = frame
 	var pending := OUTPUT_DIR.path_join("state.pending")
 	var file := FileAccess.open(pending, FileAccess.WRITE)
 	if file == null:
@@ -181,6 +186,45 @@ func read_battle_outcome(player):
 	if not completed.pending_round_start or not completed.pending_battle_opponent.is_empty():
 		return null
 	return {"playerWon": int(completed.current_wins) > int(player.current_wins)}
+
+func read_battle_frame(state):
+	var simulation = state.get("simulation") if _has(state, "simulation") else null
+	if simulation == null or not _has(simulation, "data"):
+		return null
+	var data = simulation.get("data")
+	if data == null or not _has(data, "time_elapsed") or not _has(data, "battle_units"):
+		return null
+	return {"elapsedSeconds": float(data.time_elapsed),
+		"player": read_battle_frame_side(data, 0),
+		"opponent": read_battle_frame_side(data, 1)}
+
+func read_battle_frame_side(data, team_id: int) -> Dictionary:
+	return {"health": float(data.player_health[team_id]), "maximumHealth": float(data.max_health[team_id]),
+		"shield": float(data.team_shield[team_id]), "burn": int(data.team_burn[team_id]),
+		"poison": int(data.team_poison[team_id]), "shock": int(data.team_shock[team_id]),
+		"units": read_battle_frame_units(data.battle_units, team_id)}
+
+func read_battle_frame_units(units: Array, team_id: int) -> Array:
+	var output := []
+	# The stat order intentionally matches read_combat_units / GameCombatUnit:
+	# damage, heal, shield, burn, poison, shock, cooldown speed, multicast, sell.
+	var stat_ids := [1, 2, 3, 4, 5, 6, 10, 7, "bonus_sell_value"]
+	for unit in units:
+		if unit == null or int(unit.team_id) != team_id:
+			continue
+		var stats := []
+		for stat in stat_ids:
+			stats.append(float(unit.get_stat(stat)))
+		# Keep opponent frame slots in the same player-screen coordinates as the
+		# battle-start template above.
+		var slot := int(unit.slot_index)
+		if team_id == 1:
+			slot = (slot + 3) % 6
+		output.append({"slot": slot, "alive": not bool(unit.is_dead),
+			"casts": int(unit.cast_count), "stats": stats,
+			"damageDealt": float(unit.damage_dealt), "healingDone": float(unit.healing_done),
+			"shieldGranted": float(unit.shield_granted)})
+	return output
 
 func read_combat_units(source: Array, opponent := false) -> Array:
 	var units := []

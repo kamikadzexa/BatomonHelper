@@ -9,7 +9,7 @@ public sealed class CatalogBundler(HttpClient client)
         var result = await importer.ImportAsync(cancellationToken);
         var snapshot = result.Snapshot ?? throw new InvalidDataException(string.Join(" ", result.Errors));
         // The Balance 24 reference layer was only needed while the wiki lagged the
-        // game. A current Balance 25 snapshot is authoritative and must not keep
+        // game. A current wiki snapshot is authoritative and must not keep
         // advertising the old baseline plus an overlay.
         if (patch is not null && snapshot.DeclaredSteamBuild == patch.RequiredWikiBuild)
             snapshot = CatalogPatches.Apply(snapshot, patch);

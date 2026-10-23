@@ -117,4 +117,29 @@ public sealed class GameStateBridgeTests
         foreach (var item in catalog.Items)
             Assert.Equal(item.Id, GameCatalogIds.Resolve(item.Id.Replace('-', '_'), catalog.Items.Select(value => value.Id)));
     }
+
+    [Fact]
+    public async Task Reads_and_validates_optional_live_battle_frame()
+    {
+        var json = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "game-bridge-battle.json")))!.AsObject();
+        json["battle"]!["frame"] = new JsonObject
+        {
+            ["elapsedSeconds"] = .5,
+            ["player"] = FrameSide(2400, new JsonObject { ["slot"] = 0, ["alive"] = true, ["casts"] = 1, ["stats"] = new JsonArray(6, 0, 0, 6, 0, 0, 0, 1, 0), ["damageDealt"] = 6, ["healingDone"] = 0, ["shieldGranted"] = 0 }),
+            ["opponent"] = FrameSide(2394)
+        };
+        var message = GameStateBridge.Parse(json.ToJsonString(), await Catalog(), Time(json));
+        Assert.Equal(.5, message.Battle!.Frame!.ElapsedSeconds);
+        Assert.Equal(1, message.Battle.Frame.Player.Units[0].Casts);
+
+        json["battle"]!["frame"]!["player"]!["health"] = -1;
+        Assert.Throws<InvalidDataException>(() => GameStateBridge.Parse(json.ToJsonString(), Catalog().GetAwaiter().GetResult(), Time(json)));
+
+        static JsonObject FrameSide(double health, JsonObject? unit = null) => new()
+        {
+            ["health"] = health, ["maximumHealth"] = 2400, ["shield"] = 0,
+            ["burn"] = 0, ["poison"] = 0, ["shock"] = 0,
+            ["units"] = unit is null ? new JsonArray() : new JsonArray(unit)
+        };
+    }
 }

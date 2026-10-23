@@ -4,6 +4,39 @@ namespace BatomonHelper.Tests;
 
 public sealed class WikiImporterTests
 {
+    [Fact]
+    public async Task Imports_Astro_hover_levels_and_card_effects_without_navigation_entries()
+    {
+        var pages = new Dictionary<string, string> {
+            ["/"] = "Steam build 26078162 Balance 26",
+            ["/batomon"] = "<a href=\"/batomon/regions\">Regions</a><a href=\"/batomon/alpha\">Alpha</a>",
+            ["/mechanics/monster-pool"] = "", ["/batomon/regions/jinto"] = "", ["/batomon/regions/pantra"] = "",
+            ["/trainers"] = "<a href=\"/trainers/witch\">Witch</a>", ["/items"] = "<a href=\"/items/cake\">Cake</a>",
+            ["/trinkets"] = "<a href=\"/trinkets/warhorn\">Warhorn</a>",
+            ["/trainers/witch"] = "<h1>Witch</h1><div class=\"game-ability\"><span class=\"game-trigger\">Trainer ability</span><p>The first shop rolled each day contains a Potion.</p></div>",
+            ["/items/cake"] = "<h1>Cake</h1><div class=\"game-ability\"><p>Give 2 random monsters +5 Damage.</p></div>",
+            ["/trinkets/warhorn"] = "<h1>Warhorn</h1><div class=\"game-ability\"><a class=\"game-trigger\">On Battle Start</a><p>Your monsters gain +10 Damage permanently.</p></div>",
+            ["/batomon/alpha"] = "<h1>Alpha</h1><p>Common</p><span class=\"mc-cost\"><span>Cost </span>$25</span><script>{\"path\":\"/snapshots/batomon-hover/test.json\"}</script>",
+            ["/snapshots/batomon-hover/test.json"] = """
+                {"steamBuild":"26078162","balanceVersion":26,"species":{"alpha":{"types":["rock"],"levels":[{"level":1,"cooldown":6,"multicast":2,"stats":[{"key":"shield","value":90}],"trigger":"On Cast","text":"Trigger a random Rock ally."}],"shinyLevels":[]}}}
+                """
+        };
+        var result = await new WikiImporter(new FakeSource(pages)).ImportAsync(CancellationToken.None);
+        Assert.Empty(result.Errors);
+        var catalog = result.Snapshot!;
+        var monster = Assert.Single(catalog.Monsters);
+        Assert.Equal("alpha", monster.Id);
+        Assert.Equal("25", monster.ReferenceValues["Cost"]);
+        Assert.Equal(90, Assert.Single(Assert.Single(monster.Rules!.Levels).Stats).Value);
+        Assert.Equal("Trigger a random Rock ally.", monster.Rules.Abilities[1]);
+        Assert.Empty(monster.Rules.ShinyLevels);
+        Assert.Equal("The first shop rolled each day contains a Potion.", Assert.Single(catalog.Trainers).RuleText);
+        Assert.Equal("Give 2 random monsters +5 Damage.", Assert.Single(catalog.Items).RuleText);
+        Assert.Equal("On Battle Start Your monsters gain +10 Damage permanently.", Assert.Single(catalog.Trinkets).RuleText);
+        pages["/snapshots/batomon-hover/test.json"] = pages["/snapshots/batomon-hover/test.json"].Replace("26078162", "old-build");
+        Assert.Null((await new WikiImporter(new FakeSource(pages)).ImportAsync(CancellationToken.None)).Snapshot);
+    }
+
     [Theory]
     [InlineData("opalion", "Rock allies triggered", "1", "Trigger 1 random Rock allies. (Except other Opalion)", "Trigger 1 random Rock allies.", "Trigger 1 random Rock allies.")]
     [InlineData("dollhime", "Damage per trinket gained", "50/100/150", "On Trinket Gained +50 Damage permanently.", "On Trinket Gained +100 Damage permanently.", "On Trinket Gained +150 Damage permanently.")]

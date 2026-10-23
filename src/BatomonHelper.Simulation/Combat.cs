@@ -36,7 +36,7 @@ public sealed class Combat(RulesManifest rules)
     };
     public BattleResult ResolveBattle(FrozenBoard player, FrozenBoard opponent, ulong seed, bool trace = false, bool reference = false,bool cacheStats=true, CombatProbe? probe=null)
     {
-        rules.RequireReady();
+        rules.RequireCombatReady();
         if (player.Day != opponent.Day) throw new ArgumentException("Opponent must be from the same day.");
         var rng = new SeedStream(seed);
         var teams = new[] { new Side(player), new Side(opponent) };

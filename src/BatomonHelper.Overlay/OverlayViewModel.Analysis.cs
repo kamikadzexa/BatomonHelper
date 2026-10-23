@@ -57,7 +57,7 @@ public sealed partial class OverlayViewModel
         try
         {
             _damageRules ??= JsonSerializer.Deserialize<RulesManifest>(await File.ReadAllTextAsync(
-                Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json")))
+                Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "combat-rules.json")))
                 ?? throw new InvalidDataException("Simulation rules are unavailable.");
             if (cancellation.IsCancellationRequested) return;
             var result = await Task.Run(() => LiveBattleAnalysis.TryAnalyze(battle, _damageRules,
@@ -114,7 +114,7 @@ public sealed partial class OverlayViewModel
         try
         {
             _damageRules ??= JsonSerializer.Deserialize<RulesManifest>(await File.ReadAllTextAsync(
-                Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json")))
+                Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "combat-rules.json")))
                 ?? throw new InvalidDataException("Simulation rules are unavailable.");
             if (cancellation.IsCancellationRequested) return;
             var rules = _damageRules;

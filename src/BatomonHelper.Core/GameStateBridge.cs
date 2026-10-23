@@ -9,7 +9,16 @@ public sealed record GameStateMessage(int ProtocolVersion, long Sequence, DateTi
 
 public sealed record GameBattleSide(int Day, int TeamHp, string TrainerId,
     System.Collections.Immutable.ImmutableArray<BoardSlot> Team, GameCombatState Combat, int Rank = 1, int Wins = 0);
-public sealed record GameBattleState(GameBattleSide Player, GameBattleSide Opponent, GameBattleOutcome? Outcome = null);
+/// <summary>A sampled, in-progress side of the game's own visual battle simulation.</summary>
+public sealed record GameBattleFrameSide(double Health, double MaximumHealth, double Shield,
+    int Burn, int Poison, int Shock, GameBattleFrameUnit[] Units);
+/// <summary>Live values are deliberately raw game values, in the same order as <see cref="GameCombatUnit.PermanentStats"/>.</summary>
+public sealed record GameBattleFrameUnit(int Slot, bool Alive, int Casts, double[] Stats,
+    double DamageDealt, double HealingDone, double ShieldGranted);
+/// <summary>One read-only bridge sample, normally emitted every half second during visual playback.</summary>
+public sealed record GameBattleFrame(double ElapsedSeconds, GameBattleFrameSide Player, GameBattleFrameSide Opponent);
+public sealed record GameBattleState(GameBattleSide Player, GameBattleSide Opponent, GameBattleOutcome? Outcome = null,
+    GameBattleFrame? Frame = null);
 public sealed record GameBattleOutcome(bool PlayerWon);
 
 public sealed record GameCombatUnit(int Slot, double[] PermanentStats, double? BaseCooldown, string[] AddedTypes);
@@ -61,7 +70,8 @@ public sealed class GameStateBridge
             var player = ResolveSide(battle.Player);
             var opponent = ResolveSide(battle.Opponent);
             if (player.Day != opponent.Day) throw new InvalidDataException("Battle teams have different days.");
-            return message with { Board = null, Battle = battle with { Player = player, Opponent = opponent } };
+            var frame = battle.Frame is null ? null : ResolveFrame(battle.Frame);
+            return message with { Board = null, Battle = battle with { Player = player, Opponent = opponent, Frame = frame } };
         }
         if (message.Phase != "shop") throw new InvalidDataException("Unknown bridge phase.");
         var board = message.Board ?? throw new InvalidDataException("The bridge did not supply a shop board.");
@@ -104,6 +114,27 @@ public sealed class GameStateBridge
                      !catalog.Monsters.Any(value => value.Id == slot.DefinitionId))))
                 throw new InvalidDataException("Invalid battle-start team.");
             return side with { TrainerId = trainer!, Team = team };
+        }
+
+        GameBattleFrame ResolveFrame(GameBattleFrame frame)
+        {
+            if (!double.IsFinite(frame.ElapsedSeconds) || frame.ElapsedSeconds < 0 || frame.ElapsedSeconds > 3600)
+                throw new InvalidDataException("Invalid battle frame elapsed time.");
+            return frame with { Player = ResolveFrameSide(frame.Player), Opponent = ResolveFrameSide(frame.Opponent) };
+        }
+
+        GameBattleFrameSide ResolveFrameSide(GameBattleFrameSide side)
+        {
+            if (!double.IsFinite(side.Health) || !double.IsFinite(side.MaximumHealth) || !double.IsFinite(side.Shield) ||
+                side.Health < 0 || side.MaximumHealth < 0 || side.Health > side.MaximumHealth + .001 || side.Shield < 0 ||
+                side.Burn < 0 || side.Poison < 0 || side.Shock < 0 || side.Units is null || side.Units.Length > 6 ||
+                side.Units.Any(unit => unit is null || unit.Slot is < 0 or > 5 || unit.Casts < 0 || unit.Stats is null ||
+                    unit.Stats.Length != 9 || unit.Stats.Any(value => !double.IsFinite(value)) ||
+                    !double.IsFinite(unit.DamageDealt) || !double.IsFinite(unit.HealingDone) || !double.IsFinite(unit.ShieldGranted) ||
+                    unit.DamageDealt < 0 || unit.HealingDone < 0 || unit.ShieldGranted < 0) ||
+                side.Units.Select(unit => unit.Slot).Distinct().Count() != side.Units.Length)
+                throw new InvalidDataException("Invalid battle frame.");
+            return side;
         }
 
         System.Collections.Immutable.ImmutableArray<BoardSlot> Resolve(System.Collections.Immutable.ImmutableArray<BoardSlot> slots)
