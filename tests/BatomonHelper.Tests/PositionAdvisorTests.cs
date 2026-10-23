@@ -6,6 +6,21 @@ namespace BatomonHelper.Tests;
 
 public sealed class PositionAdvisorTests
 {
+    [Fact]
+    public void Healing_and_shielding_do_not_replace_a_faster_damage_board()
+    {
+        var rules = RuleCompiler.Fixture();
+        var supportStats = new double[9];
+        supportStats[(int)Stat.Heal] = 1000; supportStats[(int)Stat.Shield] = 1000;
+        supportStats[(int)Stat.Multicast] = 1;
+        rules = rules with { Species = [rules.Species[0], rules.Species[1] with
+            { Normal = [new(1, 1, supportStats, [])] }] };
+        var team = Enumerable.Range(1, 6).Select(i => (Unit?)new Unit { Instance = i, SpeciesId = "striker", Level = 1 }).ToArray();
+        var board = new FrozenBoard(1, 300, "fixture", team, [], []);
+        Assert.Null(new PositionAdvisor(rules).FindBetterPosition(board,
+            [new() { Instance = 7, SpeciesId = "guard", Level = 1 }, null, null, null], targetHp: 300));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(1)]

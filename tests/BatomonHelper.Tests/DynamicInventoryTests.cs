@@ -112,12 +112,12 @@ public sealed class DynamicInventoryTests
     }
 
     [Fact]
-    public void Metronome_applies_to_the_current_cast_and_expires_after_battle()
+    public void Metronome_applies_after_output_and_expires_after_battle()
     {
         var basis = RuleCompiler.Fixture(); var rules = basis with { Trinkets = [Inventory("metronome")] };
         var own = Board("striker") with { Bag = [new("metronome", 1, 1)] };
         var result = Match(rules, own, own with { Bag = [], MaxHp = 30, Team = new Unit?[6] });
-        Assert.Equal(2, result.Seconds); Assert.Equal(-5, result.OpponentHp); Assert.Equal(0, result.PersistentTeam[0]!.Bonuses[0]);
+        Assert.Equal(4, result.Seconds); Assert.Equal(-30, result.OpponentHp); Assert.Equal(0, result.PersistentTeam[0]!.Bonuses[0]);
     }
 
     [Fact]

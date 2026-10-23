@@ -50,7 +50,8 @@ public sealed class StatTransferReactionTests
         var decoy=Species("decoy",null,[],10);decoy.Normal[0].Stats[7]=100;decoy.Normal[0].Stats[6]=10;
         var best=Species("best",null,[],20,30);
         var result=Match([actor,decoy,best],Board("actor"),Board("decoy","best") with {MaxHp=1});
-        Assert.Equal(10,result.PersistentTeam[0]!.Bonuses[0]);Assert.Equal(15,result.PersistentTeam[0]!.Bonuses[2]);
+        // The first cast copies stats; the second deals damage and copies once more.
+        Assert.Equal(20,result.PersistentTeam[0]!.Bonuses[0]);Assert.Equal(30,result.PersistentTeam[0]!.Bonuses[2]);
         Assert.Equal(0,result.PersistentTeam[0]!.Bonuses[6]);Assert.Equal(0,result.PersistentTeam[0]!.Bonuses[7]);
     }
 
@@ -74,7 +75,7 @@ public sealed class StatTransferReactionTests
         var shield=new InventoryDefinition("shield","Shield",0,false,0,[new(Trigger.Ongoing,Operation.Add,Target.All,Stat.Shield,5)],"fixture","");
         var own=Board("aegistruct","other",null,"aegistruct") with {MaxHp=1,Bag=[new("shield",1,1)]};own.Team[3]!.Bonuses[2]=100;
         var result=Match([actor,other,attacker],own,Board("attacker"),[shield]);
-        Assert.Equal(-859,result.PlayerHp); // Two casters apply 35 and 105 Shield; source clones are excluded from transfer.
+        Assert.Equal(-889,result.PlayerHp); // First casts apply 5 and 105 Shield; the new +30 applies on the next cast.
         Assert.Equal(0,result.PersistentTeam[0]!.Bonuses[2]);
     }
 

@@ -22,7 +22,8 @@ public sealed record GameBattleState(GameBattleSide Player, GameBattleSide Oppon
 public sealed record GameBattleOutcome(bool PlayerWon);
 
 public sealed record GameCombatUnit(int Slot, double[] PermanentStats, double? BaseCooldown, string[] AddedTypes);
-public sealed record GameCombatState(GameCombatUnit[] Team, string[] Trinkets, GameCombatUnit[]? Bench = null);
+public sealed record GameCombatState(GameCombatUnit[] Team, string[] Trinkets, GameCombatUnit[]? Bench = null,
+    Dictionary<string, double>? Counters = null, string[]? ExtraTrainers = null);
 
 public static class GameCatalogIds
 {

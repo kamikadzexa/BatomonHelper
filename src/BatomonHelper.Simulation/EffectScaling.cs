@@ -10,9 +10,9 @@ internal static class EffectScaling
         EffectScale.Trinkets => bag.Sum(x => x.Quantity),
         EffectScale.DistinctTrinkets => bag.Where(x => x.Quantity > 0).Select(x => x.Id).Distinct().Count(),
         EffectScale.CommonTrinkets => bag.Where(x => trinkets![x.Id].Rarity == 0).Sum(x => x.Quantity),
-        EffectScale.UniqueTeamTypes => team.SelectMany(x => species[x.SpeciesId].Types.Concat(x.AddedTypes)).Distinct().Count(),
+        EffectScale.UniqueTeamTypes => team.SelectMany(x => UnitTypes.Resolve(x, species)).Distinct().Count(),
         EffectScale.Allies => team.Count(x => (source is null || !ReferenceEquals(x, source)) &&
-            (effect.ScaleType is null || species[x.SpeciesId].Types.Concat(x.AddedTypes).Contains(effect.ScaleType)) &&
+            (effect.ScaleType is null || UnitTypes.Resolve(x, species).Contains(effect.ScaleType)) &&
             (effect.ScaleRarity is null || species[x.SpeciesId].Rarity == effect.ScaleRarity) &&
             (effect.ScaleMinimumLevel is null || x.Level >= effect.ScaleMinimumLevel)),
         EffectScale.EnemyStatus => enemyStatus![(int)effect.ScaleStat - (int)Stat.Burn],

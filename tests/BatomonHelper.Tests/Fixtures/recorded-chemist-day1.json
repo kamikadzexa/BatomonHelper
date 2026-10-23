@@ -1,0 +1,459 @@
+{
+  "start": {
+    "player": {
+      "day": 1,
+      "teamHp": 300,
+      "trainerId": "chemist",
+      "team": [
+        {
+          "index": 0,
+          "occupancy": "Empty",
+          "definitionId": null,
+          "variant": "Unknown",
+          "level": null,
+          "stats": [],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 1,
+          "occupancy": "Empty",
+          "definitionId": null,
+          "variant": "Unknown",
+          "level": null,
+          "stats": [],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 2,
+          "occupancy": "Empty",
+          "definitionId": null,
+          "variant": "Unknown",
+          "level": null,
+          "stats": [],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 3,
+          "occupancy": "Empty",
+          "definitionId": null,
+          "variant": "Unknown",
+          "level": null,
+          "stats": [],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 4,
+          "occupancy": "Creature",
+          "definitionId": "velocect",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 15
+            },
+            {
+              "kind": "Multicast",
+              "value": 2
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 5,
+          "occupancy": "Creature",
+          "definitionId": "spinarai",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 3
+            },
+            {
+              "kind": "Poison",
+              "value": 4
+            }
+          ],
+          "price": null,
+          "affordable": null
+        }
+      ],
+      "combat": {
+        "team": [
+          {
+            "slot": 5,
+            "permanentStats": [
+              3,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 2.5,
+            "addedTypes": []
+          },
+          {
+            "slot": 4,
+            "permanentStats": [
+              15,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0
+            ],
+            "baseCooldown": 3.5,
+            "addedTypes": []
+          }
+        ],
+        "trinkets": [],
+        "bench": null
+      },
+      "rank": 1,
+      "wins": 0
+    },
+    "opponent": {
+      "day": 1,
+      "teamHp": 300,
+      "trainerId": "chemist",
+      "team": [
+        {
+          "index": 0,
+          "occupancy": "Empty",
+          "definitionId": null,
+          "variant": "Unknown",
+          "level": null,
+          "stats": [],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 1,
+          "occupancy": "Empty",
+          "definitionId": null,
+          "variant": "Unknown",
+          "level": null,
+          "stats": [],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 2,
+          "occupancy": "Empty",
+          "definitionId": null,
+          "variant": "Unknown",
+          "level": null,
+          "stats": [],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 3,
+          "occupancy": "Creature",
+          "definitionId": "venopuff",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Poison",
+              "value": 7
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 4,
+          "occupancy": "Creature",
+          "definitionId": "mosslug",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Heal",
+              "value": 30
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 5,
+          "occupancy": "Empty",
+          "definitionId": null,
+          "variant": "Unknown",
+          "level": null,
+          "stats": [],
+          "price": null,
+          "affordable": null
+        }
+      ],
+      "combat": {
+        "team": [
+          {
+            "slot": 3,
+            "permanentStats": [
+              0,
+              0,
+              0,
+              0,
+              4,
+              0,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 3.5,
+            "addedTypes": []
+          },
+          {
+            "slot": 4,
+            "permanentStats": [
+              0,
+              30,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 6,
+            "addedTypes": []
+          }
+        ],
+        "trinkets": [],
+        "bench": null
+      },
+      "rank": 0,
+      "wins": 0
+    },
+    "outcome": null,
+    "frame": null
+  },
+  "outcome": {
+    "playerWon": true
+  },
+  "frames": [
+    {
+      "bridgeSequence": 91,
+      "capturedAt": "2026-10-23T20:35:44+03:00",
+      "frame": {
+        "elapsedSeconds": 1.46666666666667,
+        "player": {
+          "health": 300,
+          "maximumHealth": 300,
+          "shield": 0,
+          "burn": 0,
+          "poison": 0,
+          "shock": 0,
+          "units": [
+            {
+              "slot": 0,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                3,
+                0,
+                0,
+                0,
+                4,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 1,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                15,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            }
+          ]
+        },
+        "opponent": {
+          "health": 300,
+          "maximumHealth": 300,
+          "shield": 0,
+          "burn": 0,
+          "poison": 0,
+          "shock": 0,
+          "units": [
+            {
+              "slot": 3,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                0,
+                0,
+                0,
+                0,
+                7,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 4,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                0,
+                30,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "bridgeSequence": 101,
+      "capturedAt": "2026-10-23T20:35:49+03:00",
+      "frame": {
+        "elapsedSeconds": 16.5333333333333,
+        "player": {
+          "health": 56,
+          "maximumHealth": 300,
+          "shield": 0,
+          "burn": 0,
+          "poison": 28,
+          "shock": 0,
+          "units": [
+            {
+              "slot": 0,
+              "alive": true,
+              "casts": 6,
+              "stats": [
+                3,
+                0,
+                0,
+                0,
+                4,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 18,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 1,
+              "alive": true,
+              "casts": 8,
+              "stats": [
+                15,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              "damageDealt": 120,
+              "healingDone": 0,
+              "shieldGranted": 0
+            }
+          ]
+        },
+        "opponent": {
+          "health": 30,
+          "maximumHealth": 300,
+          "shield": 0,
+          "burn": 0,
+          "poison": 24,
+          "shock": 0,
+          "units": [
+            {
+              "slot": 3,
+              "alive": true,
+              "casts": 4,
+              "stats": [
+                0,
+                0,
+                0,
+                0,
+                7,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 4,
+              "alive": true,
+              "casts": 2,
+              "stats": [
+                40,
+                30,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 20,
+              "healingDone": 60,
+              "shieldGranted": 0
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

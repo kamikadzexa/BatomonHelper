@@ -90,7 +90,10 @@ public sealed class RunCaptureStore
 
     private async Task WriteAsync(DateTimeOffset? endedAt, CancellationToken cancellationToken)
     {
-        var run = new CapturedRun(2, _startedAt, endedAt, _catalogVersion, _gameBuild, [.. _changes], [.. _fights]);
+        // Older installed bridges lack trainer metadata and still emit raw player
+        // frame indices. Do not label those recordings as corrected screen order.
+        var version = _fights.Any(fight => fight.Start.Player.Combat.Counters is null) ? 2 : 3;
+        var run = new CapturedRun(version, _startedAt, endedAt, _catalogVersion, _gameBuild, [.. _changes], [.. _fights]);
         var temporaryPath = _path + ".tmp";
         await File.WriteAllTextAsync(temporaryPath, JsonSerializer.Serialize(run, JsonOptions), cancellationToken);
         File.Move(temporaryPath, _path, true);

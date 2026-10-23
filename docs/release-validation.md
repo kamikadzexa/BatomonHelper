@@ -1,4 +1,14 @@
-# Release validation: 1.0.4
+# Release validation: 1.0.5
+
+Validated locally on 2026-10-23.
+
+- Full Release suite: **481 passed, 0 failed, 0 skipped**. Includes recorded Chemist/Masked Man outcomes in both resolvers, trainer progress import, integer stat rounding, playback refresh preservation, and fastest-TTK placement scoring that rejects a higher-output healer/shielder.
+- Both user recordings: **287 shop snapshots imported, 22/22 outcomes match seed-69 replays**, with optimized/reference agreement on winner, duration and remaining HP. See [recorded-run review](run-validation-1.0.5.md) and [JSON results](run-validation-1.0.5.json). Missing game seeds and trainer progress prevent exact timeline claims.
+- Bridge 1.6.0 passes native Godot 4.7.2 compilation and isolated smoke execution, including all six player/opponent sample coordinates and lost-life counter export. New runs use schema version 3 to distinguish corrected frame coordinates.
+- Installer built with the production script, which repeats native bridge checks, verifies self-contained runtime/catalog/mod/license payloads and produces a SHA-256 checksum. Training and run-validation tools are excluded.
+- No installed game files, saves, loader, or running game were changed during this release. Machine-wide installation/UAC was not repeated. The installer remains unsigned.
+
+## Historical validation: 1.0.4
 
 Validated locally on 2026-10-23.
 

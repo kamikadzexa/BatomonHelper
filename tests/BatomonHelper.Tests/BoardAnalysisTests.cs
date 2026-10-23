@@ -48,7 +48,7 @@ public sealed class BoardAnalysisTests
     [Fact] public void Reactive_stacks_change_effective_damage_and_expose_activation_counts(){
         var (rules,board)=Board(10,effects:[new(Trigger.Cast,Operation.Add,Target.Self,Stat.Damage,2)]);
         var result=new BoardAnalyzer(rules).Analyze(board,300,1);
-        Assert.Equal(1230,result.Checkpoints[^1].Damage,8);Assert.Equal(70,result.Checkpoints[^1].Units[0].Stats[0],8);
+        Assert.Equal(1170,result.Checkpoints[^1].Damage,8);Assert.Equal(70,result.Checkpoints[^1].Units[0].Stats[0],8);
         Assert.Equal(30,result.Checkpoints[^1].Units[0].Counters["effect:Cast/Add/Self/Damage"]);
     }
     [Fact] public void Multicast_and_existing_shock_are_not_double_counted(){

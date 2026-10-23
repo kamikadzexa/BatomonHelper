@@ -27,6 +27,10 @@ class FakeSimulation extends RefCounted:
 class FakeState extends RefCounted:
 	var simulation = FakeSimulation.new()
 
+class FakeRun extends RefCounted:
+	var lives_lost := 4
+	var _active_passives: Array = []
+
 func _init():
 	var script = load("res://bridge.gd")
 	if script == null or not script.can_instantiate():
@@ -45,10 +49,18 @@ func _init():
 	var valid = frame != null and frame.elapsedSeconds == 1.5 \
 		and frame.player.health == 95.0 and frame.opponent.shock == 6 \
 		and frame.player.units.size() == 1 and frame.opponent.units.size() == 1 \
-		and frame.player.units[0].slot == 1 and frame.opponent.units[0].slot == 3 \
+		and frame.player.units[0].slot == 4 and frame.opponent.units[0].slot == 3 \
 		and frame.player.units[0].casts == 3 and frame.player.units[0].stats.size() == 9 \
 		and frame.player.units[0].damageDealt == 12.0 \
 		and bridge.read_battle_frame(empty_state) == null
+	var run = FakeRun.new()
+	valid = valid and bridge.read_combat_counters(run).get("lives-lost") == 4
+	for index in range(6):
+		player.slot_index = index
+		opponent.slot_index = index
+		frame = bridge.read_battle_frame(state)
+		valid = valid and frame.player.units[0].slot == 5 - index \
+			and frame.opponent.units[0].slot == (index + 3) % 6
 	empty_state.free()
 	bridge.free()
 	if not valid:

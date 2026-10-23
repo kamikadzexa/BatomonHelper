@@ -32,8 +32,12 @@ public static class LiveBoardImport
             throw new InvalidDataException("A live trinket has no simulation rules.");
         var hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { rules.Hash, data })));
         var calibratedRules = rules with { Species = species.Values.ToArray(), Hash = hash };
-        var frozen = new FrozenBoard(board.Day!.Value, board.TeamHp!.Value, trainer, team, bag, [],
-            Rank: board.ShopRank!.Value, Wins: board.Wins!.Value);
+        var extraTrainers = (data.ExtraTrainers ?? []).Select(id => GameCatalogIds.Resolve(id, rules.Trainers.Select(value => value.Id))).ToArray();
+        if (extraTrainers.Any(id => !rules.Trainers.Any(value => value.Id == id)) ||
+            data.Counters?.Any(pair => !double.IsFinite(pair.Value)) == true)
+            throw new InvalidDataException("Invalid live trainer progress.");
+        var frozen = new FrozenBoard(board.Day!.Value, board.TeamHp!.Value, trainer, team, bag, extraTrainers,
+            Counters: data.Counters is null ? null : new(data.Counters), Rank: board.ShopRank!.Value, Wins: board.Wins!.Value);
         return new(calibratedRules, frozen, bench);
 
         void ValidateMetadata(BoardSlot[] slots, GameCombatUnit[] metadata, string area)

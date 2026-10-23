@@ -160,11 +160,14 @@ public sealed class Combat(RulesManifest rules)
             {
                 queue.Dequeue();
                 if(teams[casting.Side].Units[casting.Slot] is not { Alive:true } caster || caster.Epoch!=casting.Epoch) continue;
+                // The game reads output stats before on_cast runs. Self buffs such as
+                // Mosslug's damage growth therefore affect the next cast, not this one.
+                var castStats=(double[])Stats(casting.Side,casting.Slot).Clone();
                 Activate(casting.Side,casting.Slot,Trigger.Cast);
                 for(var child=0;child<6;child++)if(teams[casting.Side].Units[child] is {Alive:true} summoned && summoned.ParentSlot==casting.Slot)
                     Sequence(casting.Side,child,casting.Slot);
                 Inventory(casting.Side,casting.Slot,Trigger.Cast);
-                casts.Add((casting.Side,casting.Slot,Stats(casting.Side,casting.Slot)));
+                casts.Add((casting.Side,casting.Slot,castStats));
                 NotifyAllies(casting.Side,casting.Slot,Trigger.AllyCast);
                 if(trace) log.Add($"{now*tickSeconds:F2}s side {casting.Side} slot {casting.Slot}: {caster.Unit.SpeciesId} cast");
             }
@@ -219,7 +222,7 @@ public sealed class Combat(RulesManifest rules)
         {
             return _levels.GetOrAdd((u.Unit.SpeciesId,u.Unit.Level,u.Unit.Shiny),key=>LevelRules.Resolve(_species[key.Item1],key.Item2,key.Item3));
         }
-        bool Matches(Fighter u,Effect effect) => (effect.Operation==Operation.AddType || effect.Type is null || _matchTypes.GetOrAdd(effect.Type,text=>text.Split('|')).Any(type=>_species[u.Unit.SpeciesId].Types.Contains(type)||u.Unit.AddedTypes.Contains(type))) &&
+        bool Matches(Fighter u,Effect effect) => (effect.Operation==Operation.AddType || effect.Type is null || _matchTypes.GetOrAdd(effect.Type,text=>text.Split('|')).Any(type=>Types(u).Contains(type))) &&
             u.Unit.SpeciesId!=effect.ExcludeSpecies && (effect.Rarity is null || _species[u.Unit.SpeciesId].Rarity==effect.Rarity) &&
             (effect.MinimumLevel is null || u.Unit.Level>=effect.MinimumLevel) && (effect.MaximumLevel is null || u.Unit.Level<=effect.MaximumLevel) &&
             (!effect.RequireNoAbility||Definition(u).Effects.Length==0) && (!effect.RequireOngoing||Definition(u).AbilityTrigger==Trigger.Ongoing || Definition(u).Effects.Any(x=>x.Trigger==Trigger.Ongoing));
@@ -279,7 +282,7 @@ public sealed class Combat(RulesManifest rules)
                 if(trainer=="pyromaniac" && types.Contains("fire"))values[3]+=2;
             }
             for(var i=0;i<9;i++)values[i]*=1+percentages[i];
-            for(var i=0;i<6;i++) values[i]=Math.Clamp(values[i],0,999_999_999);
+            for(var i=0;i<6;i++) values[i]=Math.Clamp(Math.Round(values[i],MidpointRounding.AwayFromZero),0,999_999_999);
             values[0]+=source.DamageAdjustment;
             values[(int)Stat.Multicast]=Math.Max(1,values[(int)Stat.Multicast]);
             if(source.Unit.SpeciesId=="zephyrex")values[(int)Stat.Multicast]=1;
@@ -521,7 +524,7 @@ public sealed class Combat(RulesManifest rules)
             }finally{Invalidate();}
         }
         int BagCount(int side,string id)=>teams[side].Bag.Where(x=>x.Id==id).Sum(x=>x.Quantity);
-        IEnumerable<string> Types(Fighter unit)=>_species[unit.Unit.SpeciesId].Types.Concat(unit.Unit.AddedTypes).Distinct();
+        IEnumerable<string> Types(Fighter unit)=>UnitTypes.Resolve(unit.Unit,_species);
         double Gain(int side,Stat stat,double value)=>stat is Stat.Multicast or Stat.Speed?value:value*(1+.8*BagCount(side,"zenith-stone"));
         void Consume(int side,string id){Invalidate();var index=teams[side].Bag.FindIndex(x=>x.Id==id);if(index<0)return;var entry=teams[side].Bag[index];if(entry.Quantity<=1)teams[side].Bag.RemoveAt(index);else teams[side].Bag[index]=entry with {Quantity=entry.Quantity-1};}
         void LevelChanged(int side,int slot){

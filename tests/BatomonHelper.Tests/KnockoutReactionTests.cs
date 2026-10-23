@@ -57,7 +57,7 @@ public sealed class KnockoutReactionTests
         Assert.Equal(18, result.PersistentTeam[0]!.Bonuses[2]);
         var poison = actor with { Normal = actor.Normal.Select(x => x with { Effects = Effects("Knockout adjacent allies and gain +7 Poison this battle for each ally Knockout.") }).ToArray() };
         result = Match([poison, guarded, victim], own, own with { MaxHp = 5, Team = new BatomonHelper.Simulation.Unit?[6] });
-        Assert.Equal(1, result.Seconds); Assert.Equal(-2, result.OpponentHp); Assert.Equal(0, result.PersistentTeam[0]!.Bonuses[4]);
+        Assert.Equal(2, result.Seconds); Assert.Equal(-2, result.OpponentHp); Assert.Equal(0, result.PersistentTeam[0]!.Bonuses[4]);
     }
 
     [Fact]
@@ -75,13 +75,13 @@ public sealed class KnockoutReactionTests
     }
 
     [Fact]
-    public void Stealing_uses_pre_knockout_stats_and_the_current_cast_but_preserves_the_opponent()
+    public void Stealing_uses_pre_knockout_stats_for_the_next_cast_and_preserves_the_opponent()
     {
         var actor = Unit("actor", 1, Effects("Knockout the monster opposite of this and gain their stats for this battle (except Cooldown)."), 1);
         var victim = Unit("victim", 5, [], 10); victim.Normal[0].Stats[6] = 2; victim.Normal[0].Stats[7] = 3;
         var result = Match([actor, victim], Board("actor"), Board("victim") with { MaxHp = 10 });
-        Assert.Equal(1, result.Seconds); Assert.Equal(-1, result.OpponentHp);
-        Assert.All(result.PersistentTeam[0]!.Bonuses, x => Assert.Equal(0, x)); Assert.Single(result.Trace);
+        Assert.Equal(2, result.Seconds); Assert.Equal(-2, result.OpponentHp);
+        Assert.All(result.PersistentTeam[0]!.Bonuses, x => Assert.Equal(0, x)); Assert.Equal(2, result.Trace.Length);
     }
 
     [Fact]

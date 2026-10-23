@@ -165,7 +165,19 @@ func read_slots(source: Array, count: int, shop: bool, gold: int, reverse_visual
 	return slots
 
 func read_combat(run) -> Dictionary:
-	return {"team": read_combat_units(run.team), "bench": read_combat_units(run.bench), "trinkets": run.trinket_ids}
+	return {"team": read_combat_units(run.team), "bench": read_combat_units(run.bench), "trinkets": run.trinket_ids,
+		"counters": read_combat_counters(run), "extraTrainers": run.mask_trainer_choices if _has(run, "mask_trainer_choices") else []}
+
+func read_combat_counters(run) -> Dictionary:
+	var counters := {}
+	if _has(run, "lives_lost"):
+		counters["lives-lost"] = int(run.lives_lost)
+	# Chemist's helper only reads its accumulated buff; it does not invoke a trigger.
+	if _has(run, "_active_passives"):
+		for passive in run._active_passives:
+			if passive != null and passive.has_method("_get_current_buff") and _script_is(passive, "res://game/trainers/chemist/chemist_passive.gd"):
+				counters["chemist-levels"] = max(0, int(passive._get_current_buff(run)) - 3)
+	return counters
 
 func read_battle_side(run, day: int, opponent := false) -> Dictionary:
 	# Replay templates omit passive caches. Rebuild them only on an isolated copy,
@@ -174,7 +186,8 @@ func read_battle_side(run, day: int, opponent := false) -> Dictionary:
 	return {"day": day, "teamHp": int(run.player_hp), "trainerId": str(run.trainer_id),
 		"rank": int(run.shop_rank), "wins": int(run.current_wins),
 		"team": read_slots(run.team, 6, false, int(run.gold), true, opponent),
-		"combat": {"team": read_combat_units(run.team, opponent), "trinkets": run.trinket_ids}}
+		"combat": {"team": read_combat_units(run.team, opponent), "trinkets": run.trinket_ids,
+			"counters": read_combat_counters(run), "extraTrainers": run.mask_trainer_choices if _has(run, "mask_trainer_choices") else []}}
 
 func read_battle_outcome(player):
 	# The game's ghost simulation promotes the completed run before the visual
@@ -215,11 +228,10 @@ func read_battle_frame_units(units: Array, team_id: int) -> Array:
 		var stats := []
 		for stat in stat_ids:
 			stats.append(float(unit.get_stat(stat)))
-		# Keep opponent frame slots in the same player-screen coordinates as the
-		# battle-start template above.
-		var slot := int(unit.slot_index)
+		# Both sides use the same screen coordinates as their battle-start template.
+		var slot := 5 - int(unit.slot_index)
 		if team_id == 1:
-			slot = (slot + 3) % 6
+			slot = (int(unit.slot_index) + 3) % 6
 		output.append({"slot": slot, "alive": not bool(unit.is_dead),
 			"casts": int(unit.cast_count), "stats": stats,
 			"damageDealt": float(unit.damage_dealt), "healingDone": float(unit.healing_done),

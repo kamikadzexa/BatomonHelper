@@ -1,0 +1,248 @@
+{
+  "seed": 69,
+  "analyzerVersion": 5,
+  "rulesHash": "E2B9706B6E8FBC9B48BB3B818182E42A8DC81021B60B3E488D40D0090B5BFE47",
+  "reports": [
+    {
+      "file": "batomon-run-20261023-173527257.json",
+      "version": 2,
+      "build": "26078162",
+      "importedShopBoards": 144,
+      "fights": [
+        {
+          "day": 1,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 17.5,
+          "samples": 21,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 2,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 16,
+          "samples": 21,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 3,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 21,
+          "samples": 23,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 4,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 14,
+          "samples": 20,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 5,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 21,
+          "samples": 24,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 6,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 14,
+          "samples": 20,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 7,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 17,
+          "samples": 21,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 8,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 16,
+          "samples": 20,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 9,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 15,
+          "samples": 21,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 10,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 13,
+          "samples": 22,
+          "trainerProgressRecorded": false
+        }
+      ]
+    },
+    {
+      "file": "batomon-run-20261023-174602160.json",
+      "version": 2,
+      "build": "26078162",
+      "importedShopBoards": 143,
+      "fights": [
+        {
+          "day": 1,
+          "gameWon": false,
+          "simulatedWon": false,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 24,
+          "samples": 26,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 2,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 27,
+          "samples": 28,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 3,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 13,
+          "samples": 19,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 4,
+          "gameWon": false,
+          "simulatedWon": false,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 16,
+          "samples": 21,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 5,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 21,
+          "samples": 25,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 6,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 18.5,
+          "samples": 23,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 7,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 21.94,
+          "samples": 25,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 8,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 22,
+          "samples": 25,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 9,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 14.67,
+          "samples": 21,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 10,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 17.19,
+          "samples": 23,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 11,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 14.85,
+          "samples": 20,
+          "trainerProgressRecorded": false
+        },
+        {
+          "day": 12,
+          "gameWon": true,
+          "simulatedWon": true,
+          "outcomeMatches": true,
+          "referenceAgrees": true,
+          "simulatedSeconds": 12.950000000000001,
+          "samples": 19,
+          "trainerProgressRecorded": false
+        }
+      ]
+    }
+  ],
+  "failures": 0,
+  "limitations": [
+    "Outcome agreement does not prove exact timeline parity; recordings omit the game\u0027s random seed.",
+    "Version 2 runs omit trainer progress and additional trainers. Their player frame slots must be reversed (5 - slot) for timeline comparisons; version 3 uses screen order."
+  ]
+}

@@ -26,7 +26,7 @@ public sealed partial class OverlayViewModel
     private async Task RefreshBattleAsync(GameBattleState battle)
     {
         BattleSummary = Setup.ShowBattleOutcome ? BattleOutcomePresentation.Summary(battle.Outcome) : "";
-        var identity = "battle:" + JsonSerializer.Serialize(battle with { Outcome = null });
+        var identity = "battle:" + JsonSerializer.Serialize(battle with { Outcome = null, Frame = null });
         if (_damageIdentity == identity) return;
         AnalysisWarning = "";
         _damageIdentity = identity;

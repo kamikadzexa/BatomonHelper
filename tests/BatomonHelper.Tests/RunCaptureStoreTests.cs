@@ -21,7 +21,7 @@ public sealed class RunCaptureStoreTests
 
             var run = JsonSerializer.Deserialize<CapturedRun>(await File.ReadAllTextAsync(store.Path), GameStateBridge.JsonOptions);
             Assert.NotNull(run);
-            Assert.Equal(2, run.Version);
+            Assert.Equal(3, run.Version);
             Assert.NotNull(run.EndedAt);
             Assert.Equal([1L, 3L], run.Changes.Select(change => change.BridgeSequence));
             Assert.Empty(run.Fights);
@@ -50,6 +50,7 @@ public sealed class RunCaptureStoreTests
             await store.CompleteAsync();
 
             var run = JsonSerializer.Deserialize<CapturedRun>(await File.ReadAllTextAsync(store.Path), GameStateBridge.JsonOptions)!;
+            Assert.Equal(2, run.Version); // An old bridge's frames retain their legacy schema marker.
             var fight = Assert.Single(run.Fights);
             Assert.Null(fight.Start.Outcome);
             Assert.Null(fight.Start.Frame);

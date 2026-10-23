@@ -1,0 +1,916 @@
+{
+  "start": {
+    "player": {
+      "day": 4,
+      "teamHp": 1400,
+      "trainerId": "masked-man",
+      "team": [
+        {
+          "index": 0,
+          "occupancy": "Creature",
+          "definitionId": "velocect",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 20
+            },
+            {
+              "kind": "Multicast",
+              "value": 2
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 1,
+          "occupancy": "Creature",
+          "definitionId": "joltail",
+          "variant": "Normal",
+          "level": 2,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 15
+            },
+            {
+              "kind": "Shock",
+              "value": 8
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 2,
+          "occupancy": "Creature",
+          "definitionId": "spinarai",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 8
+            },
+            {
+              "kind": "Poison",
+              "value": 1
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 3,
+          "occupancy": "Creature",
+          "definitionId": "plunderbird",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 6
+            },
+            {
+              "kind": "Heal",
+              "value": 25
+            },
+            {
+              "kind": "Multicast",
+              "value": 2
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 4,
+          "occupancy": "Creature",
+          "definitionId": "bumblebolt",
+          "variant": "Normal",
+          "level": 2,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 16
+            },
+            {
+              "kind": "Shock",
+              "value": 2
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 5,
+          "occupancy": "Creature",
+          "definitionId": "vipair",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 10
+            },
+            {
+              "kind": "Poison",
+              "value": 17
+            },
+            {
+              "kind": "Multicast",
+              "value": 2
+            }
+          ],
+          "price": null,
+          "affordable": null
+        }
+      ],
+      "combat": {
+        "team": [
+          {
+            "slot": 5,
+            "permanentStats": [
+              5,
+              0,
+              0,
+              0,
+              17,
+              0,
+              0.05,
+              2,
+              0
+            ],
+            "baseCooldown": 6.5,
+            "addedTypes": []
+          },
+          {
+            "slot": 4,
+            "permanentStats": [
+              11,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 2.5,
+            "addedTypes": []
+          },
+          {
+            "slot": 3,
+            "permanentStats": [
+              1,
+              25,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0
+            ],
+            "baseCooldown": 5,
+            "addedTypes": []
+          },
+          {
+            "slot": 2,
+            "permanentStats": [
+              3,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 2.5,
+            "addedTypes": []
+          },
+          {
+            "slot": 1,
+            "permanentStats": [
+              10,
+              0,
+              0,
+              0,
+              0,
+              8,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 4.5,
+            "addedTypes": []
+          },
+          {
+            "slot": 0,
+            "permanentStats": [
+              15,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0
+            ],
+            "baseCooldown": 3.5,
+            "addedTypes": []
+          }
+        ],
+        "trinkets": [
+          "wood_sword",
+          "bargain_bin",
+          "mysterious_mask"
+        ],
+        "bench": null
+      },
+      "rank": 4,
+      "wins": 2
+    },
+    "opponent": {
+      "day": 4,
+      "teamHp": 1400,
+      "trainerId": "painter",
+      "team": [
+        {
+          "index": 0,
+          "occupancy": "Creature",
+          "definitionId": "venopuff",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 57
+            },
+            {
+              "kind": "Poison",
+              "value": 4
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 1,
+          "occupancy": "Creature",
+          "definitionId": "gildshell",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 60
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 2,
+          "occupancy": "Creature",
+          "definitionId": "alpinine",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 104
+            },
+            {
+              "kind": "Shield",
+              "value": 48
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 3,
+          "occupancy": "Creature",
+          "definitionId": "pebbler",
+          "variant": "Shiny",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 52
+            },
+            {
+              "kind": "Shield",
+              "value": 24
+            }
+          ],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 4,
+          "occupancy": "Empty",
+          "definitionId": null,
+          "variant": "Unknown",
+          "level": null,
+          "stats": [],
+          "price": null,
+          "affordable": null
+        },
+        {
+          "index": 5,
+          "occupancy": "Creature",
+          "definitionId": "berroon",
+          "variant": "Normal",
+          "level": 1,
+          "stats": [
+            {
+              "kind": "Damage",
+              "value": 92
+            }
+          ],
+          "price": null,
+          "affordable": null
+        }
+      ],
+      "combat": {
+        "team": [
+          {
+            "slot": 3,
+            "permanentStats": [
+              0,
+              0,
+              24,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 5,
+            "addedTypes": []
+          },
+          {
+            "slot": 5,
+            "permanentStats": [
+              40,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 4,
+            "addedTypes": []
+          },
+          {
+            "slot": 0,
+            "permanentStats": [
+              5,
+              0,
+              0,
+              0,
+              4,
+              0,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 3.5,
+            "addedTypes": []
+          },
+          {
+            "slot": 1,
+            "permanentStats": [
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              42
+            ],
+            "baseCooldown": 2,
+            "addedTypes": []
+          },
+          {
+            "slot": 2,
+            "permanentStats": [
+              52,
+              0,
+              48,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            "baseCooldown": 6,
+            "addedTypes": [
+              "all"
+            ]
+          }
+        ],
+        "trinkets": [
+          "rainbow_berry"
+        ],
+        "bench": null
+      },
+      "rank": 0,
+      "wins": 3
+    },
+    "outcome": null,
+    "frame": null
+  },
+  "outcome": {
+    "playerWon": false
+  },
+  "frames": [
+    {
+      "bridgeSequence": 1640,
+      "capturedAt": "2026-10-23T20:48:42+03:00",
+      "frame": {
+        "elapsedSeconds": 1.23333333333333,
+        "player": {
+          "health": 1400,
+          "maximumHealth": 1400,
+          "shield": 0,
+          "burn": 0,
+          "poison": 0,
+          "shock": 0,
+          "units": [
+            {
+              "slot": 0,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                10,
+                0,
+                0,
+                0,
+                17,
+                0,
+                0.05,
+                2,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 1,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                16,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 2,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                6,
+                25,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 3,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                8,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 4,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                15,
+                0,
+                0,
+                0,
+                0,
+                8,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 5,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                20,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            }
+          ]
+        },
+        "opponent": {
+          "health": 1400,
+          "maximumHealth": 1400,
+          "shield": 0,
+          "burn": 0,
+          "poison": 0,
+          "shock": 0,
+          "units": [
+            {
+              "slot": 3,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                52,
+                0,
+                24,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 5,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                92,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 0,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                57,
+                0,
+                0,
+                0,
+                4,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 1,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                60,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                62
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 2,
+              "alive": true,
+              "casts": 0,
+              "stats": [
+                104,
+                0,
+                48,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 0,
+              "healingDone": 0,
+              "shieldGranted": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "bridgeSequence": 1649,
+      "capturedAt": "2026-10-23T20:48:46+03:00",
+      "frame": {
+        "elapsedSeconds": 14.7666666666666,
+        "player": {
+          "health": 168,
+          "maximumHealth": 1400,
+          "shield": 0,
+          "burn": 0,
+          "poison": 16,
+          "shock": 0,
+          "units": [
+            {
+              "slot": 0,
+              "alive": true,
+              "casts": 4,
+              "stats": [
+                10,
+                0,
+                0,
+                0,
+                17,
+                0,
+                0.05,
+                2,
+                0
+              ],
+              "damageDealt": 114,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 1,
+              "alive": true,
+              "casts": 5,
+              "stats": [
+                16,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 148,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 2,
+              "alive": true,
+              "casts": 4,
+              "stats": [
+                6,
+                25,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              "damageDealt": 92,
+              "healingDone": 100,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 3,
+              "alive": true,
+              "casts": 5,
+              "stats": [
+                8,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 108,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 4,
+              "alive": true,
+              "casts": 3,
+              "stats": [
+                15,
+                0,
+                0,
+                0,
+                0,
+                8,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 87,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 5,
+              "alive": true,
+              "casts": 8,
+              "stats": [
+                20,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              "damageDealt": 304,
+              "healingDone": 0,
+              "shieldGranted": 0
+            }
+          ]
+        },
+        "opponent": {
+          "health": 356.1,
+          "maximumHealth": 1400,
+          "shield": 0,
+          "burn": 0,
+          "poison": 73,
+          "shock": 34,
+          "units": [
+            {
+              "slot": 3,
+              "alive": true,
+              "casts": 2,
+              "stats": [
+                52,
+                0,
+                60,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 104,
+              "healingDone": 0,
+              "shieldGranted": 66
+            },
+            {
+              "slot": 5,
+              "alive": true,
+              "casts": 3,
+              "stats": [
+                92,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 276,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 0,
+              "alive": true,
+              "casts": 4,
+              "stats": [
+                57,
+                0,
+                0,
+                0,
+                4,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 228,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 1,
+              "alive": true,
+              "casts": 7,
+              "stats": [
+                60,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                62
+              ],
+              "damageDealt": 420,
+              "healingDone": 0,
+              "shieldGranted": 0
+            },
+            {
+              "slot": 2,
+              "alive": true,
+              "casts": 2,
+              "stats": [
+                104,
+                0,
+                48,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+              ],
+              "damageDealt": 208,
+              "healingDone": 0,
+              "shieldGranted": 96
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
