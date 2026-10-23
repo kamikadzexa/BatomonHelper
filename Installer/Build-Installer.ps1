@@ -1,9 +1,10 @@
 [CmdletBinding()]
-param([string]$CompilerPath)
+param([string]$CompilerPath, [Parameter(Mandatory)][string]$GodotPath)
 
 $ErrorActionPreference = 'Stop'
 $installerRoot = $PSScriptRoot
 $repositoryRoot = Split-Path -Parent $installerRoot
+& (Join-Path $repositoryRoot 'tools/Test-GameBridge.ps1') -GodotPath $GodotPath
 $overlayProject = Join-Path $repositoryRoot 'src\BatomonHelper.Overlay\BatomonHelper.Overlay.csproj'
 $stagingDirectory = Join-Path $installerRoot 'staging'
 $outputDirectory = Join-Path $installerRoot 'output'

@@ -60,10 +60,10 @@ WIN/LOSS comes from the game. Projections and position advice use a passive-targ
 dotnet restore BatomonHelper.sln
 dotnet run --project src/BatomonHelper.Overlay -c Release
 dotnet test BatomonHelper.sln -c Release
-.\Installer\Build-Installer.ps1
+.\Installer\Build-Installer.ps1 -GodotPath 'C:\Tools\Godot\Godot_win64_console.exe'
 ```
 
-Needs .NET 10 SDK; installer creation also needs [Inno Setup 6](https://jrsoftware.org/isinfo.php). Pass `-CompilerPath` for a custom compiler location. Output includes installer, checksum, and [release notes](docs/release-1.0.4.md). Publish the installer and its `.sha256` file as identically versioned GitHub Release assets for in-app updating.
+Needs .NET 10 SDK; installer creation also needs [Inno Setup 6](https://jrsoftware.org/isinfo.php) and a Godot 4.7 editor executable passed through `-GodotPath`. The build compiles the actual bridge and runs an isolated battle-frame smoke test before publishing. Pass `-CompilerPath` for a custom Inno compiler location. Output includes installer, checksum, and [release notes](docs/release-1.0.4.md). Publish the installer and its `.sha256` file as identically versioned GitHub Release assets for in-app updating.
 
 [Training Lab](docs/strategic-training.md) is separate and excluded from the installer. See [data/development details](docs/development.md) and [training](docs/training.md).
 

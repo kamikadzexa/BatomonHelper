@@ -60,7 +60,7 @@ func _publish() -> void:
 			message.battle.outcome = read_battle_outcome(player)
 			# These are observations of the game's visual replay, never a second
 			# simulation. They make captured runs useful for auditing simulator rules.
-			var frame := read_battle_frame(state)
+			var frame = read_battle_frame(state)
 			if frame != null:
 				message.battle.frame = frame
 	var pending := OUTPUT_DIR.path_join("state.pending")

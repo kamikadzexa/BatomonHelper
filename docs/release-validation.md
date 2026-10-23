@@ -2,6 +2,15 @@
 
 Validated locally on 2026-10-23.
 
+### Replacement installer: Bridge 1.5.1
+
+- Reproduced the released Bridge 1.5.0 parse failure in Godot 4.7.2: `var frame := read_battle_frame(state)` cannot infer a type from a Variant-returning function. Using an untyped local fixes compilation.
+- The fixed production bridge passes native Godot compilation and an isolated execution test for battle frames, stat arrays, counters, missing simulation state, and opponent slot mapping. Installer creation now requires these checks through `-GodotPath`.
+- Installed Bridge 1.5.1 locally through the normal installation service with the game closed, retaining its backups. The restarted game's log confirms the mod starts, and the user confirms the helper works.
+- Rebuilt the 1.0.4 installer and checksum as replacements at the user's request; the helper version remains 1.0.4. Earlier 1.0.4 installations require a manual download of the replacement installer.
+
+### Original installer validation
+
 - Full Release suite: **474 passed, 0 failed, 0 skipped**. Includes new wiki-format/build matching, complete offline assets, Witch projections, Furnadon duplicate-trinket scaling in cached/reference combat, combat-only training refusal, and battle-frame capture/validation cases.
 - Wiki import: Steam build **26078162 / Balance 26**, 148 creatures with complete rules, 143 shiny sprites, 25 trainers, 55 items, 93 trinkets. Region membership: 81 Pantra, 85 Jinto. The five existing missing-shiny declarations remain explicit warnings.
 - The helper uses a separate generated `combat-rules.json`: zero unresolved combat rules, all imported creature/trinket rules, and no item-purchase actions. Witch and Bug Catcher exemptions require their exact reviewed shop-only text. Combat-only manifests are rejected by Training Lab. Historical training rules and strategy observations retain their original provenance.
