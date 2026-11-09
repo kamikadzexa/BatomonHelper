@@ -6,7 +6,7 @@ namespace BatomonHelper.Tests;
 public sealed class AbilitySimulationTests
 {
     [Theory]
-    [InlineData("This and Common allies gain +10 Damage permanently.",Trigger.BattleStart,Operation.Add,Target.All,10)]
+    [InlineData("This and Common allies gain +10 Damage permanently.",Trigger.BattleStart,Operation.Add,Target.Allies,10)]
     [InlineData("Give adjacent allies +40% Shield for this battle.",Trigger.Cast,Operation.Multiply,Target.Adjacent,.4)]
     [InlineData("Give the Flying ally in front +3 Multicast permanently. (Zephyrex can't have Multicast)",Trigger.Cast,Operation.Add,Target.Right,3)]
     [InlineData("Gain 3 random non-unique Legendary Trinkets.",Trigger.Victory,Operation.GrantTrinket,Target.Self,3)]
@@ -39,6 +39,29 @@ public sealed class AbilitySimulationTests
         var environment=new GameEnvironment(rules);environment.Reset(7,"fixture");environment.State.Units[0]=new(){SpeciesId=actor.Id};
         environment.State.Shop[4]=new(null,"fake-coin",0);environment.Step(new(Move.BuyItem,4));
         Assert.Equal(24,environment.State.Units[0]!.Bonuses[0]);Assert.Equal(24,environment.State.Units[0]!.Bonuses[2]);Assert.Equal(1,environment.State.FreeRerolls);
+    }
+
+    [Fact]
+    public void Cairnage_buffs_other_allies_but_not_itself_and_explicit_this_and_allies_includes_self()
+    {
+        var basis=RuleCompiler.Fixture();
+        var cairnageEffects=RuleCompiler.CompileText("Allies gain Damage for this battle equal to 0.8x their Shield.",Trigger.Cast,out var understood);
+        Assert.True(understood);Assert.Equal(Target.Allies,Assert.Single(cairnageEffects).Target);cairnageEffects=[cairnageEffects[0] with {Permanent=true}];
+        var explicitEffects=RuleCompiler.CompileText("This and allies gain +10 Damage permanently.",Trigger.BattleStart,out understood);Assert.True(understood);
+        var stats=new double[9];stats[(int)Stat.Shield]=100;
+        var cairnage=basis.Species[0] with {Id="cairnage",Normal=[new(1,1,stats,cairnageEffects)]};
+        var allyStats=new double[9];allyStats[(int)Stat.Shield]=50;
+        var ally=basis.Species[1] with {Id="ally",Normal=[new(1,10,allyStats,[])]};
+        var explicitSelf=basis.Species[2] with {Id="explicit-self",Normal=[new(1,10,new double[9],explicitEffects)]};
+        var rules=basis with {Species=[cairnage,ally,explicitSelf]};
+        var board=new FrozenBoard(1,1000,"fixture",[new(){SpeciesId=cairnage.Id},new(){SpeciesId=ally.Id},null,null,null,null],[],[]);
+        var result=new Combat(rules).ResolveBattle(board,board with {Team=[null,null,null,null,null,null]},1);
+        Assert.Equal(0,result.PersistentTeam[0]!.Bonuses[(int)Stat.Damage]);
+        Assert.True(result.PersistentTeam[1]!.Bonuses[(int)Stat.Damage]>0);
+        var inclusive=new FrozenBoard(1,1000,"fixture",[new(){SpeciesId=explicitSelf.Id},new(){SpeciesId=ally.Id},null,null,null,null],[],[]);
+        var inclusiveResult=new Combat(rules).ResolveBattle(inclusive,inclusive with {Team=[null,null,null,null,null,null]},1);
+        Assert.Equal(10,inclusiveResult.PersistentTeam[0]!.Bonuses[(int)Stat.Damage]);
+        Assert.Equal(10,inclusiveResult.PersistentTeam[1]!.Bonuses[(int)Stat.Damage]);
     }
 
     [Fact]

@@ -190,17 +190,19 @@ public sealed record HelperSettings(
     bool ShowDpsCounters = true,
     bool ShowBestDpsBoardSuggestions = true,
     bool ShowBattleOutcome = true,
-    bool AutoInstallUpdates = false)
+    bool AutoInstallUpdates = false,
+    bool AlwaysOnTop = true)
 {
     public static string DefaultPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BatomonHelper", "settings.json");
-    public static HelperSettings Load()
+    public static HelperSettings Load(string? path = null)
     {
-        try { return JsonSerializer.Deserialize<HelperSettings>(File.ReadAllText(DefaultPath)) ?? new(); }
+        try { return JsonSerializer.Deserialize<HelperSettings>(File.ReadAllText(path ?? DefaultPath)) ?? new(); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException) { return new(); }
     }
-    public void Save()
+    public void Save(string? path = null)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(DefaultPath)!);
-        File.WriteAllText(DefaultPath, JsonSerializer.Serialize(this));
+        var target = path ?? DefaultPath;
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        File.WriteAllText(target, JsonSerializer.Serialize(this));
     }
 }

@@ -2,7 +2,7 @@
   "Build": "26078162",
   "Balance": "26",
   "Version": "unknown",
-  "Hash": "E2B9706B6E8FBC9B48BB3B818182E42A8DC81021B60B3E488D40D0090B5BFE47",
+  "Hash": "D2FC741A88712B7B77FAE1AFA21691327F7516EC0607F38DA8660C92FFAD920E",
   "Species": [
     {
       "Id": "bambudo",
@@ -20481,7 +20481,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 10,
               "Permanent": true,
@@ -20552,7 +20552,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 20,
               "Permanent": true,
@@ -20623,7 +20623,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 30,
               "Permanent": true,
@@ -20694,7 +20694,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 60,
               "Permanent": true,
@@ -20767,7 +20767,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 12,
               "Permanent": true,
@@ -20838,7 +20838,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 24,
               "Permanent": true,
@@ -20909,7 +20909,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 36,
               "Permanent": true,
@@ -20980,7 +20980,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 72,
               "Permanent": true,
@@ -41342,7 +41342,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 20,
               "Permanent": true,
@@ -41413,7 +41413,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 40,
               "Permanent": true,
@@ -41484,7 +41484,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 60,
               "Permanent": true,
@@ -41555,7 +41555,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 240,
               "Permanent": true,
@@ -41628,7 +41628,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 24,
               "Permanent": true,
@@ -41699,7 +41699,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 48,
               "Permanent": true,
@@ -41770,7 +41770,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 72,
               "Permanent": true,
@@ -41841,7 +41841,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 288,
               "Permanent": true,
@@ -42518,7 +42518,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 15,
               "Permanent": true,
@@ -42570,7 +42570,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 1,
               "Amount": 15,
               "Permanent": true,
@@ -42641,7 +42641,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 30,
               "Permanent": true,
@@ -42693,7 +42693,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 1,
               "Amount": 30,
               "Permanent": true,
@@ -42764,7 +42764,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 45,
               "Permanent": true,
@@ -42816,7 +42816,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 1,
               "Amount": 45,
               "Permanent": true,
@@ -42887,7 +42887,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 180,
               "Permanent": true,
@@ -42939,7 +42939,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 1,
               "Amount": 180,
               "Permanent": true,
@@ -43012,7 +43012,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 18,
               "Permanent": true,
@@ -43064,7 +43064,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 1,
               "Amount": 18,
               "Permanent": true,
@@ -43135,7 +43135,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 36,
               "Permanent": true,
@@ -43187,7 +43187,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 1,
               "Amount": 36,
               "Permanent": true,
@@ -43258,7 +43258,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 54,
               "Permanent": true,
@@ -43310,7 +43310,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 1,
               "Amount": 54,
               "Permanent": true,
@@ -43381,7 +43381,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 216,
               "Permanent": true,
@@ -43433,7 +43433,7 @@
             {
               "Trigger": 2,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 1,
               "Amount": 216,
               "Permanent": true,
@@ -60744,7 +60744,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 6,
               "Amount": 0.1,
               "Permanent": true,
@@ -60815,7 +60815,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 6,
               "Amount": 0.2,
               "Permanent": true,
@@ -60886,7 +60886,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 6,
               "Amount": 0.3,
               "Permanent": true,
@@ -60957,7 +60957,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 6,
               "Amount": 2.4,
               "Permanent": true,
@@ -61030,7 +61030,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 6,
               "Amount": 0.12,
               "Permanent": true,
@@ -61101,7 +61101,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 6,
               "Amount": 0.24,
               "Permanent": true,
@@ -61172,7 +61172,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 6,
               "Amount": 0.36,
               "Permanent": true,
@@ -61243,7 +61243,7 @@
             {
               "Trigger": 4,
               "Operation": 0,
-              "Target": 1,
+              "Target": 25,
               "Stat": 6,
               "Amount": 2.88,
               "Permanent": true,
@@ -70236,7 +70236,7 @@
             {
               "Trigger": 1,
               "Operation": 13,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 0.8,
               "Permanent": false,
@@ -70307,7 +70307,7 @@
             {
               "Trigger": 1,
               "Operation": 13,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 1.6,
               "Permanent": false,
@@ -70378,7 +70378,7 @@
             {
               "Trigger": 1,
               "Operation": 13,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 2.4,
               "Permanent": false,
@@ -70449,7 +70449,7 @@
             {
               "Trigger": 1,
               "Operation": 13,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 19.2,
               "Permanent": false,
@@ -70522,7 +70522,7 @@
             {
               "Trigger": 1,
               "Operation": 13,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 1,
               "Permanent": false,
@@ -70593,7 +70593,7 @@
             {
               "Trigger": 1,
               "Operation": 13,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 1.9,
               "Permanent": false,
@@ -70664,7 +70664,7 @@
             {
               "Trigger": 1,
               "Operation": 13,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 2.9,
               "Permanent": false,
@@ -70735,7 +70735,7 @@
             {
               "Trigger": 1,
               "Operation": 13,
-              "Target": 1,
+              "Target": 25,
               "Stat": 0,
               "Amount": 23,
               "Permanent": false,

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="Batomon Helper" Icon="pack://application:,,,/BatomonHelper.Overlay;component/Assets/batomon-helper.ico"
-        Width="1440" Height="900" MinWidth="960" MinHeight="640" Topmost="True"
+        Width="1440" Height="900" MinWidth="960" MinHeight="640" Topmost="{Binding Setup.AlwaysOnTop}"
         WindowStyle="None" ResizeMode="CanResize" Background="#125F70" FontFamily="Segoe UI" FontSize="13"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
   <shell:WindowChrome.WindowChrome>
@@ -214,6 +214,7 @@
                   <CheckBox Content="Show DPS counters" IsChecked="{Binding ShowDpsCounters, Mode=TwoWay}" ToolTip="Show team and enemy damage-per-second counters during battles." Margin="0,4"/>
                   <CheckBox Content="Suggest the best DPS board" IsChecked="{Binding ShowBestDpsBoardSuggestions, Mode=TwoWay}" ToolTip="Show a faster board and bench arrangement when one is found." Margin="0,4"/>
                   <CheckBox Content="Show WIN / LOSS at battle start" IsChecked="{Binding ShowBattleOutcome, Mode=TwoWay}" ToolTip="Show the battle result indicator when the game supplies it." Margin="0,4"/>
+                  <CheckBox Content="Always on top" IsChecked="{Binding AlwaysOnTop, Mode=TwoWay}" ToolTip="Keep the helper window above other windows." Margin="0,4"/>
                 </StackPanel></Border>
                 <Border Style="{StaticResource Surface}" Margin="0,0,0,12"><StackPanel>
                   <TextBlock Text="Helper updates" Style="{StaticResource SectionTitle}"/>

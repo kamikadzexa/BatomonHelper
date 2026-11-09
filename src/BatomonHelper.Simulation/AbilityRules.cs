@@ -14,7 +14,7 @@ public static class AbilityRules
     private static Target T(string s) => s switch
     {
         "this"=>Target.Self,"adjacent allies"=>Target.Adjacent,"ally above"=>Target.Above,"ally behind"=>Target.Left,
-        "ally in front"=>Target.Right,"allies"=>Target.All,"random ally"=>Target.RandomAlly,_=>throw new InvalidDataException(s)
+        "ally in front"=>Target.Right,"allies"=>Target.Allies,"random ally"=>Target.RandomAlly,_=>throw new InvalidDataException(s)
     };
     public static bool TryCompile(string text,Trigger trigger,out Effect[] effects)
     {
@@ -153,7 +153,7 @@ public static class AbilityRules
             Type:"fire",Scale:EffectScale.SelfStat,ScaleStat:Stat.Burn)];return true;}
         var allyShieldDamage=M("Allies gain Damage for this battle equal to (?:(?<amount>"+Number+")x )?their Shield\\.");
         if(allyShieldDamage.Success)
-        {effects=[new(trigger,Operation.CopyStat,Target.All,Amount:allyShieldDamage.Groups["amount"].Success?N(allyShieldDamage.Groups["amount"].Value):1,ScaleStat:Stat.Shield)];return true;}
+        {effects=[new(trigger,Operation.CopyStat,Target.Allies,Amount:allyShieldDamage.Groups["amount"].Success?N(allyShieldDamage.Groups["amount"].Value):1,ScaleStat:Stat.Shield)];return true;}
         var toxicCast=M("When a Toxic ally casts, give it (?<amount>\\+"+Number+")% Cooldown Speed for this battle\\.");
         if(toxicCast.Success)
         {effects=[new(Trigger.AllyCast,Operation.Add,Target.Actor,Stat.Speed,N(toxicCast.Groups["amount"].Value)/100,EventType:"toxic")];return true;}

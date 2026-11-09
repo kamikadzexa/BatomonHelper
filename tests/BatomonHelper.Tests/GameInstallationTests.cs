@@ -129,6 +129,16 @@ public sealed class GameInstallationTests : IDisposable
         File.Delete(Path.Combine(Loader, "Mods", "mod_title_state.gd"));
         Assert.False(GameInstallation.IsLoaderDirectory(Loader));
     }
+    [Fact]
+    public void Always_on_top_setting_defaults_on_and_round_trips_through_settings_file()
+    {
+        Assert.True(new HelperSettings().AlwaysOnTop);
+        var path=Path.Combine(_root,"settings","settings.json");
+        new HelperSettings(AlwaysOnTop:false).Save(path);
+        Assert.False(HelperSettings.Load(path).AlwaysOnTop);
+        new HelperSettings(AlwaysOnTop:true).Save(path);
+        Assert.True(HelperSettings.Load(path).AlwaysOnTop);
+    }
     private static void Put(string root, string relative, string text)
     {
         var path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));

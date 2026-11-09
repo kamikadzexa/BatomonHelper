@@ -27,7 +27,7 @@ public sealed class Combat(RulesManifest rules)
         d=>d.Effects.GroupBy(x=>x.Trigger).ToDictionary(x=>x.Key,x=>x.ToArray())).GetValueOrDefault(trigger)??[];
     private static int[] BuildTargets(int slot, Target target, bool linked = false) => target switch
     {
-        Target.Self => [slot], Target.Above => slot >= 3 ? [slot-3] : [], Target.Below => slot < 3 ? [slot+3] : [],
+        Target.Self => [slot], Target.Allies => Enumerable.Range(0,6).Where(i => i != slot).ToArray(), Target.Above => slot >= 3 ? [slot-3] : [], Target.Below => slot < 3 ? [slot+3] : [],
         Target.Left => slot % 3 > 0 ? [slot-1] : [], Target.Right => slot % 3 < 2 ? [slot+1] : [],
         Target.Adjacent => Enumerable.Range(0,6).Where(i => i != slot && (linked || i/3 == slot/3 && Math.Abs(i-slot)==1 || Math.Abs(i-slot)==3)).ToArray(),
         Target.Row or Target.EnemyRow or Target.BothRows => Enumerable.Range(slot/3*3,3).ToArray(), Target.Column => [slot%3,slot%3+3], Target.Opposite => [slot], Target.BottomRight => [5],

@@ -69,6 +69,11 @@ public sealed class GameSetupViewModel : INotifyPropertyChanged
         get => _settings.AutoInstallUpdates;
         set => SaveOptions(_settings with { AutoInstallUpdates = value });
     }
+    public bool AlwaysOnTop
+    {
+        get => _settings.AlwaysOnTop;
+        set => SaveOptions(_settings with { AlwaysOnTop = value });
+    }
     public string Connection => _connection;
     public bool ShowDpsCounters
     {

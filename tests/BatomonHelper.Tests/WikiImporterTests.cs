@@ -5,10 +5,18 @@ namespace BatomonHelper.Tests;
 public sealed class WikiImporterTests
 {
     [Fact]
+    public void Uses_the_wiki_home_route_and_retains_catalog_routes()
+    {
+        Assert.Equal("/wiki", WikiImporter.RequiredPages[0]);
+        Assert.Contains("/batomon", WikiImporter.RequiredPages);
+        Assert.Contains("/trainers", WikiImporter.RequiredPages);
+        Assert.Contains("/items", WikiImporter.RequiredPages);
+    }
+    [Fact]
     public async Task Imports_Astro_hover_levels_and_card_effects_without_navigation_entries()
     {
         var pages = new Dictionary<string, string> {
-            ["/"] = "Steam build 26078162 Balance 26",
+            ["/wiki"] = "Steam build 26078162 Balance 26",
             ["/batomon"] = "<a href=\"/batomon/regions\">Regions</a><a href=\"/batomon/alpha\">Alpha</a>",
             ["/mechanics/monster-pool"] = "", ["/batomon/regions/jinto"] = "", ["/batomon/regions/pantra"] = "",
             ["/trainers"] = "<a href=\"/trainers/witch\">Witch</a>", ["/items"] = "<a href=\"/items/cake\">Cake</a>",
@@ -50,7 +58,7 @@ public sealed class WikiImporterTests
             shinyAbility = new { byLevel = new Dictionary<string, string> { ["1"] = "Different shiny value 999" } }
         } });
         var pages = new Dictionary<string, string> {
-            ["/"] = "Batomon Showdown 1.3.0 Balance 25 Steam build 99999",
+            ["/wiki"] = "Batomon Showdown 1.3.0 Balance 25 Steam build 99999",
             ["/batomon"] = $"<a href=\"/batomon/{id}\"><div data-rarity=\"rare\"></div></a>",
             ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
             ["/batomon/regions/jinto"] = "", ["/batomon/regions/pantra"] = "",
@@ -68,7 +76,7 @@ public sealed class WikiImporterTests
     {
         var pages = new Dictionary<string, string>
         {
-            ["/"] = "<p>Balance 22 Steam build <!-- -->25377295</p>",
+            ["/wiki"] = "<p>Balance 22 Steam build <!-- -->25377295</p>",
             ["/batomon"] = "<a href=\"/batomon/alpha\">Alpha</a><script>{\"regions\":[\"Jinto\"],\"id\":\"alpha\"}</script>",
             ["/mechanics/monster-pool"] = "<h1>Shop</h1>",
             ["/trainers"] = "<a class=\"catalog\" href=\"/trainers/black-belt\"><span>Black Belt</span></a>",
@@ -102,7 +110,7 @@ public sealed class WikiImporterTests
     {
         var pages = new Dictionary<string, string>
         {
-            ["/"] = "<p>Balance 22 Steam build 25377295</p>",
+            ["/wiki"] = "<p>Balance 22 Steam build 25377295</p>",
             ["/batomon"] = "<a href=\"/batomon/alpha\">Alpha</a><script>{\"regions\":[\"Jinto\"],\"id\":\"alpha\"}</script>",
             ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "", ["/batomon/regions/jinto"] = "", ["/batomon/regions/pantra"] = "",
             ["/batomon/alpha"] = $"<title>Alpha — {rarityLabel} Fire Batomon | batomon.com</title><nav>Common Uncommon Rare Super Rare Legendary Mythical</nav><h1>Alpha</h1><p>{rarityLabel} Fire Starter</p>"
@@ -118,7 +126,7 @@ public sealed class WikiImporterTests
     {
         var pages = new Dictionary<string, string>
         {
-            ["/"] = "Steam build 25377295", ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
+            ["/wiki"] = "Steam build 25377295", ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
             ["/batomon"] = "<a href=\"/batomon/alpha\"><div data-rarity=\"legendary\"></div></a>",
             ["/batomon/regions/jinto"] = "<div data-monster-card=\"alpha\"></div>",
             ["/batomon/regions/pantra"] = "<div data-monster-card=\"alpha\"></div>",
@@ -137,7 +145,7 @@ public sealed class WikiImporterTests
     {
         var pages = new Dictionary<string, string>
         {
-            ["/"] = "Steam build 25377295", ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
+            ["/wiki"] = "Steam build 25377295", ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
             ["/batomon"] = "<a href=\"/batomon/alpha\"><div data-rarity=\"common\"></div></a><a href=\"/batomon/beta\"><div data-rarity=\"common\"></div></a>",
             ["/batomon/regions/jinto"] = "<a href=\"/batomon/beta\">Navigation</a><div data-monster-card=\"alpha\"></div>",
             ["/batomon/regions/pantra"] = "<a href=\"/batomon/alpha\">Navigation</a><div data-monster-card=\"beta\"></div>",
@@ -155,7 +163,7 @@ public sealed class WikiImporterTests
     {
         var pages = new Dictionary<string, string>
         {
-            ["/"] = "Steam build 25377295", ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
+            ["/wiki"] = "Steam build 25377295", ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "", ["/items"] = "",
             ["/batomon"] = "<a href=\"/batomon/evolved\"><div data-rarity=\"common\"></div></a>",
             ["/batomon/regions/jinto"] = "", ["/batomon/regions/pantra"] = "",
             ["/batomon/evolved"] = """<h1>Evolved</h1><script>{\"evolvesFrom\":[{\"id\":\"base\"}]}</script>"""
@@ -171,7 +179,7 @@ public sealed class WikiImporterTests
     {
         var pages = new Dictionary<string, string>
         {
-            ["/"] = "<p>No version</p>", ["/batomon"] = "<a href=\"/batomon/alpha\">Alpha</a>", ["/mechanics/monster-pool"] = "shop",
+            ["/wiki"] = "<p>No version</p>", ["/batomon"] = "<a href=\"/batomon/alpha\">Alpha</a>", ["/mechanics/monster-pool"] = "shop",
             ["/trainers"] = "", ["/items"] = "", ["/batomon/regions/jinto"] = "", ["/batomon/regions/pantra"] = ""
         };
         var result = await new WikiImporter(new FakeSource(pages)).ImportAsync(CancellationToken.None);

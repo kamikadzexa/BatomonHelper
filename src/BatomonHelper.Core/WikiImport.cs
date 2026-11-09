@@ -24,14 +24,16 @@ public sealed record WikiImportResult(CatalogSnapshot? Snapshot, ImmutableArray<
 
 public sealed partial class WikiImporter(IWikiSource source)
 {
-    public static readonly string[] RequiredPages = ["/", "/batomon", "/mechanics/monster-pool", "/trainers", "/items", "/batomon/regions/jinto", "/batomon/regions/pantra"];
+    public static readonly string[] RequiredPages = ["/wiki", "/batomon", "/mechanics/monster-pool", "/trainers", "/items", "/batomon/regions/jinto", "/batomon/regions/pantra"];
 
     public async Task<WikiImportResult> ImportAsync(CancellationToken cancellationToken)
     {
         try
         {
             var pages = await Task.WhenAll(RequiredPages.Select(path => source.GetStringAsync(path, cancellationToken)));
-            var build = FindBuild(pages) ?? throw new InvalidDataException("The wiki snapshot did not declare a Steam build.");
+            var build = FindBuild(pages);
+            if (build is null) build = FindBuild([await source.GetStringAsync("/", cancellationToken)]);
+            if (build is null) throw new InvalidDataException("The wiki snapshot did not declare a Steam build.");
             var catalogRarities = ParseCatalogRarities(pages[1]);
             var monsterIds = MonsterIdRegex().Matches(pages[1]).Select(m => m.Groups["id"].Value).Where(id => id != "regions").Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             if (monsterIds.Length == 0) throw new InvalidDataException("The wiki catalog did not contain any Batomon links.");
