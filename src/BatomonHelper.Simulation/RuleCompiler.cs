@@ -41,7 +41,7 @@ public static class RuleCompiler
             }
             else if (element.ValueKind == JsonValueKind.Array) foreach (var value in element.EnumerateArray()) Walk(value);
         }
-        if ((catalog.DeclaredSteamBuild, catalog.Balance) is not (("25738032", "25") or ("26078162", "26")))
+        if ((catalog.DeclaredSteamBuild, catalog.Balance) is not (("25738032", "25") or ("26078162", "26") or ("26572818", "27")))
             issues.Add(new("catalog-build", "Source", $"Bundled build {catalog.DeclaredSteamBuild}/Balance {catalog.Balance} is not a reviewed catalog target.", "https://batomon.com/wiki"));
         if(!profile.AllowGuesses && settings.Evidence.Any(x=>x.Kind==EvidenceKind.Guessed))
             issues.Add(new("guesses-disabled","Source","This profile contains inferred rules while guesses are disabled.","user-profile.json"));
@@ -115,6 +115,13 @@ public static class RuleCompiler
         understood = true;
         if (string.IsNullOrWhiteSpace(text) || text == "Does nothing." || Regex.IsMatch(text, "^Evolves at level [1-4]\\.$")) return [];
         text = text.Trim();
+        var ongoingSuffix = Regex.Match(text, @"^(?<first>.+?)\. Ongoing (?<ongoing>.+)$");
+        if (ongoingSuffix.Success)
+        {
+            var first = CompileText(ongoingSuffix.Groups["first"].Value + ".", trigger, out var firstUnderstood);
+            var ongoing = CompileText(ongoingSuffix.Groups["ongoing"].Value, Trigger.Ongoing, out var ongoingUnderstood);
+            if (firstUnderstood && ongoingUnderstood) return [..first, ..ongoing];
+        }
         foreach (var prefix in new[] { "On Battle Start", "On Bought", "On Victory", "On Battle Lost", "On Trinket Gained" })
             if (text.StartsWith(prefix, StringComparison.Ordinal)) { trigger = ParseTrigger(prefix); text = text[prefix.Length..].Trim(); break; }
         if (AbilityRules.TryCompile(text,trigger,out var compiled)) return compiled;

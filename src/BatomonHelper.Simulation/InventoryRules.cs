@@ -24,7 +24,7 @@ public static class InventoryRules
         "winged-fossil" => ("Your Flying monsters have +25% stats (except Cooldown and Multicast).", SixStats(.25, Target.All, "flying")),
         "fancy-sword" => ("Your monsters have +3% Damage for each Trinket you have.", [Buff(Stat.Damage, .03, percent: true, scale: EffectScale.Trinkets)]),
         "scrap-sword" => ("Your monsters have +2 Damage for each Common Trinket you have.", [Buff(Stat.Damage, 2, scale: EffectScale.CommonTrinkets)]),
-        "rainbow-berry" => ("Your monsters have +4 Damage for each unique type on your team.", [Buff(Stat.Damage, 4, scale: EffectScale.UniqueTeamTypes)]),
+        "rainbow-berry" => ("Your monsters have +5 Damage for each unique type on your team.", [Buff(Stat.Damage, 5, scale: EffectScale.UniqueTeamTypes)]),
         "metronome" => ("When your monsters cast, they gain +10 Damage for this battle.", [Buff(Stat.Damage, 10, Target.Self, Trigger.Cast)]),
         "repeater-charm" => ("Your monsters' On Battle Start abilities activate an additional time.", [new(Trigger.Ongoing, Operation.NextBattleStartRepeat, Target.All, Amount: 1)]),
         "link-cable" => ("All of your team's monsters are now considered adjacent to each other.", [new(Trigger.Ongoing, Operation.LinkAllies, Target.All)]),

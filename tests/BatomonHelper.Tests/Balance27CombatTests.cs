@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 
 namespace BatomonHelper.Tests;
 
-public sealed class Balance26CombatTests
+public sealed class Balance27CombatTests
 {
     private static RulesManifest Rules() => JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(
         Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "combat-rules.json")))!;
@@ -16,12 +16,16 @@ public sealed class Balance26CombatTests
     public void New_trainer_and_balance_values_work_in_live_projections(bool reference)
     {
         var rules = Rules();
-        Assert.Equal("26078162", rules.Build); Assert.Equal("26", rules.Balance);
+        Assert.Equal("26572818", rules.Build); Assert.Equal("27", rules.Balance);
         Assert.Empty(rules.Issues); Assert.True(rules.CombatReady);
-        Assert.Equal(148, rules.Species.Length); Assert.Equal(24, rules.Trainers.Length);
-        Assert.Equal(4.5, rules.Species.Single(s => s.Id == "lignite").Normal[0].Cooldown);
+        Assert.Equal(148, rules.Species.Length); Assert.Equal(24, rules.Trainers.Length); Assert.Equal(95, rules.Trinkets.Length);
+        Assert.Equal(5, rules.Species.Single(s => s.Id == "lignite").Normal[0].Cooldown);
         Assert.Equal(30, rules.Species.Single(s => s.Id == "aviarab").Cost);
-        Assert.Equal(20, rules.Species.Single(s => s.Id == "sarudo").Cost);
+        Assert.Equal(15, rules.Species.Single(s => s.Id == "sarudo").Cost);
+        var lure=Assert.Single(rules.Trinkets,t=>t.Id=="plain-lure").Effects;
+        Assert.Equal(20,Assert.Single(lure).Amount);Assert.Equal(ShopTrait.CommonWeight,lure[0].ShopTrait);
+        var sweet=rules.Trinkets.Single(t=>t.Id=="sweet-lure").Effects;
+        Assert.Equal([10d,15d],sweet.Select(effect=>effect.Amount));
         var board = new FrozenBoard(1, 100, "witch",
             [new() { Instance = 1, SpeciesId = "furnadon", Level = 1 }, null, null, null, null, null],
             [new("junk", 4), new("bargain-bin", 2)], []);

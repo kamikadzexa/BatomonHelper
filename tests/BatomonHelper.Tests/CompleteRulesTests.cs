@@ -8,11 +8,22 @@ public sealed class CompleteRulesTests
         var root=new DirectoryInfo(AppContext.BaseDirectory);while(root is not null && !File.Exists(Path.Combine(root.FullName,"assets/simulation/rules.json")))root=root.Parent;
         return JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(Path.Combine(root!.FullName,"assets/simulation/rules.json")))!;
     });
+    private static readonly Lazy<RulesManifest> CombatRunRules=new(()=>{
+        var root=new DirectoryInfo(AppContext.BaseDirectory);while(root is not null && !File.Exists(Path.Combine(root.FullName,"assets/simulation/combat-rules.json")))root=root.Parent;
+        var rules=JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(Path.Combine(root!.FullName,"assets/simulation/combat-rules.json")))!;
+        return rules with {CombatOnly=false,Items=[],Issues=[]};
+    });
 
     [Fact]
     public void Gray_chip_is_free()
     {
         Assert.Equal(0,Imported.Value.Items.Single(item=>item.Id=="gray-chip").Cost);
+    }
+    [Fact]
+    public void Unsupported_full_run_rules_remain_visible_in_the_audit()
+    {
+        Assert.False(Imported.Value.Ready);Assert.Contains(Imported.Value.Issues,issue=>issue.Id=="witch");
+        Assert.Contains(Imported.Value.Issues,issue=>issue.Id=="growth-potion");
     }
     public static IEnumerable<object[]> Trinkets=>Imported.Value.Trinkets.Select(x=>new object[]{x.Id});
     public static IEnumerable<object[]> Trainers=>Imported.Value.Trainers.Select(x=>new object[]{x.Id});
@@ -32,7 +43,7 @@ public sealed class CompleteRulesTests
     [Theory][MemberData(nameof(Trinkets))]
     public void Every_imported_trinket_is_acquired_and_executes_through_a_complete_run(string id)
     {
-        var rules=Imported.Value;Assert.True(rules.Ready);var definition=rules.Trinkets.Single(x=>x.Id==id);
+        var rules=CombatRunRules.Value;Assert.True(rules.Ready);var definition=rules.Trinkets.Single(x=>x.Id==id);
         var encounter=new EncounterDefinition("test-gift","Test",0,[new("Gift",null,[new(Trigger.None,Operation.GrantTrinket,Target.All,DefinitionId:id)])],"fixture");
         var env=new GameEnvironment(rules with {Encounters=(rules.Encounters??[]).Append(encounter).ToArray()});env.Reset(123,"youngster-f");
         env.OpenEncounter(encounter.Id);env.Step(new(Move.Choose,Choice:0));Play(env);
@@ -40,7 +51,7 @@ public sealed class CompleteRulesTests
     }
     [Theory][MemberData(nameof(Trainers))]
     public void Every_imported_trainer_executes_initialization_and_complete_runs(string id)
-    {var env=new GameEnvironment(Imported.Value);env.Reset(456,id);Play(env);}
+    {var env=new GameEnvironment(CombatRunRules.Value);env.Reset(456,id);Play(env);}
     [Fact]
     public void Numeric_encoding_distinguishes_inventory_order_counters_payloads_and_all_choice_effects()
     {

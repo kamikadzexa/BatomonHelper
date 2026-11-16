@@ -13,7 +13,7 @@ public sealed class LiveBoardImportTests
         var catalog = (await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db"), true).GetLatestAsync())!;
         var timestamp = JsonSerializer.Deserialize<GameStateMessage>(raw, GameStateBridge.JsonOptions)!.UpdatedAt;
         var message = GameStateBridge.Parse(raw, catalog, timestamp);
-        var rules = JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json")))!;
+        var rules = JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "combat-rules.json")))!;
         var imported = LiveBoardImport.Create(message.Board!, message.Combat!, rules);
         var result = new BoardAnalyzer(imported.Rules).Analyze(imported.Board, samples: 1);
         Assert.Equal(6, result.Checkpoints.Length);

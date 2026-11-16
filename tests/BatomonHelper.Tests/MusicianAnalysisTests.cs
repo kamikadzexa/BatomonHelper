@@ -46,7 +46,7 @@ public sealed class MusicianAnalysisTests
     private static (RulesManifest, FrozenBoard) Setup()
     {
         var rules = JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(
-            Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json")))!;
+            Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "combat-rules.json")))!;
         var stats = new double[9]; stats[(int)Stat.Damage] = 10; stats[(int)Stat.Multicast] = 1;
         var striker = RuleCompiler.Fixture().Species[0] with { Types = ["bug"], Normal = [new(1, 1, stats, [])] };
         rules = rules with { Species = [rules.Species.Single(s => s.Id == "galvanade"), striker] };

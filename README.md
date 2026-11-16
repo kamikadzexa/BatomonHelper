@@ -52,7 +52,7 @@ Bridge removal keeps the shared loader. Uninstalling the helper through Windows 
 - **Invalid/incompatible snapshot:** update helper and bridge together. Invalid boards are not applied.
 - **Shortcut conflict:** another app owns F8/F9; use the on-screen controls.
 
-WIN/LOSS comes from the game. Projections and position advice use a passive-target simulator and are estimates, not win probabilities. The offline wiki bundle targets **Balance 26**, Steam build **26078162**. Live stats and prices take precedence. See [bridge protocol and verified limits](docs/game-bridge.md).
+WIN/LOSS comes from the game. Projections and position advice use a passive-target simulator and are estimates, not win probabilities. The offline wiki bundle targets **Balance 27**, Steam build **26572818**. Live stats and prices take precedence. See [bridge protocol and verified limits](docs/game-bridge.md).
 
 ## Development
 
@@ -63,7 +63,7 @@ dotnet test BatomonHelper.sln -c Release
 .\Installer\Build-Installer.ps1 -GodotPath 'C:\Tools\Godot\Godot_win64_console.exe'
 ```
 
-Needs .NET 10 SDK; installer creation also needs [Inno Setup 6](https://jrsoftware.org/isinfo.php) and a Godot 4.7 editor executable passed through `-GodotPath`. The build compiles the actual bridge and runs an isolated battle-frame smoke test before publishing. Pass `-CompilerPath` for a custom Inno compiler location. Output includes installer, checksum, and [release notes](docs/release-1.0.6.md). Publish the installer and its `.sha256` file as identically versioned GitHub Release assets for in-app updating.
+Needs .NET 10 SDK; installer creation also needs [Inno Setup 6](https://jrsoftware.org/isinfo.php) and a Godot 4.7 editor executable passed through `-GodotPath`. The build compiles the actual bridge and runs an isolated battle-frame smoke test before publishing. Pass `-CompilerPath` for a custom Inno compiler location. Output includes installer, checksum, and [release notes](docs/release-1.0.7.md). Publish the installer and its `.sha256` file as identically versioned GitHub Release assets for in-app updating.
 
 [Training Lab](docs/strategic-training.md) is separate and excluded from the installer. See [data/development details](docs/development.md) and [training](docs/training.md).
 

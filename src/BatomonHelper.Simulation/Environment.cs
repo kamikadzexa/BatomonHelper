@@ -164,7 +164,19 @@ public sealed partial class GameEnvironment(RulesManifest rules)
                 var selection=(State.CurrentEvent is { } current?current+": ":"")+choice.Label+(targetUnit is null?"":$" → slot {action.Target+1} ({targetUnit.SpeciesId})");
                 State.DayChoices=State.DayChoices.Append(selection).ToArray();
                 if(State.Phase==Phase.Reward && choice.DefinitionId is { } trinket) {
-                    foreach(var selected in State.TakeAllChoices?State.Choices:[choice])if(selected.DefinitionId is { } rewardId)GainTrinket(rewardId,true);
+                    if(State.TakeAllChoices)
+                    {
+                        foreach(var selected in State.Choices)if(selected.DefinitionId is { } rewardId)GainTrinket(rewardId,true);
+                    }
+                    else
+                    {
+                        GainTrinket(trinket,true);
+                        if(HasTrainer("burglar"))
+                        {
+                            var stolen=State.Choices.Where(x=>x.DefinitionId!=trinket && x.DefinitionId is not null).ToArray();
+                            if(stolen.Length>0)GainTrinket(stolen[_random.Index(stolen.Length)].DefinitionId!,true);
+                        }
+                    }
                 }
                 else if(State.Phase==Phase.TrainerChoice && choice.DefinitionId is { } trainer) AcquireTrainer(trainer);
                 else if(choice.AtShopStart)State.PendingShopEffects=State.PendingShopEffects.Concat(choice.Effects).ToArray();
@@ -227,6 +239,11 @@ public sealed partial class GameEnvironment(RulesManifest rules)
         var weights=ShopRankOdds.ForRank(State.Rank).Select(x=>(double)x.Probability*100).ToArray();
         var effects=InventoryEffects().Where(x=>x.Effect.Operation==Operation.ShopModifier).ToArray();
         weights[4]+=effects.Where(x=>x.Effect.ShopTrait==ShopTrait.LegendaryWeight).Sum(x=>x.Effect.Amount);
+        if(CountTrinket("vip-pass")==0)
+        {
+            weights[0]+=effects.Where(x=>x.Effect.ShopTrait==ShopTrait.CommonWeight).Sum(x=>x.Effect.Amount);
+            weights[1]+=effects.Where(x=>x.Effect.ShopTrait==ShopTrait.UncommonWeight).Sum(x=>x.Effect.Amount);
+        }
         var minimum=(int)effects.Where(x=>x.Effect.ShopTrait==ShopTrait.MinimumRarity)
             .Select(x=>x.Effect.Amount).DefaultIfEmpty(0).Max();
         for(var tier=0;tier<Math.Min(minimum,weights.Length);tier++)weights[tier]=0;
@@ -383,21 +400,29 @@ public sealed partial class GameEnvironment(RulesManifest rules)
         if(rules.Trinkets.Length==0 && rules.Build=="fixture")return;
         var choices=new List<Choice>();
         var odds=GetShopOdds();
-        var count=HasTrainer("burglar")?2:3;
+        var count=3;
         var bonus=CountTrinket("treasure-map")+CountTrainer("treasure-hunter");
         ConsumeTrinket("treasure-map");
-        var takeAll=HasTrainer("burglar") || CountTrinket("greedy-gloves")>0;
+        var takeAll=CountTrinket("greedy-gloves")>0;
         if(CountTrinket("greedy-gloves")>0)ConsumeTrinket("greedy-gloves",1);
         while(choices.Count<count)
         {
             var tier=Math.Min(5,(rarity??RarityRoll(odds))+bonus);InventoryDefinition[] eligible=[];
             while(tier>=0 && eligible.Length==0)
-            {eligible=rules.Trinkets.Where(x=>x.Rarity==tier && (!x.Unique||!State.Bag.Any(b=>b.Id==x.Id) && !choices.Any(c=>c.DefinitionId==x.Id))).ToArray();tier--;}
+            {eligible=rules.Trinkets.Where(x=>x.Rarity==tier && TrinketEligible(x.Id) && (!x.Unique||!State.Bag.Any(b=>b.Id==x.Id) && !choices.Any(c=>c.DefinitionId==x.Id))).ToArray();tier--;}
             if(eligible.Length==0)break;
             var entry=eligible[_random.Index(eligible.Length)];choices.Add(new(entry.Name,entry.Id,entry.Effects));
         }
         if(choices.Count==0)throw new InvalidOperationException("Reward pool has no eligible trinket.");
         QueueChoices(Phase.Reward,choices.ToArray(),takeAll:takeAll);
+    }
+    private bool TrinketEligible(string id)
+    {
+        var lure=id is "plain-lure" or "sweet-lure";
+        if(HasTrainer("gentleman") && (lure || id=="vip-pass"))return false;
+        if(lure && CountTrinket("vip-pass")>0)return false;
+        if(id=="vip-pass" && (CountTrinket("plain-lure")>0 || CountTrinket("sweet-lure")>0))return false;
+        return true;
     }
     private bool CanMerge(Unit unit) => unit.Level<3 || LevelRules.Unlimited(_species[unit.SpeciesId]);
     private int MergeCopies(Unit unit)
@@ -656,7 +681,7 @@ public sealed partial class GameEnvironment(RulesManifest rules)
     {
         // Current 1.3.0 priority: a Common Bug consumes Bargain Bin first, leaving Bug Catcher armed.
         if(_species[unit.SpeciesId].Rarity==0 && State.Counters.GetValueOrDefault("free-common-used")<TraitSum(ShopTrait.FirstCommonFree))AddCounter("free-common-used",1);
-        else if(_species[unit.SpeciesId].Types.Concat(unit.AddedTypes).Contains("bug") && State.Counters.GetValueOrDefault("free-bug-used")<TraitSum(ShopTrait.FirstBugFree))AddCounter("free-bug-used",1);
+        else if(_species[unit.SpeciesId].Types.Concat(unit.AddedTypes).Contains("bug") && State.Counters.GetValueOrDefault("free-bug-used")<((TraitSum(ShopTrait.FirstBugFree)>0 || TraitSum(ShopTrait.FirstBugDiscount)>0)?1:0))AddCounter("free-bug-used",1);
     }
     private void RefreshShop()
     {
@@ -683,9 +708,10 @@ public sealed partial class GameEnvironment(RulesManifest rules)
             }
             ApplyTrainerTyping(unit);
             var price=Math.Max(0,basis-Sum(ShopTrait.CreatureDiscount,unit));
-            if(HasTrainer("smuggler") && !_species[unit.SpeciesId].Pantra)price=RoundPrice(price*.75);
-            if(_species[unit.SpeciesId].Rarity==0 && State.Counters.GetValueOrDefault("free-common-used")<Sum(ShopTrait.FirstCommonFree) ||
-                _species[unit.SpeciesId].Types.Concat(unit.AddedTypes).Contains("bug") && State.Counters.GetValueOrDefault("free-bug-used")<Sum(ShopTrait.FirstBugFree))price=0;
+            if(HasTrainer("smuggler") && !_species[unit.SpeciesId].Pantra)price=RoundPrice(price*.65);
+            if(_species[unit.SpeciesId].Rarity==0 && State.Counters.GetValueOrDefault("free-common-used")<Sum(ShopTrait.FirstCommonFree))price=0;
+            else if(_species[unit.SpeciesId].Types.Concat(unit.AddedTypes).Contains("bug") && State.Counters.GetValueOrDefault("free-bug-used")<(Sum(ShopTrait.FirstBugFree)>0 || Sum(ShopTrait.FirstBugDiscount)>0?1:0))
+                price=Math.Max(0,price-Sum(ShopTrait.FirstBugDiscount));
             var discount=Math.Max(0,_species[unit.SpeciesId].Cost-price);var old=unit.Counters.GetValueOrDefault("offer:discount");
             unit.StoredDiscount+=discount-old;unit.Counters["offer:discount"]=discount;
             State.Shop[i]=offer with {BasisPrice=basis,Price=price};

@@ -17,7 +17,7 @@ public sealed class LiveBattleAnalysisTests
         Assert.Null(message.Board);
         Assert.Equal("scorchimp", message.Battle!.Player.Team[0].DefinitionId);
         Assert.Equal("dribblet", message.Battle.Opponent.Team[5].DefinitionId);
-        var rules = JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "rules.json")))!;
+        var rules = JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "combat-rules.json")))!;
         var result = LiveBattleAnalysis.Analyze(message.Battle, rules, samples: 1);
         Assert.Null(message.Battle.Outcome);
         Assert.True(result.Player.Checkpoints[^1].Damage > 0);

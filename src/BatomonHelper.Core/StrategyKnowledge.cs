@@ -107,8 +107,10 @@ public static class WikiPayload
 
     public static string MechanicsRules(string html)
     {
-        var exact = Regex.Match(html, @"<h2\b[^>]*>\s*Exact rules\s*</h2>(?<rules>[\s\S]*?)(?=<h2\b|</main>)", RegexOptions.IgnoreCase);
-        if (!exact.Success) throw new InvalidDataException("Mechanic page has no exact rules section.");
+        // The wiki used "Exact rules" for the rules body through Balance 26 and
+        // renamed the same section "How it works" in Balance 27.
+        var exact = Regex.Match(html, @"<h2\b[^>]*>\s*(?:Exact rules|How it works)\s*</h2>(?<rules>[\s\S]*?)(?=<h2\b|</main>)", RegexOptions.IgnoreCase);
+        if (!exact.Success) throw new InvalidDataException("Mechanic page has no rules section.");
         var sections = exact.Groups["rules"].Value;
         // Formula, resolution order and worked rules between Exact rules and Current build examples are significant.
         var tail = html[(exact.Index + exact.Length)..];
@@ -121,6 +123,29 @@ public static class WikiPayload
     {
         var table = Regex.Match(html, @"<tbody\b[^>]*>([\s\S]*?)</tbody>").Groups[1].Value;
         var result = ImmutableArray.CreateBuilder<PairEvidence>();
+        if (table.Length == 0)
+        {
+            foreach (Match row in Regex.Matches(html, @"<li\b(?=[^>]*class=""[^""]*meta-entry-pair)[^>]*>([\s\S]*?)</li>", RegexOptions.IgnoreCase))
+            {
+                var names = Regex.Matches(row.Groups[1].Value, @"<a\b[^>]*title=""([^""]+)""[^>]*>")
+                    .Select(m => WebUtility.HtmlDecode(m.Groups[1].Value)).ToArray();
+                var ids = names.Select(name => catalog.Monsters.SingleOrDefault(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase))?.Id).ToArray();
+                var text = MainText("<main>" + row.Groups[1].Value + "</main>");
+                var counts = Regex.Match(text, @"(?<wins>[\d,]+) wins in (?<observations>[\d,]+) observations");
+                var presence = Regex.Match(text, @"Seen together (?<rate>[\d.]+)% \((?<seen>[\d,]+) of (?<total>[\d,]+) rounds\)");
+                var winRate = Regex.Match(row.Groups[1].Value, @"class=""meta-win-rate""[^>]*>(?<rate>[\d.]+)%", RegexOptions.IgnoreCase);
+                if (ids.Length != 2 || ids.Any(string.IsNullOrEmpty) || !counts.Success || !presence.Success || !winRate.Success)
+                    throw new InvalidDataException("Incomplete or unknown Batomon pair row.");
+                int Int(string value) => int.Parse(value, NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
+                result.Add(new("pairs/" + string.Join('+', ids), ids[0]!, ids[1]!,
+                    decimal.Parse(presence.Groups["rate"].Value, CultureInfo.InvariantCulture) / 100m,
+                    Int(presence.Groups["seen"].Value), Int(presence.Groups["total"].Value),
+                    decimal.Parse(winRate.Groups["rate"].Value, CultureInfo.InvariantCulture) / 100m,
+                    Int(counts.Groups["wins"].Value), "https://batomon.com/meta/pairs", window));
+            }
+            if (result.Count == 0) throw new InvalidDataException("No structured pair rows found.");
+            return result.ToImmutable();
+        }
         foreach (Match row in Regex.Matches(table, @"<tr\b[^>]*>([\s\S]*?)</tr>"))
         {
             var ids = Regex.Matches(row.Value, "data-monster-card=\"([^\"]+)\"").Select(m => m.Groups[1].Value.Replace('_', '-')).Distinct().ToArray();
@@ -144,8 +169,9 @@ public static class WikiPayload
         {
             var normalized = NormalizeIds(row);
             var ids = Strings(normalized, "coreUnitIds");
-            if (ids.IsEmpty || ids.Any(id => !catalog.Monsters.Any(m => m.Id == id)) || !row.TryGetProperty("details", out _))
-                throw new InvalidDataException("Incomplete composition core or details.");
+            var hasDetails = row.TryGetProperty("details", out _) || row.TryGetProperty("representativeUnits", out var units) && units.ValueKind == JsonValueKind.Array;
+            if (ids.IsEmpty || ids.Any(id => !catalog.Monsters.Any(m => m.Id == id)) || !hasDetails)
+                throw new InvalidDataException($"Incomplete composition core or representative units for {row.GetProperty("id").GetString()}: {string.Join(",", ids)}.");
             return new CompositionEvidence("comps/" + row.GetProperty("id").GetString(), row.GetProperty("name").GetString()!, ids,
                 normalized, "https://batomon.com/comps", window);
         }).ToImmutableArray();
@@ -214,8 +240,10 @@ public sealed class StrategyKnowledgeImporter(IWikiSource source)
     }
     public static string ObservationWindow(string text)
     {
-        // Responsive filter controls and their date label can occupy a single text line.
+        // Responsive filter controls and the current wiki's ranked/data window can occupy one line.
         var dates = Regex.Match(text, @"Dates [^\n]+").Value;
+        if (dates.Length == 0) dates = text.Split('\n').FirstOrDefault(line => line.Contains("Balance ", StringComparison.Ordinal) &&
+            (line.StartsWith("Ranked ", StringComparison.Ordinal) || line.Contains("eligible ranked runs", StringComparison.Ordinal))) ?? "";
         var scope = text.Split('\n').Where(line => line.Contains("last 30 days") || line.StartsWith("Last updated ") ||
             line.Contains("Based on recent public") || line.StartsWith("Refine ") && line != "Refine the field");
         var result = string.Join(" · ", scope.Prepend(dates).Where(line => line.Length > 0));

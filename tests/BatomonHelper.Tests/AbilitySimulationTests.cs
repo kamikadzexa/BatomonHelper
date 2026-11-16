@@ -42,6 +42,31 @@ public sealed class AbilitySimulationTests
     }
 
     [Fact]
+    public void Formiqueen_cooldown_aura_targets_adjacent_common_allies_only()
+    {
+        var rules=RuleCompiler.Fixture();
+        var effects=RuleCompiler.CompileText("Adjacent Common allies have +25% Cooldown Speed.",Trigger.Ongoing,out var understood);
+        Assert.True(understood);var aura=Assert.Single(effects);Assert.Equal(0,aura.Rarity);
+        var queen=rules.Species[0] with {Id="formiqueen",Rarity=2,Normal=[new(1,4,new double[9],[aura],"Adjacent Common allies have +25% Cooldown Speed.",Trigger.Ongoing)]};
+        var common=rules.Species[1] with {Id="common",Rarity=0,Normal=[new(1,4,new double[9],[])]};
+        var uncommon=rules.Species[1] with {Id="uncommon",Rarity=1,Normal=[new(1,4,new double[9],[])]};
+        rules=rules with {Species=[queen,common,uncommon]};
+        var board=new FrozenBoard(1,1000,"fixture",[new(){SpeciesId=common.Id},new(){SpeciesId=queen.Id},new(){SpeciesId=uncommon.Id},null,null,null],[],[]);
+        var analysis=new BoardAnalyzer(rules).Analyze(board,targetHp:1000,samples:1);
+        Assert.Equal(.25,analysis.Checkpoints[0].Units.Single(x=>x.Species==common.Id).Stats[(int)Stat.Speed],8);
+        Assert.Equal(0,analysis.Checkpoints[0].Units.Single(x=>x.Species==uncommon.Id).Stats[(int)Stat.Speed],8);
+    }
+
+    [Fact]
+    public void Gildshell_compiles_day_start_sell_value_and_shiny_ongoing_damage()
+    {
+        var effects=RuleCompiler.CompileText("At the start of each day, this gains +20 Sell Value permanently if it is on your team. Ongoing Has additional Damage equal to 0.5 times this monster's Sell Value.",Trigger.None,out var understood);
+        Assert.True(understood);Assert.Equal(2,effects.Length);
+        Assert.Equal(Trigger.DayStart,effects[0].Trigger);Assert.Equal(Stat.SellValue,effects[0].Stat);Assert.Equal(20,effects[0].Amount);
+        Assert.Equal(Trigger.Ongoing,effects[1].Trigger);Assert.Equal(EffectScale.SelfStat,effects[1].Scale);Assert.Equal(.5,effects[1].Amount);
+    }
+
+    [Fact]
     public void Cairnage_buffs_other_allies_but_not_itself_and_explicit_this_and_allies_includes_self()
     {
         var basis=RuleCompiler.Fixture();

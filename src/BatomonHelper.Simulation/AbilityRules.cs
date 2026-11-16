@@ -31,6 +31,9 @@ public static class AbilityRules
         var dailyShop=M("At the start of each day, monsters in your shop gain (?<amount>\\+"+Number+") Damage\\.");
         if(dailyShop.Success)
         {effects=[new(Trigger.DayStart,Operation.Add,Target.Shop,Amount:N(dailyShop.Groups["amount"].Value),Permanent:true)];return true;}
+        var dailySell=M("At the start of each day, this gains (?<amount>\\+"+Number+") Sell Value permanently if it is on your team\\.");
+        if(dailySell.Success)
+        {effects=[new(Trigger.DayStart,Operation.Add,Target.Self,Stat.SellValue,N(dailySell.Groups["amount"].Value),true)];return true;}
         var nextBuy=M("Give the next (?<flying>Flying )?monster you buy (?:(?<type>"+Types+") typing and )?(?<amount>\\+"+Number+") (?<stat>"+Stats+")\\. Lost if sold\\.");
         if(nextBuy.Success)
         {
@@ -65,6 +68,12 @@ public static class AbilityRules
         if(ongoingAura.Success)
         {effects=[new(trigger,Operation.Add,ongoingAura.Groups["target"].Value=="Adjacent allies"?Target.Adjacent:Target.Left,Stat.Speed,
             N(ongoingAura.Groups["amount"].Value)/100,Scale:EffectScale.Trinkets)];return true;}
+        var rarityAura=M("Adjacent (?<rarity>Common|Uncommon|Rare|Super Rare|Legendary|Mythical) allies have (?<amount>\\+"+Number+")% Cooldown Speed\\.");
+        if(rarityAura.Success)
+        {
+            var rarity=rarityAura.Groups["rarity"].Value switch {"Common"=>0,"Uncommon"=>1,"Rare"=>2,"Super Rare"=>3,"Legendary"=>4,_=>5};
+            effects=[new(trigger,Operation.Add,Target.Adjacent,Stat.Speed,N(rarityAura.Groups["amount"].Value)/100,Rarity:rarity)];return true;
+        }
         var multiCount=M("(?<shield>\\+"+Number+") Shield permanently for each Rock ally and (?<multicast>\\+"+Number+") Multicast permanently for each Flying ally\\.");
         if(multiCount.Success)
         {effects=[new(trigger,Operation.Add,Target.Self,Stat.Shield,N(multiCount.Groups["shield"].Value),true,Scale:EffectScale.Allies,ScaleType:"rock"),

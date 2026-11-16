@@ -10,6 +10,8 @@ public static class ShopRules
     public static (string Text,Effect[] Effects)? Definition(string category,string id) => (category,id) switch
     {
         ("trinkets","research-notes") => ("Legendary monsters are much more likely to appear in your shop.",[Trait(ShopTrait.LegendaryWeight,20)]),
+        ("trinkets","plain-lure") => ("Common monsters are more likely to appear in your shop.",[Trait(ShopTrait.CommonWeight,20)]),
+        ("trinkets","sweet-lure") => ("Common and Uncommon monsters are more likely to appear in your shop.",[Trait(ShopTrait.CommonWeight,10),Trait(ShopTrait.UncommonWeight,15)]),
         ("trinkets","vip-pass") => ("Your shop no longer stocks anything Common or Uncommon.",[Trait(ShopTrait.MinimumRarity,2)]),
         ("trinkets","rainbow-pearl") => ("All monsters in your shop are SHINY.",[Trait(ShopTrait.ForcedShiny)]),
         ("trinkets","rocket-boots") => ("Monsters in your shop gain Flying typing.",[new(Trigger.ShopSpawn,Operation.AddType,Target.All,Permanent:true,Type:"flying")]),
@@ -34,12 +36,11 @@ public static class ShopRules
         ("trinkets","arcade-coins") => ("Gain 10 free rerolls.",[new(Trigger.RunStart,Operation.FreeReroll,Target.All,Amount:10)]),
         ("trinkets","power-pouch") => ("When you buy an item, give your monsters +2 Damage.",[new(Trigger.ItemBought,Operation.Add,Target.All,Amount:2,Permanent:true)]),
         ("trinkets","silver-watch") => ("When a monster levels up from a merge, it gains +12% Cooldown Speed.",[new(Trigger.AllyLevelUp,Operation.Add,Target.Self,Stat.Speed,.12,true)]),
-        ("trainers","bug-catcher") => ("The first Bug monster you buy each day is free.",[Trait(ShopTrait.FirstBugFree)]),
+        ("trainers","bug-catcher") => ("The first Bug monster you buy each day costs $10 less.",[Trait(ShopTrait.FirstBugDiscount,10)]),
         ("trainers","youngster-f") => ("SHINY monsters are more likely to appear.",[Trait(ShopTrait.ShinyMultiplier,20)]),
         ("trainers","youngster-m") => ("Gain 3 free rerolls every day.",[new(Trigger.DayStart,Operation.FreeReroll,Target.All,Amount:3)]),
         ("trainers","lady") => ("Gain shop rank +2 and $10.",[new(Trigger.RunStart,Operation.ShopRank,Target.All,Amount:2),new(Trigger.RunStart,Operation.Gold,Target.All,Amount:10)]),
         ("trainers","shopkeeper") => ("Your shop stocks Item 1 rarity tier higher and cost 15% less.",[Trait(ShopTrait.ItemTierBonus),Trait(ShopTrait.ItemDiscount,.15)]),
-        ("trainers","gentleman") => ("From day 4 onwards, your shop no longer stocks Common or Uncommon monsters.",[Trait(ShopTrait.MinimumRarity,2,minimumDay:4)]),
         _ => null
     };
     public static bool TryCompile(string category,string id,string? text,out Effect[] effects)

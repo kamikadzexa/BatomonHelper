@@ -1,4 +1,5 @@
 using BatomonHelper.Simulation;
+using System.Globalization;
 
 namespace BatomonHelper.Overlay;
 
@@ -8,7 +9,7 @@ public static class DamagePresentation
 {
     public static string Summary(BoardAnalysisResult result)
     {
-        var timing = result.MedianKillSeconds is {} seconds ? $"Estimated win at {seconds:0.0}s ({seconds / 30:0%})" : "Target not defeated within 30s";
+        var timing = result.MedianKillSeconds is {} seconds ? FormattableString.Invariant($"Estimated win at {seconds:0.0}s ({seconds / 30:0%})") : "Target not defeated within 30s";
         return $"Next opponent HP (est.): {result.TargetHp:N0}  ·  {timing}";
     }
 
@@ -34,6 +35,6 @@ public static class DamagePresentation
         }
     }
 
-    public static string FormatRate(double value) => value==0 || Math.Abs(value)>=1 ? value.ToString("N1") :
-        Math.Abs(value)>=.001 ? value.ToString("0.###") : value.ToString("0.###E+0");
+    public static string FormatRate(double value) => value==0 || Math.Abs(value)>=1 ? value.ToString("N1",CultureInfo.InvariantCulture) :
+        Math.Abs(value)>=.001 ? value.ToString("0.###",CultureInfo.InvariantCulture) : value.ToString("0.###E+0",CultureInfo.InvariantCulture);
 }

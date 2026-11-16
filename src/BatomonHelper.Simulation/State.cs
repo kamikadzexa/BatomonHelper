@@ -11,7 +11,8 @@ public enum Target { Self, All, Adjacent, Above, Below, Left, Right, Row, Column
 public enum Operation { Add, Multiply, Charge, Trigger, Knockout, Protect, Revive, Cleanse, LevelUp, Gold, AddType, Disable, Transform, CopyStat, TeamHp, GrantTrinket,
     ShopRank, FreeReroll, ItemUses, DiscountShop, RollShop, TrinketGift, GrantUnit, RecruitOffer, Shiny, NextBattleStartRepeat, NextVictoryGold, NextCopyEnemy, LoseLife, ActivateAbility, AddedCooldown, ShopModifier, DiscardStats, Recombine, PendingPurchase, LinkAllies, CopyEnemyStats, Evolve, ProgressEvolution, Hatch, GrowAbility, ForceBerryItems, MergeRequirement, RepeatOngoing, Devour, SpawnDevoured, InventoryRule, TrainerRule }
 public enum ShopTrait { LegendaryWeight, MinimumRarity, ForcedShiny, ShinyMultiplier, ItemTierBonus, ItemDiscount,
-    CreatureDiscount, FirstCommonFree, FirstBugFree, NoItems, Income, DailyItemUses, RepeatBought, RepeatZeroItem, MythicalItemChance }
+    CreatureDiscount, FirstCommonFree, FirstBugFree, NoItems, Income, DailyItemUses, RepeatBought, RepeatZeroItem, MythicalItemChance,
+    CommonWeight, UncommonWeight, FirstBugDiscount }
 public enum EffectScale { None, Trinkets, CommonTrinkets, UniqueTeamTypes, Allies, EnemyStatus, SelfStat, LostLives, EventStat, AlliedStat, Badges, ItemsUsed, DistinctTrinkets }
 public sealed record Effect(Trigger Trigger, Operation Operation, Target Target, Stat Stat = Stat.Damage,
     double Amount = 0, bool Permanent = false, string? Type = null, string? ExcludeSpecies = null,

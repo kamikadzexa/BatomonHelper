@@ -35,6 +35,7 @@ public static class ItemRules
         "gray-ticket" => ("Reroll a shop with all Common monsters.", [E(Operation.RollShop, rarity: 0)]),
         "green-stone" => ("Transform a random Common monster into an Uncommon monster.", [E(Operation.Transform, Target.RandomAlly, rarity: 0, id: "rarity:1")]),
         "green-ticket" => ("Reroll a shop with all Uncommon monsters.", [E(Operation.RollShop, rarity: 1)]),
+        "heros-sword" => ("Give your monsters +16 Damage.", [E(Operation.Add, amount: 16)]),
         "hot-pepper" => ("Give your Fire monsters +1 Burn.", [E(Operation.Add, stat: Stat.Burn, amount: 1, type: "fire")]),
         "lootbox" => ("Get a random Legendary monster.", [E(Operation.GrantUnit, rarity: 4)]),
         "lucky-coin" => ("Gain $3. You can use 1 more item(s) today.", [E(Operation.Gold, amount: 3), E(Operation.ItemUses, amount: 1)]),

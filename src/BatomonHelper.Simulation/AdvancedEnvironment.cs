@@ -59,8 +59,11 @@ public sealed partial class GameEnvironment
                 State.Counters["egg-breeder-granted"]=1;
                 var egg=Create(_species["purple-egg"]);egg.Counters["trainer-hatch-day"]=State.Day+5;PlaceUnit(egg);return;
             case "gamer":
-                if(State.Day<9 || State.Counters.ContainsKey("gamer-granted"))return;
+                if(State.Day<8 || State.Counters.ContainsKey("gamer-granted"))return;
                 State.Counters["gamer-granted"]=1;State.Gold+=30;PlaceUnit(Create(RollSpecies(5)));return;
+            case "redhead":
+                foreach(var unit in State.Units.OfType<Unit>().Where(unit=>Types(unit).Contains("fire")))unit.Bonuses[(int)Stat.Burn]+=2;
+                return;
             case "mad-scientist":
                 if(State.Day<7 || State.Counters.ContainsKey("mad-scientist-used"))return;
                 State.Counters["mad-scientist-used"]=1;

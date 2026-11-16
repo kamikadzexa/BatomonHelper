@@ -169,7 +169,7 @@ public sealed class Combat(RulesManifest rules)
                 Inventory(casting.Side,casting.Slot,Trigger.Cast);
                 casts.Add((casting.Side,casting.Slot,castStats));
                 NotifyAllies(casting.Side,casting.Slot,Trigger.AllyCast);
-                if(trace) log.Add($"{now*tickSeconds:F2}s side {casting.Side} slot {casting.Slot}: {caster.Unit.SpeciesId} cast");
+                if(trace) log.Add(FormattableString.Invariant($"{now*tickSeconds:F2}s side {casting.Side} slot {casting.Slot}: {caster.Unit.SpeciesId} cast"));
             }
             // All casts on this tick share the published Shield -> Damage -> Status -> Heal phases.
             foreach(var cast in casts)
@@ -272,7 +272,7 @@ public sealed class Combat(RulesManifest rules)
             if(cooldown>=5){percentages[0]+=.2*BagCount(side,"small-club");for(var i=0;i<6;i++)percentages[i]+=.7*BagCount(side,"giant-club");}
             var types=Types(source).ToHashSet();
             var kaleidoscope=BagCount(side,"kaleidoscope");
-            if(kaleidoscope>0&&!teams[side].Units.Where((u,i)=>i!=slot && u is {Alive:true}).OfType<Fighter>().Any(u=>Types(u).Any(types.Contains)))values[6]+=.25*kaleidoscope;
+            if(kaleidoscope>0&&!teams[side].Units.Where((u,i)=>i!=slot && u is {Alive:true}).OfType<Fighter>().Any(u=>Types(u).Any(types.Contains)))values[6]+=.35*kaleidoscope;
             foreach(var trainer in teams[side].Trainers){
                 // Musician counts the active roster, including knocked-out units, as the
                 // game does in run_data.team. A self-knockout must neither remove its
@@ -358,7 +358,7 @@ public sealed class Combat(RulesManifest rules)
                 foreach(var effect in _trinkets[entry.Id].Effects.Where(x=>x.Trigger==trigger))
                     for(var count=0;count<entry.Quantity;count++) Apply(side,slot,effect);
             foreach(var trainer in teams[side].Trainers)
-                foreach(var effect in _trainers[trainer].Effects.Where(x=>x.Trigger==trigger))Apply(side,slot,effect);
+                foreach(var effect in _trainers[trainer].Effects.Where(x=>x.Trigger==trigger || trainer=="black-belt" && trigger is Trigger.Victory or Trigger.Defeat))Apply(side,slot,effect);
         }
         void Apply(int side,int slot,Effect effect,double[]? eventStats=null,int eventSlot=-1)
         {

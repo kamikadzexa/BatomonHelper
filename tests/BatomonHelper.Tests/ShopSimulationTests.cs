@@ -10,12 +10,12 @@ public sealed class ShopSimulationTests
         var basis=RuleCompiler.Fixture();
         var species=Enumerable.Range(0,6).Select(i=>basis.Species[0] with {Id="unit-"+i,MergeGroup="unit-"+i,Rarity=i,
             Types=i<=1?["bug"]:i==2?["toxic"]:["fire"],Cost=20,Shiny=basis.Species[0].Normal}).ToArray();
-        var trinketIds=new[]{"research-notes","vip-pass","rainbow-pearl","rocket-boots","quick-bell","blitz-bell","power-bell","mighty-bell",
+        var trinketIds=new[]{"research-notes","plain-lure","sweet-lure","vip-pass","rainbow-pearl","rocket-boots","quick-bell","blitz-bell","power-bell","mighty-bell",
             "fire-bell","poison-bell","sapphire-ring","topaz-ring","bug-net","bargain-bin","echo-bell","echo-charm","membership-card",
             "gold-nugget","gold-bar","gold-o-matic","fools-gold","market-license","arcade-coins","power-pouch","silver-watch"};
-        var trainerIds=new[]{"bug-catcher","youngster-f","youngster-m","lady","shopkeeper","gentleman"};
+        var trainerIds=new[]{"bug-catcher","burglar","youngster-f","youngster-m","lady","shopkeeper","gentleman"};
         InventoryDefinition Definition(string category,string id)
-        {var definition=ShopRules.Definition(category,id)!.Value;return new(id,id,0,false,0,definition.Effects,"fixture",definition.Text);}
+        {var definition=ShopRules.Definition(category,id)??AdvancedRules.Definition(category,id)??throw new InvalidDataException(id);return new(id,id,0,false,0,definition.Effects,"fixture",definition.Text);}
         var coin=ItemRules.Definition("fake-coin")!.Value;
         var ticket=ItemRules.Definition("gray-ticket")!.Value;
         return basis with {Species=species,Trinkets=trinketIds.Select(x=>Definition("trinkets",x)).ToArray(),
@@ -35,7 +35,10 @@ public sealed class ShopSimulationTests
         foreach(var definition in rules.Trinkets.Concat(rules.Trainers.Where(x=>x.Id!="fixture")))
         {
             var category=rules.Trinkets.Contains(definition)?"trinkets":"trainers";
-            Assert.True(ShopRules.TryCompile(category,definition.Id,definition.Description,out var effects));Assert.NotEmpty(effects);
+            var supported=ShopRules.TryCompile(category,definition.Id,definition.Description,out var effects) ||
+                InventoryRules.TryCompile(definition.Id,definition.Description,out effects) ||
+                AdvancedRules.TryCompile(category,definition.Id,definition.Description,out effects);
+            Assert.True(supported);Assert.NotEmpty(effects);
             Assert.False(ShopRules.TryCompile(category,definition.Id,definition.Description+" Unknown.",out _));
         }
     }
@@ -54,6 +57,27 @@ public sealed class ShopSimulationTests
     }
 
     [Fact]
+    public void Lures_add_their_documented_shop_weights_and_vip_pass_suppresses_them()
+    {
+        var environment=Ready();environment.State.Rank=3;Bag(environment,new BagEntry("plain-lure",1));
+        Assert.Equal([95d/120,25d/120,0,0,0],environment.GetShopOdds());
+        Bag(environment,new BagEntry("sweet-lure",1));
+        Assert.Equal([85d/125,40d/125,0,0,0],environment.GetShopOdds());
+        Bag(environment,new BagEntry("plain-lure",1),new("vip-pass",1));
+        Assert.Equal([0d,0,1,0,0],environment.GetShopOdds());
+    }
+
+    [Fact]
+    public void Burglar_takes_the_chosen_trinket_and_one_random_unselected_choice()
+    {
+        var environment=Ready("burglar");environment.State.Phase=Phase.Reward;
+        environment.State.Choices=[new("Plain Lure","plain-lure",[]),new("Sweet Lure","sweet-lure",[]),new("VIP Pass","vip-pass",[])];
+        environment.Step(new(Move.Choose,Choice:1));
+        Assert.Equal(2,environment.State.Bag.Length);Assert.Contains(environment.State.Bag,x=>x.Id=="sweet-lure");
+        Assert.Contains(environment.State.Bag,x=>x.Id is "plain-lure" or "vip-pass");
+    }
+
+    [Fact]
     public void Shop_buffs_are_applied_once_per_inventory_instance_and_survive_purchase()
     {
         var environment=Ready();Bag(environment,new BagEntry("power-bell",2),new("quick-bell",1),new("rocket-boots",1),new("rainbow-pearl",1));
@@ -67,16 +91,16 @@ public sealed class ShopSimulationTests
     }
 
     [Fact]
-    public void Common_bug_uses_bargain_bin_first_and_preserves_bug_catcher_for_an_uncommon()
+    public void Common_bug_uses_bargain_bin_first_and_bug_catcher_discounts_the_next_bug()
     {
         var environment=Ready("bug-catcher");Bag(environment,new BagEntry("bargain-bin",1));
         environment.State.Shop=[new(new(){SpeciesId="unit-0",Instance=50},null,20),new(new(){SpeciesId="unit-1",Instance=51},null,20),null,null,null];
         Assert.Equal(0,environment.GetObservation().Shop[0]!.Price);
         environment.Step(new(Move.Buy,0,0));Assert.Equal(1000,environment.State.Gold);
         Assert.Equal(1,environment.State.Counters["free-common-used"]);Assert.False(environment.State.Counters.ContainsKey("free-bug-used"));
-        environment.Step(new(Move.Buy,1,1));Assert.Equal(1000,environment.State.Gold);Assert.Equal(1,environment.State.Counters["free-bug-used"]);
+        Assert.Equal(10,environment.State.Shop[1]!.Price);environment.Step(new(Move.Buy,1,1));Assert.Equal(990,environment.State.Gold);Assert.Equal(1,environment.State.Counters["free-bug-used"]);
         environment.State.Shop[0]=new(new(){SpeciesId="unit-0",Instance=52},null,20);
-        Assert.Equal(20,environment.GetObservation().Shop[0]!.Price);environment.Step(new(Move.Buy,0,2));Assert.Equal(980,environment.State.Gold);
+        Assert.Equal(20,environment.GetObservation().Shop[0]!.Price);environment.Step(new(Move.Buy,0,2));Assert.Equal(970,environment.State.Gold);
     }
 
     [Fact]

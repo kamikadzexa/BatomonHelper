@@ -37,7 +37,7 @@ if(args.Length>0 && args[0]=="--refresh")
     var source=new BatomonWikiSource(http);
     var imported=await new WikiImporter(source).ImportAsync(CancellationToken.None);
     var catalog=imported.Snapshot??throw new InvalidDataException(string.Join("; ",imported.Errors));
-    if(catalog.DeclaredSteamBuild!="25738032" || catalog.Balance!="25") throw new InvalidDataException("Wiki build changed; audit target before publishing.");
+    if(catalog.DeclaredSteamBuild!="26572818" || catalog.Balance!="27") throw new InvalidDataException("Wiki build changed; audit target before publishing.");
     var knowledge=await new StrategyKnowledgeImporter(source).ImportAsync(catalog);
     var catalogPath=Path.Combine(args[1],"catalog.db"); var repository=new SnapshotRepository(catalogPath);
     await repository.InitializeAsync(); await repository.SaveAsync(catalog);

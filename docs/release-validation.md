@@ -1,3 +1,11 @@
+# Release validation: 1.0.7
+
+Validated locally on 2026-11-16.
+
+- Full Release solution suite: **492 passed, 0 failed, 0 skipped**.
+- Offline wiki bundle and simulation references refreshed to Balance 27 / Steam build 26572818. Combat manifest has zero unresolved combat rules; training remains unavailable for documented unsupported shop/Potion rules.
+- Godot 4.7.2 bridge compilation and isolated smoke test passed. Production installer built with Inno Setup 6; the installer script verified required payload files and generated the SHA-256 checksum.
+- The installer is unsigned. No live game installation or mod files were changed.
 # Release validation: 1.0.5
 
 Validated locally on 2026-10-23.
