@@ -53,6 +53,73 @@ public sealed class PositionAdvisorTests
         Assert.True(advice.Recommended.Checkpoints[^1].Dps > advice.Current.Checkpoints[^1].Dps);
     }
 
+    [Theory]
+    [InlineData(20)]
+    [InlineData(40)]
+    public void Survival_chooses_effective_healing_and_cleansing_over_damage(int day)
+    {
+        var rules = RuleCompiler.Fixture();
+        double[] healer = [0, 25000, 0, 0, 0, 0, 0, 1, 0];
+        var support = rules.Species[1] with { Normal = [new(1, 1, healer,
+            [new(Trigger.Cast, Operation.Cleanse, Target.All, Amount: 1, Percent: true)])] };
+        rules = rules with
+        {
+            Species = [rules.Species[0], support],
+            Parameters = rules.Parameters with { DailyHp = [.. rules.Parameters.DailyHp.Take(19), 453800] }
+        };
+        var team = Enumerable.Range(1, 6).Select(index => (Unit?)new Unit { Instance = index, SpeciesId = "striker" }).ToArray();
+        var board = new FrozenBoard(day, 453800, "fixture", team, [], []);
+        Unit?[] bench = [new() { Instance = 7, SpeciesId = "guard" }, null, null, null];
+        var advisor = new PositionAdvisor(rules);
+        Assert.Null(advisor.FindBetterPosition(board, bench, targetHp: board.MaxHp));
+        var advice = Assert.IsType<PositionAdvice>(advisor.FindBetterPosition(board, bench,
+            objective: PlacementObjective.MostHpAndShield));
+        Assert.Equal(board.MaxHp, advice.Current.TargetHp);
+        Assert.NotNull(advice.CurrentSurvival!.DefeatedAt);
+        Assert.Null(advice.RecommendedSurvival!.DefeatedAt);
+        Assert.Contains(advice.Slots.Take(6), unit => unit?.SpeciesId == "guard");
+    }
+
+    [Fact]
+    public void Mirrored_opponent_columns_and_top_middle_match_captured_positions()
+    {
+        var rules = RuleCompiler.Fixture();
+        rules = rules with { Trinkets = new[] { "haste-crown", "quick-flag", "speed-crest" }.Select(id =>
+        {
+            var definition = InventoryRules.Definition(id)!.Value;
+            return new InventoryDefinition(id, id, 0, false, 0, definition.Effects, "fixture", definition.Text);
+        }).ToArray() };
+        var board = new FrozenBoard(20, 453800, "fixture",
+            Enumerable.Range(0, 6).Select(slot => (Unit?)new Unit { Instance = slot + 1, SpeciesId = "striker" }).ToArray(),
+            [new("haste-crown", 1), new("quick-flag", 1), new("speed-crest", 3)], []);
+        var analyzer = new BoardAnalyzer(rules);
+        var own = analyzer.Analyze(board, samples: 1).Checkpoints[0].Units;
+        var opponent = analyzer.Analyze(board with { Mirrored = true }, samples: 1).Checkpoints[0].Units;
+        Assert.Equal([.04, .2, .45, .04, 0, .45], own.Select(unit => Math.Round(unit.Stats[(int)Stat.Speed], 2)));
+        Assert.Equal([.45, .2, .04, .45, 0, .04], opponent.Select(unit => Math.Round(unit.Stats[(int)Stat.Speed], 2)));
+    }
+
+    [Fact]
+    public void Mirrored_neighbor_targets_move_in_owner_direction_and_opposite_stays_screen_aligned()
+    {
+        var rules = RuleCompiler.Fixture();
+        var actor = rules.Species[0];
+        var species = actor with { Normal = [actor.Normal[0] with
+        {
+            Effects = [new(Trigger.BattleStart, Operation.Add, Target.Left, Stat.Speed, .2),
+                new(Trigger.BattleStart, Operation.Knockout, Target.Opposite)]
+        }] };
+        rules = rules with { Species = [species, rules.Species[1]] };
+        Unit Guard() => new() { SpeciesId = rules.Species[1].Id };
+        var player = new FrozenBoard(1, 300, "fixture", [Guard(), Guard(), Guard(), null, null, null], [], []);
+        var enemy = player with { Team = [Guard(), new() { SpeciesId = species.Id }, Guard(), null, null, null], Mirrored = true };
+        var frames = new List<GameBattleFrame>();
+        new Combat(rules).ResolveBattle(player, enemy, 69, audit: frames.Add);
+        Assert.False(frames[0].Player.Units.Single(unit => unit.Slot == 1).Alive);
+        Assert.Equal(.2, frames[0].Opponent.Units.Single(unit => unit.Slot == 2).Stats[(int)Stat.Speed]);
+        Assert.Equal(0, frames[0].Opponent.Units.Single(unit => unit.Slot == 0).Stats[(int)Stat.Speed]);
+    }
+
     private static (RulesManifest Rules, FrozenBoard Board) RandomTrinketBoard(int strongSlot)
     {
         var rules = RuleCompiler.Fixture();
@@ -94,15 +161,15 @@ public sealed class PositionAdvisorTests
         var units = live.Board.Team.Concat(live.Bench!).OfType<Unit>().ToArray();
         Assert.Equal(units.Length, units.Select(unit => unit.Instance).Distinct().Count());
         var analyzer = new BoardAnalyzer(live.Rules);
-        var current = analyzer.Analyze(live.Board, samples: 1);
+        var current = analyzer.Analyze(live.Board, targetHp: 18250, samples: 1);
         Assert.Equal(150, current.Checkpoints[0].Units.Single(unit => unit.Slot == 0).Stats[(int)Stat.Shock]);
         Assert.Equal(0, current.Checkpoints[0].Units.Single(unit => unit.Slot == 4).Stats[(int)Stat.Shock]);
         var swapped = StateSnapshots.Copy(live.Board);
         (swapped.Team[0], swapped.Team[4]) = (swapped.Team[4], swapped.Team[0]);
-        var worse = analyzer.Analyze(swapped, samples: 1);
+        var worse = analyzer.Analyze(swapped, targetHp: 18250, samples: 1);
         Assert.Equal(75, worse.Checkpoints[0].Units.Single(unit => unit.Slot == 4).Stats[(int)Stat.Shock]);
         Assert.True(worse.MedianKillSeconds > current.MedianKillSeconds);
-        var advice = new PositionAdvisor(live.Rules).FindBetterPosition(live.Board, live.Bench!);
+        var advice = new PositionAdvisor(live.Rules).FindBetterPosition(live.Board, live.Bench!, targetHp: 18250);
         Assert.False(advice?.Slots[0]?.SpeciesId == "clawnetic" && advice?.Slots[4]?.SpeciesId == "galvanade");
     }
 

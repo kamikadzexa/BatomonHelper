@@ -43,15 +43,24 @@ public sealed class GameStateBridgeTests
         Assert.Equal(MonsterRegionFilter.Jinto, board.RegionFilter);
     }
 
-    [Fact]
-    public async Task Normalizes_a_game_rank_above_fourteen_to_the_maximum_rank()
+    [Theory]
+    [InlineData(20)]
+    [InlineData(40)]
+    public async Task Accepts_extended_shop_and_caps_only_the_odds_rank(int day)
     {
         var json = Fixture();
-        json["board"]!["shopRank"] = 15;
-
-        var board = GameStateBridge.Parse(json.ToJsonString(), await Catalog(), Time(json)).Board;
-
-        Assert.Equal(14, board!.ShopRank);
+        var row = json["board"]!;
+        row["day"] = day;
+        row["wins"] = 17;
+        row["winTarget"] = day == 20 ? JsonValue.Create(10) : null;
+        row["shopRank"] = 21;
+        row["teamHp"] = 25_000_000_000L;
+        row["team"]![0]!["level"] = 5;
+        var catalog = await Catalog();
+        var board = GameStateBridge.Parse(json.ToJsonString(), catalog, Time(json)).Board!;
+        Assert.Equal(day, board.Day);
+        Assert.Equal(21, board.ShopRank);
+        Assert.Equal(14, board.ToShopOddsSnapshot(catalog).ShopRank);
     }
 
     [Fact]
@@ -133,7 +142,7 @@ public sealed class GameStateBridgeTests
         Assert.Equal(1, message.Battle.Frame.Player.Units[0].Casts);
 
         json["battle"]!["frame"]!["player"]!["health"] = -1;
-        Assert.Throws<InvalidDataException>(() => GameStateBridge.Parse(json.ToJsonString(), Catalog().GetAwaiter().GetResult(), Time(json)));
+        Assert.Null(GameStateBridge.Parse(json.ToJsonString(), await Catalog(), Time(json)).Battle!.Frame);
 
         static JsonObject FrameSide(double health, JsonObject? unit = null) => new()
         {

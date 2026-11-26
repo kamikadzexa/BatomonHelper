@@ -7,14 +7,14 @@ namespace BatomonHelper.Overlay;
 /// <summary>A self-contained, atomically persisted trace of one player run for offline training and rule validation.</summary>
 public sealed record CapturedRun(int Version, DateTimeOffset StartedAt, DateTimeOffset? EndedAt,
     string CatalogVersion, string? GameBuild, ImmutableArray<RunCaptureStep> Changes,
-    ImmutableArray<CapturedFight> Fights);
+    ImmutableArray<CapturedFight> Fights, string? CatalogBuild = null, bool Partial = false);
 
 public sealed record RunCaptureStep(long BridgeSequence, DateTimeOffset CapturedAt, BoardSnapshot Board,
     GameCombatState? Combat);
 
 /// <summary>Game-authoritative fight evidence for comparing the simulator with the live game.</summary>
 public sealed record CapturedFight(GameBattleState Start, GameBattleOutcome? Outcome,
-    ImmutableArray<FightCaptureFrame> Frames);
+    ImmutableArray<FightCaptureFrame> Frames, bool TerminalObserved = false);
 public sealed record FightCaptureFrame(long BridgeSequence, DateTimeOffset CapturedAt, GameBattleFrame Frame);
 
 public sealed class RunCaptureStore
@@ -27,15 +27,22 @@ public sealed class RunCaptureStore
     private readonly DateTimeOffset _startedAt;
     private readonly string _catalogVersion;
     private readonly string? _gameBuild;
+    private readonly string? _catalogBuild;
+    private readonly bool _partial;
+    private readonly Dictionary<string, int> _fightIndices = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _lastFrameSignatures = new(StringComparer.Ordinal);
+    private DateTimeOffset _lastPersisted;
     private string? _lastSignature;
 
-    public RunCaptureStore(string directory, CatalogSnapshot catalog, DateTimeOffset startedAt)
+    public RunCaptureStore(string directory, CatalogSnapshot catalog, DateTimeOffset startedAt, string? gameBuild = null, bool partial = false)
     {
         Directory.CreateDirectory(directory);
         _path = System.IO.Path.Combine(directory, $"batomon-run-{startedAt:yyyyMMdd-HHmmssfff}.json");
         _startedAt = startedAt;
         _catalogVersion = catalog.WikiVersion ?? "snapshot";
-        _gameBuild = catalog.DeclaredSteamBuild;
+        _catalogBuild = catalog.DeclaredSteamBuild;
+        _gameBuild = gameBuild;
+        _partial = partial;
     }
 
     public string Path => _path;
@@ -60,23 +67,39 @@ public sealed class RunCaptureStore
     {
         // The starting teams identify a fight. Outcome and each sampled frame are mutable observations.
         var start = battle with { Outcome = null, Frame = null };
-        var startSignature = JsonSerializer.Serialize(start, GameStateBridge.JsonOptions);
+        var startSignature = start.FightId ?? JsonSerializer.Serialize(start, GameStateBridge.JsonOptions);
         await _gate.WaitAsync(cancellationToken);
         try
         {
-            var index = _fights.FindIndex(fight => JsonSerializer.Serialize(fight.Start, GameStateBridge.JsonOptions) == startSignature);
-            if (index < 0)
+            if (_changes.Count > 0 && start.Player.Day < _changes[0].Board.Day) return;
+            var newFight = !_fightIndices.TryGetValue(startSignature, out var index);
+            if (newFight)
             {
-                _fights.Add(new(start, battle.Outcome, []));
-                index = _fights.Count - 1;
+                index = _fights.Count;
+                _fightIndices.Add(startSignature, index);
+                _fights.Add(new(start, null, []));
             }
 
             var fight = _fights[index];
             var frames = fight.Frames;
-            if (battle.Frame is { } frame && (frames.IsDefaultOrEmpty || !Equals(frames[^1].Frame, frame)))
-                frames = frames.Add(new(sequence, capturedAt, frame));
-            _fights[index] = fight with { Outcome = battle.Outcome ?? fight.Outcome, Frames = frames };
-            await WriteAsync(null, cancellationToken);
+            var terminal = fight.TerminalObserved;
+            if (battle.Frame is { } frame)
+            {
+                var signature = JsonSerializer.Serialize(frame, GameStateBridge.JsonOptions);
+                if (_lastFrameSignatures.GetValueOrDefault(startSignature) != signature)
+                {
+                    _lastFrameSignatures[startSignature] = signature;
+                    frames = frames.Add(new(sequence, capturedAt, frame));
+                    terminal |= frame.Player.Health <= 0 || frame.Opponent.Health <= 0;
+                }
+            }
+            var outcome = battle.Outcome ?? fight.Outcome;
+            var outcomeChanged = outcome != fight.Outcome;
+            if (!newFight && frames == fight.Frames && !outcomeChanged) return;
+            _fights[index] = fight with { Outcome = outcome, Frames = frames, TerminalObserved = terminal };
+            if (newFight || outcomeChanged || terminal && !fight.TerminalObserved ||
+                DateTimeOffset.UtcNow - _lastPersisted >= TimeSpan.FromSeconds(2))
+                await WriteAsync(null, cancellationToken);
         }
         finally { _gate.Release(); }
     }
@@ -93,9 +116,11 @@ public sealed class RunCaptureStore
         // Older installed bridges lack trainer metadata and still emit raw player
         // frame indices. Do not label those recordings as corrected screen order.
         var version = _fights.Any(fight => fight.Start.Player.Combat.Counters is null) ? 2 : 3;
-        var run = new CapturedRun(version, _startedAt, endedAt, _catalogVersion, _gameBuild, [.. _changes], [.. _fights]);
+        if (version == 3 && (_partial || _gameBuild is not null || _fights.Any(fight => fight.Start.FightId is not null))) version = 4;
+        var run = new CapturedRun(version, _startedAt, endedAt, _catalogVersion, _gameBuild, [.. _changes], [.. _fights], _catalogBuild, _partial);
         var temporaryPath = _path + ".tmp";
         await File.WriteAllTextAsync(temporaryPath, JsonSerializer.Serialize(run, JsonOptions), cancellationToken);
         File.Move(temporaryPath, _path, true);
+        _lastPersisted = DateTimeOffset.UtcNow;
     }
 }

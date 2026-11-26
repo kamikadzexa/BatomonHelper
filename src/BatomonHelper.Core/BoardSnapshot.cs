@@ -18,7 +18,7 @@ public sealed record BoardSnapshot
     public int? Lives { get; init; }
     public int? Wins { get; init; }
     public int? WinTarget { get; init; }
-    public int? TeamHp { get; init; }
+    public long? TeamHp { get; init; }
     public int? Gold { get; init; }
     public int? ShopRank { get; init; }
     public ImmutableArray<CapturedRarityOdds> RarityOdds { get; init; } = [];
@@ -40,7 +40,7 @@ public sealed record BoardSnapshot
         if (!validation.IsValid) throw new InvalidOperationException(string.Join(" ", validation.Errors));
         var item = Shop.FirstOrDefault(slot => slot.Occupancy == SlotOccupancy.Item);
         var definition = catalog.Items.FirstOrDefault(entry => entry.Id == item?.DefinitionId);
-        return new(catalog.Trainers.First(entry => entry.Id == TrainerId).Name, ShopRank!.Value,
+        return new(catalog.Trainers.First(entry => entry.Id == TrainerId).Name, ShopRankOdds.Normalize(ShopRank!.Value),
             Gold!.Value, RarityOdds, ItemUsesRemaining > 0,
             definition is null ? null : new(definition.Name, item!.Price!.Value, definition.RuleText), CapturedAt)
         { RegionFilter = RegionFilter };
@@ -53,11 +53,12 @@ public static class BoardSnapshotValidator
     {
         var errors = ImmutableArray.CreateBuilder<string>();
         if (!catalog.Trainers.Any(trainer => trainer.Id == board.TrainerId)) errors.Add("Choose a catalog trainer.");
-        Check(board.Day, 1, 999, "Day"); Check(board.Lives, 0, 99, "Lives");
-        Check(board.Wins, 0, 999, "Wins"); Check(board.WinTarget, 1, 999, "Win target");
-        if (board.Wins > board.WinTarget) errors.Add("Wins exceed the win target.");
-        Check(board.TeamHp, 0, 9_999_999, "Team HP"); Check(board.Gold, 0, 9_999, "Gold");
-        Check(board.ShopRank, ShopRankOdds.MinimumRank, ShopRankOdds.MaximumRank, "Shop rank");
+        Check(board.Day, 1, int.MaxValue, "Day"); Check(board.Lives, 0, 99, "Lives");
+        Check(board.Wins, 0, int.MaxValue, "Wins");
+        if (board.WinTarget is not null || board.Wins is not >= 10)
+            Check(board.WinTarget, 1, int.MaxValue, "Win target");
+        Check(board.TeamHp, 1, long.MaxValue, "Team HP"); Check(board.Gold, 0, int.MaxValue, "Gold");
+        Check(board.ShopRank, ShopRankOdds.MinimumRank, int.MaxValue, "Shop rank");
         if (board.RarityOdds.Length != 5 || board.RarityOdds.Select(odds => odds.Rarity).Distinct().Count() != 5 ||
             board.RarityOdds.Any(odds => !Enum.IsDefined(odds.Rarity) || odds.Rarity == Rarity.Mythical || odds.Probability is < 0 or > 1) ||
             board.RarityOdds.Sum(odds => odds.Probability) != 1) errors.Add("Read all five displayed odds; they must total 100%.");
@@ -72,7 +73,7 @@ public static class BoardSnapshotValidator
         Slots(board.Team, 6, "Team", false); Slots(board.Bench, 4, "Bench", false); Slots(board.Shop, 5, "Shop", true);
         return errors.Count == 0 ? ValidationResult.Success : new(false, errors.ToImmutable());
 
-        void Check(int? value, int min, int max, string name)
+        void Check(long? value, long min, long max, string name)
         { if (value is null || value < min || value > max) errors.Add($"{name} must be between {min} and {max}."); }
         void Slots(ImmutableArray<BoardSlot> slots, int count, string area, bool shop)
         {
@@ -88,12 +89,12 @@ public static class BoardSnapshotValidator
                 {
                     if (!catalog.Monsters.Any(monster => monster.Id == slot.DefinitionId)) errors.Add($"Choose a creature for {label}.");
                     if (!Enum.IsDefined(slot.Variant) || slot.Variant == ShinyState.Unknown) errors.Add($"Choose normal or shiny for {label}.");
-                    if (!shop) Check(slot.Level, 1, 4, $"{label} level");
-                    if (slot.Stats.IsDefault || slot.Stats.Any(stat => !Enum.IsDefined(stat.Kind) || stat.Kind == VisibleStatKind.Unknown || stat.Value is null or < 0 or > 9_999_999)) errors.Add($"Read the visible badges for {label}.");
+                    if (!shop) Check(slot.Level, 1, int.MaxValue, $"{label} level");
+                    if (slot.Stats.IsDefault || slot.Stats.Any(stat => !Enum.IsDefined(stat.Kind) || stat.Kind == VisibleStatKind.Unknown || stat.Value is null or < 0)) errors.Add($"Read the visible badges for {label}.");
                     if (!slot.Stats.IsDefault && slot.Stats.Select(stat => stat.Kind).Distinct().Count() != slot.Stats.Length) errors.Add($"Duplicate stat badges in {label}.");
                 }
                 if (slot.Occupancy == SlotOccupancy.Item && (!shop || !catalog.Items.Any(item => item.Id == slot.DefinitionId))) errors.Add($"Choose a shop item for {label}.");
-                if (shop) Check(slot.Price, 0, 9_999, $"{label} price");
+                if (shop) Check(slot.Price, 0, int.MaxValue, $"{label} price");
                 if (shop && slot.Affordable != (slot.Price <= board.Gold)) errors.Add($"Affordability does not agree with gold for {label}.");
             }
         }

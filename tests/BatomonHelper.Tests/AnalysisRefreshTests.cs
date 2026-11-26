@@ -65,7 +65,7 @@ public sealed class AnalysisRefreshTests
                     Assert.Empty(model.DamageRows);
                     Assert.Empty(model.OpponentDamageRows);
                     Assert.Null(Field(model, "_damageIdentity").GetValue(model));
-                    Assert.Null(Field(model, "_positionIdentity").GetValue(model));
+                    Assert.Equal("unchanged", Field(model, "_positionIdentity").GetValue(model));
                     var side = new GameBattleSide(1, 100, "fixture", [], new([], []));
                     var refresh = typeof(OverlayViewModel).GetMethod("RefreshBattleAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
                     foreach (var hp in new[] { 100, 200 })
@@ -84,6 +84,26 @@ public sealed class AnalysisRefreshTests
         thread.Start();
         Assert.True(thread.Join(TimeSpan.FromSeconds(30)), "Analysis refresh regression test timed out.");
         if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
+    }
+
+    [Fact]
+    public void Pure_bench_moves_keep_the_placement_identity_and_changes_to_bench_stats_only_affect_placement()
+    {
+        var signature = typeof(OverlayViewModel).GetMethod("CombatIdentity", BindingFlags.Static | BindingFlags.NonPublic)!;
+        var board = new BoardSnapshot { Day = 20, TeamHp = 453800, Bench =
+            [new(0, SlotOccupancy.Creature, "a", ShinyState.Normal, 1), new(1, SlotOccupancy.Empty)] };
+        var detail = new GameCombatUnit(0, new double[9], 3, []);
+        var combat = new GameCombatState([], ["haste_crown"], [detail]);
+        var moved = board with { Bench = [board.Bench[1] with { Index = 0 }, board.Bench[0] with { Index = 1 }] };
+        var movedCombat = combat with { Bench = [detail with { Slot = 1 }] };
+        Assert.Equal(Key(board, combat, true), Key(moved, movedCombat, true));
+        var changed = combat with { Bench = [detail with { BaseCooldown = 4 }] };
+        Assert.Equal(Key(board, combat, false), Key(board, changed, false));
+        Assert.NotEqual(Key(board, combat, true), Key(board, changed, true));
+        Assert.NotEqual(Key(board, combat, true), Key(board, combat with { Trinkets = [] }, true));
+
+        object? Key(BoardSnapshot snapshot, GameCombatState state, bool bench) =>
+            signature.Invoke(null, [snapshot, state, bench]);
     }
 
     private static FieldInfo Field(object target, string name) =>

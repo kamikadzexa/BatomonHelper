@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using BatomonHelper.Core;
 using BatomonHelper.Simulation;
 using System.Text.Json;
@@ -43,7 +44,33 @@ public sealed class LiveBoardImportTests
         Assert.Equal(5, result.Checkpoints[0].Units[0].Cooldown);
         Assert.Equal(10, species.Normal[0].Stats[0]);
         Assert.Equal(1, species.Normal[0].Cooldown);
-        Assert.NotEqual(rules.Hash, imported.Rules.Hash);
+        Assert.Same(rules, imported.Rules);
+    }
+
+    [Fact]
+    public void Keeps_same_species_cooldowns_independent_and_applies_captured_hp_only_once()
+    {
+        var rules = RuleCompiler.Fixture();
+        var species = rules.Species[0];
+        var hpTrinket = new InventoryDefinition("weights", "Weights", 0, false, 0,
+            [new(Trigger.Ongoing, Operation.TeamHp, Target.All, Amount: 100)], "fixture", "");
+        rules = rules with { Trinkets = [hpTrinket] };
+        var team = Enumerable.Range(0, 6).Select(index => index < 2
+            ? new BoardSlot(index, SlotOccupancy.Creature, species.Id, ShinyState.Normal, 1)
+            : new BoardSlot(index, SlotOccupancy.Empty)).ToImmutableArray();
+        var combat = new GameCombatState([new(0, species.Normal[0].Stats, 2, []), new(1, species.Normal[0].Stats, 5, [])], ["weights"]);
+        var live = new GameBattleSide(20, 300, "fixture", team, combat);
+        var imported = LiveBoardImport.CreateBattleSide(live, rules);
+        var detail = new BoardAnalyzer(rules).Analyze(imported.Board, targetHp: 100_000, samples: 1);
+        Assert.Equal([2d, 5d], detail.Checkpoints[0].Units.Select(unit => unit.Cooldown!.Value));
+
+        var frames = new List<GameBattleFrame>();
+        new Combat(rules).ResolveBattle(imported.Board, imported.Board, 69, audit: frames.Add);
+        Assert.Equal(300, frames[0].Player.MaximumHealth);
+        var shop = LiveBoardImport.Create(new BoardSnapshot { Day = 20, TeamHp = 300, Team = team,
+            TrainerId = "fixture", ShopRank = 20, Wins = 15 }, combat, rules);
+        Assert.Equal(200, shop.Board.MaxHp);
+        Assert.Equal(14, shop.Board.Rank);
     }
 
     [Fact]

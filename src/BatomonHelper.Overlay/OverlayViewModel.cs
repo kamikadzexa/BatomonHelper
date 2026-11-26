@@ -17,7 +17,7 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     private readonly GameStateBridge _bridge = new();
     private readonly BridgeRefreshQueue _captureQueue;
     private readonly CancellationTokenSource _captureCancellation = new();
-    private string? _lastBoardSignature;
+    private string? _lastBoardSignature, _lastOddsSignature;
     private bool _manualScenario;
     private string _boardSummary = "Waiting for the BatomonHelper bridge mod.";
     private string? _trainerSpritePath;
@@ -46,9 +46,11 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     private RunCaptureStore? _runCaptureStore;
     private string _runCaptureStatus = "Run capture is off.";
     private long _lastLiveSequence;
+    private int _liveProcessId;
+    private bool _inLiveShop;
     private GameCombatState? _lastLiveCombat;
     private GameBattleState? _lastLiveBattle;
-    private (bool Dps, bool Positions, bool Outcome) _analysisOptions;
+    private (bool Dps, bool Positions, bool Outcome, PlacementObjective Objective) _analysisOptions;
     private RegionFilterOption _selectedRegionFilter = new(MonsterRegionFilter.Pantra, "Pantra region");
     private RarityFilterOption _selectedRarityFilter = new(null, "All rarities");
     private RarityFilterOption _selectedItemRarityFilter = new(null, "All rarities");
@@ -62,11 +64,12 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         DecreaseRankCommand = new RelayCommand(() => ChangeRank(-1));
         IncreaseRankCommand = new RelayCommand(() => ChangeRank(1));
         ResetCommand = new RelayCommand(ResetManualState);
-        _analysisOptions = (Setup.ShowDpsCounters, Setup.ShowBestDpsBoardSuggestions, Setup.ShowBattleOutcome);
+        _analysisOptions = (Setup.ShowDpsCounters, Setup.ShowBestDpsBoardSuggestions, Setup.ShowBattleOutcome, Setup.PlacementObjective);
         Setup.PropertyChanged += (_, args) =>
         {
             if (string.IsNullOrEmpty(args.PropertyName) || args.PropertyName is nameof(GameSetupViewModel.ShowDpsCounters)
-                or nameof(GameSetupViewModel.ShowBestDpsBoardSuggestions) or nameof(GameSetupViewModel.ShowBattleOutcome))
+                or nameof(GameSetupViewModel.ShowBestDpsBoardSuggestions) or nameof(GameSetupViewModel.ShowBattleOutcome)
+                or nameof(GameSetupViewModel.PlacementObjective))
                 ApplyAnalysisOptions();
         };
         _ = Application.Current.Dispatcher.InvokeAsync(InitializeAsync);
@@ -219,6 +222,11 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
                 return;
             }
             var message = await _bridge.ReadAsync(_catalog, _captureCancellation.Token);
+            _liveProcessId = message.ProcessId;
+            _inLiveShop = message.Phase == "shop";
+            OnPropertyChanged(nameof(CanToggleRunCapture));
+            if (message.PreviousBattle is { } previous && _captureRun && _runCaptureStore is { } store)
+                await SaveFightAsync(store, message.Sequence, message.UpdatedAt, previous);
             if (message.Phase == "battle" && message.Battle is { } battle)
             {
                 _lastLiveBattle = battle;
@@ -243,24 +251,37 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
             if (_captureRun && _runCaptureStore is not null)
                 await SaveRunChangeAsync(_runCaptureStore, message.Sequence, capturedBoard, message.Combat);
             board = capturedBoard;
-            _lastLiveBattle = null;
+            if (_lastLiveBattle is not null)
+            {
+                _lastLiveBattle = null;
+                OnPropertyChanged(nameof(PlacementControlsVisibility));
+            }
             SyncCapturedRegion(board.RegionFilter);
             var signature = System.Text.Json.JsonSerializer.Serialize(board with { CapturedAt = default }, GameStateBridge.JsonOptions);
             if (signature != _lastBoardSignature)
             {
                 var snapshot = board.ToShopOddsSnapshot(_catalog);
                 _acceptedBoard = board;
-                var odds = CalculateOdds(snapshot);
+                var oddsSignature = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    Snapshot = snapshot with { CapturedAt = default },
+                    Maxed = board.Team.Concat(board.Bench).Where(slot => slot.Level >= 3)
+                        .Select(slot => slot.DefinitionId).Distinct().Order(StringComparer.Ordinal)
+                });
+                if (_lastOddsSignature != oddsSignature || _manualScenario)
+                {
+                    Render(CalculateOdds(snapshot), snapshot);
+                    _lastOddsSignature = oddsSignature;
+                }
                 _capturedSnapshot = snapshot;
                 _itemAvailable = snapshot.ItemAvailable;
                 OnPropertyChanged(nameof(ItemAvailable));
-                Render(odds, snapshot);
                 RenderBoard(board);
                 _lastBoardSignature = signature;
                 _manualScenario = false;
                 OnPropertyChanged(nameof(CanToggleRunCapture));
             }
-            _ = RefreshDamageAsync(board, message.Combat);
+            RefreshShopAnalysis(board, message.Combat);
             BridgeNotice = "";
             Status = _manualScenario ? "Manual odds preview · game bridge connected · F9 restores live values"
                 : $"Live game state · updated {board.CapturedAt.ToLocalTime():HH:mm:ss} · automatic refresh";
@@ -275,6 +296,8 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
 
     private void BridgeUnavailable(string reason)
     {
+        _inLiveShop = false;
+        OnPropertyChanged(nameof(CanToggleRunCapture));
         BridgeNotice = reason;
         Status = "Game bridge disconnected or unavailable. Showing the last received board, if any.";
     }
@@ -282,32 +305,42 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
     {
         // Setup also raises all-properties notifications for heartbeat/readiness
         // updates. Those must not cancel analysis or clear the displayed results.
-        var options = (Setup.ShowDpsCounters, Setup.ShowBestDpsBoardSuggestions, Setup.ShowBattleOutcome);
-        if (_analysisOptions == options) return;
+        var options = (Dps: Setup.ShowDpsCounters, Positions: Setup.ShowBestDpsBoardSuggestions,
+            Outcome: Setup.ShowBattleOutcome, Objective: Setup.PlacementObjective);
+        var previous = _analysisOptions;
+        if (previous == options) return;
         _analysisOptions = options;
-        if (!Setup.ShowBattleOutcome) BattleSummary = "";
-        if (!Setup.ShowDpsCounters)
+
+        if (previous.Outcome != options.Outcome)
+            BattleSummary = options.Outcome && _lastLiveBattle is { } liveBattle
+                ? BattleOutcomePresentation.Summary(liveBattle.Outcome) : "";
+        if (previous.Dps != options.Dps)
         {
-            DamageRows.Clear(); OpponentDamageRows.Clear(); DamageCurve = []; DamageHpLine = [];
-            DamageSummary = "";
+            _damageIdentity = null;
+            _damageCancellation?.Cancel();
+            if (!options.Dps)
+            {
+                DamageRows.Clear(); OpponentDamageRows.Clear(); DamageCurve = []; DamageHpLine = [];
+                DamageSummary = "";
+            }
+            else if (_lastLiveBattle is { } battle) _ = RefreshBattleAsync(battle);
+            else if (_acceptedBoard is { } board) _ = RefreshDamageAsync(board, _lastLiveCombat);
+            OnPropertyChanged(nameof(DpsCountersVisibility));
         }
-        if (!Setup.ShowBestDpsBoardSuggestions)
+        if (previous.Positions != options.Positions || previous.Objective != options.Objective)
         {
-            RecommendedTeamRows.Clear();
-            PositionHint = "";
+            ClearPlacement();
+            if (options.Positions && _lastLiveBattle is null && _acceptedBoard is { } board)
+                _ = RefreshPositionAsync(board, _lastLiveCombat);
         }
-        OnPropertyChanged(nameof(DpsCountersVisibility));
-        OnPropertyChanged(nameof(RecommendedPositionsVisibility));
-        _damageIdentity = null;
-        _positionIdentity = null;
-        if (_lastLiveBattle is { } battle) _ = RefreshBattleAsync(battle);
-        else if (_acceptedBoard is { } board) _ = RefreshDamageAsync(board, _lastLiveCombat);
     }
+
     private void RenderBoard(BoardSnapshot board)
     {
         var trainer = _catalog.Trainers.First(entry => entry.Id == board.TrainerId);
         TrainerSpritePath = trainer.SpritePath is null ? null : Path.Combine(AppContext.BaseDirectory, trainer.SpritePath.Replace('/', Path.DirectorySeparatorChar));
-        BoardSummary = $"{trainer.Name} · Day {board.Day} · Lives {board.Lives} · Wins {board.Wins}/{board.WinTarget} · HP {board.TeamHp} · ${board.Gold} · Rank {board.ShopRank}\n" +
+        var wins = board.WinTarget is { } target ? $"{board.Wins}/{target}" : $"{board.Wins}";
+        BoardSummary = $"{trainer.Name} · Day {board.Day} · Lives {board.Lives} · Wins {wins} · HP {board.TeamHp} · ${board.Gold} · Rank {board.ShopRank}\n" +
             (board.FreeRerolls is null ? $"Reroll ${board.RerollCost}" : $"Free rerolls {board.FreeRerolls}") +
             (board.ItemUsesCounterVisible ? $" · Item uses {board.ItemUsesRemaining}/{board.ItemUsesMaximum}" : " · Item counter absent") +
             (board.ShopLocked == true ? " · Shop locked" : " · Shop unlocked");
@@ -465,22 +498,23 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         Status = "Manual browse reset to Rank 1 with an item available.";
     }
 
-    private bool CanStartRunCapture() => AutoUpdate && !_manualScenario && _acceptedBoard is { Day: 1, Wins: 0 } board
-        && board.ShopLocked == false
-        && board.Team.All(slot => slot.Occupancy == SlotOccupancy.Empty)
-        && board.Bench.All(slot => slot.Occupancy == SlotOccupancy.Empty);
+    private bool CanStartRunCapture() => AutoUpdate && !_manualScenario && _inLiveShop && _acceptedBoard is not null;
 
     private void StartRunCapture()
     {
         var board = _acceptedBoard!;
         var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BatomonHelper", "runs");
-        var store = new RunCaptureStore(directory, _catalog, DateTimeOffset.UtcNow);
+        var isOpening = board is { Day: 1, Wins: 0, ShopLocked: false }
+            && board.Team.All(slot => slot.Occupancy == SlotOccupancy.Empty)
+            && board.Bench.All(slot => slot.Occupancy == SlotOccupancy.Empty);
+        var store = new RunCaptureStore(directory, _catalog, DateTimeOffset.UtcNow,
+            GameInstallation.DetectSteamBuild(_liveProcessId), partial: !isOpening);
         _runCaptureStore = store;
         _captureRun = true;
         OnPropertyChanged(nameof(CaptureRun));
         OnPropertyChanged(nameof(CanToggleRunCapture));
         Warning = "";
-        RunCaptureStatus = $"Recording training run to {store.Path}";
+        RunCaptureStatus = $"Recording run to {store.Path}";
         _ = SaveRunChangeAsync(store, _lastLiveSequence, board, _lastLiveCombat);
     }
 
@@ -523,7 +557,7 @@ public sealed partial class OverlayViewModel : INotifyPropertyChanged
         try
         {
             await store.CompleteAsync();
-            RunCaptureStatus = $"Saved training run: {store.Path}";
+            RunCaptureStatus = $"Saved run: {store.Path}";
         }
         catch (Exception exception) { Warning = $"Run capture could not be finalized: {exception.Message}"; }
     }

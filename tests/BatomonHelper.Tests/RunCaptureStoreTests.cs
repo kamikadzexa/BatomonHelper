@@ -63,4 +63,38 @@ public sealed class RunCaptureStoreTests
             if (Directory.Exists(directory)) Directory.Delete(directory, true);
         }
     }
+    [Fact]
+    public async Task Records_partial_runs_and_deduplicates_equal_zero_time_frames_without_losing_start_effects()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "BatomonHelperTests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            var store = new RunCaptureStore(directory, CatalogSnapshot.Empty, now, gameBuild: "26773903", partial: true);
+            var combat = new GameCombatState([], [], Counters: [], ExtraTrainers: []);
+            var side = new GameBattleSide(20, 453800, "fixture", [], combat);
+            var frameSide = new GameBattleFrameSide(453800, 453800, 0, 0, 0, 0, []);
+            var first = new GameBattleState(side, side, Frame: new(0, frameSide, frameSide), FightId: "10-1");
+            await store.AppendAsync(10, new BoardSnapshot { Day = 20, CapturedAt = now }, combat);
+            await store.AppendFightAsync(11, now, first);
+            await store.AppendFightAsync(12, now, first with { Frame = first.Frame! with { Player = frameSide with { Units = [] } } });
+            await store.AppendFightAsync(13, now, first with { Frame = first.Frame! with { Player = frameSide with { Shield = 12 } } });
+            await store.AppendFightAsync(14, now, first with { Outcome = new(true),
+                Frame = first.Frame! with { Player = frameSide with { Shield = 12 }, Opponent = frameSide with { Health = 0 } } });
+            await store.CompleteAsync();
+
+            var capture = JsonSerializer.Deserialize<CapturedRun>(await File.ReadAllTextAsync(store.Path), GameStateBridge.JsonOptions)!;
+            Assert.Equal(4, capture.Version);
+            Assert.True(capture.Partial);
+            Assert.Equal("26773903", capture.GameBuild);
+            var fight = Assert.Single(capture.Fights);
+            Assert.True(fight.TerminalObserved);
+            Assert.Equal([11L, 13L, 14L], fight.Frames.Select(frame => frame.BridgeSequence));
+        }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, true);
+        }
+    }
+
 }

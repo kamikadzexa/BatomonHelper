@@ -152,7 +152,7 @@ public sealed class AbilitySimulationTests
         var rules=basis with {Species=[sacrifice,reviver]};
         var own=new FrozenBoard(1,100,"fixture",[new(){SpeciesId=sacrifice.Id},new(){SpeciesId=reviver.Id},null,null,null,null],[],[]);
         var result=new Combat(rules).ResolveBattle(own,own with {Team=[null,null,null,null,null,null]},1,true);
-        Assert.Contains(result.Trace,x=>x=="1.00s side 0 slot 0: sacrifice cast");Assert.Contains(result.Trace,x=>x=="1.05s side 0 slot 1: reviver cast");
+        Assert.Contains(result.Trace,x=>x=="1.00s side 0 slot 0: sacrifice cast");Assert.Contains(result.Trace,x=>x=="1.10s side 0 slot 1: reviver cast");
         Assert.DoesNotContain(result.Trace,x=>x=="1.10s side 0 slot 0: sacrifice cast");
         Assert.DoesNotContain(result.Trace,x=>x=="1.20s side 0 slot 0: sacrifice cast");
     }

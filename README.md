@@ -52,7 +52,7 @@ Bridge removal keeps the shared loader. Uninstalling the helper through Windows 
 - **Invalid/incompatible snapshot:** update helper and bridge together. Invalid boards are not applied.
 - **Shortcut conflict:** another app owns F8/F9; use the on-screen controls.
 
-WIN/LOSS comes from the game. Projections and position advice use a passive-target simulator and are estimates, not win probabilities. The offline wiki bundle targets **Balance 27**, Steam build **26572818**. Live stats and prices take precedence. See [bridge protocol and verified limits](docs/game-bridge.md).
+WIN/LOSS comes from the game. Fastest kill scores damage against a passive target. Most HP + shield compares placement under simulated incoming damage and debuffs. The offline wiki bundle targets **Balance 28**, Steam build **26773903**. Live stats and prices take precedence. See [bridge protocol and verified limits](docs/game-bridge.md).
 
 ## Development
 

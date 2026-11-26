@@ -1,6 +1,4 @@
 using BatomonHelper.Core;
-using System.Security.Cryptography;
-using System.Text.Json;
 
 namespace BatomonHelper.Simulation;
 
@@ -9,7 +7,12 @@ public sealed record LiveBoardProjection(RulesManifest Rules, FrozenBoard Board,
 /// <summary>Imports pre-aura game stats; combat applies its own ongoing and battle-start effects once.</summary>
 public static class LiveBoardImport
 {
-    public static LiveBoardProjection Create(BoardSnapshot board, GameCombatState data, RulesManifest rules)
+    public static LiveBoardProjection CreateBattleSide(GameBattleSide side, RulesManifest rules, bool mirrored = false) =>
+        Create(new BoardSnapshot { Day = side.Day, TeamHp = side.TeamHp, TrainerId = side.TrainerId,
+            Team = side.Team, ShopRank = side.Rank, Wins = side.Wins }, side.Combat with { Bench = null },
+            battleStart: true, rules: rules, mirrored: mirrored);
+
+    public static LiveBoardProjection Create(BoardSnapshot board, GameCombatState data, RulesManifest rules, bool battleStart = false, bool mirrored = false)
     {
         var occupied = board.Team.Where(slot => slot.Occupancy == SlotOccupancy.Creature).ToArray();
         ValidateMetadata(occupied, data.Team, "team");
@@ -26,19 +29,18 @@ public static class LiveBoardImport
         }
         var trainer = GameCatalogIds.Resolve(board.TrainerId!, rules.Trainers.Select(value => value.Id));
         if (!rules.Trainers.Any(value => value.Id == trainer)) throw new InvalidDataException($"No simulation trainer {board.TrainerId}.");
-        var bag = data.Trinkets.Select(id => GameCatalogIds.Resolve(id, rules.Trinkets.Select(value => value.Id)))
-            .GroupBy(id => id).Select(group => new BagEntry(group.Key, group.Count())).ToArray();
-        if (bag.Any(entry => !rules.Trinkets.Any(value => value.Id == entry.Id)))
-            throw new InvalidDataException("A live trinket has no simulation rules.");
-        var hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { rules.Hash, data })));
-        var calibratedRules = rules with { Species = species.Values.ToArray(), Hash = hash };
+        var trinkets = rules.Trinkets.ToDictionary(value => GameCatalogIds.Normalize(value.Id), value => value.Id);
+        var bag = data.Trinkets.Select((rawId, index) => trinkets.TryGetValue(GameCatalogIds.Normalize(rawId), out var id)
+            ? new BagEntry(id, 1, index + 1) : throw new InvalidDataException($"No simulation rules for live trinket {rawId}.")).ToArray();
         var extraTrainers = (data.ExtraTrainers ?? []).Select(id => GameCatalogIds.Resolve(id, rules.Trainers.Select(value => value.Id))).ToArray();
         if (extraTrainers.Any(id => !rules.Trainers.Any(value => value.Id == id)) ||
             data.Counters?.Any(pair => !double.IsFinite(pair.Value)) == true)
             throw new InvalidDataException("Invalid live trainer progress.");
         var frozen = new FrozenBoard(board.Day!.Value, board.TeamHp!.Value, trainer, team, bag, extraTrainers,
-            Counters: data.Counters is null ? null : new(data.Counters), Rank: board.ShopRank!.Value, Wins: board.Wins!.Value);
-        return new(calibratedRules, frozen, bench);
+            Counters: data.Counters is null ? null : new(data.Counters), Rank: ShopRankOdds.Normalize(board.ShopRank!.Value), Wins: board.Wins!.Value,
+            Mirrored: mirrored, IncludesOngoingHp: battleStart);
+        if (!battleStart) frozen = frozen with { MaxHp = new Combat(rules).RecoverBaseHp(frozen) };
+        return new(rules, frozen, bench);
 
         void ValidateMetadata(BoardSlot[] slots, GameCombatUnit[] metadata, string area)
         {
@@ -63,14 +65,9 @@ public static class LiveBoardImport
                 destination[slot.Index] = new Unit
                 {
                     Instance = instanceOffset + slot.Index + 1, SpeciesId = definition.Id, Level = level, Shiny = shiny,
-                    AddedTypes = detail.AddedTypes,
+                    AddedTypes = detail.AddedTypes, CapturedCooldown = new(definition.Id, level, shiny, detail.BaseCooldown),
                     Bonuses = detail.PermanentStats.Select((value, index) => value - basis.Stats[index]).ToArray()
                 };
-                // Live base cooldowns also cover game/wiki balance differences. Each species/level/variant has one basis.
-                var levels = shiny && definition.Shiny.Length > 0 ? definition.Shiny : definition.Normal;
-                var calibrated = levels.Select(value => value.Level == level ? value with { Cooldown = detail.BaseCooldown } : value).ToArray();
-                species[definition.Id] = shiny && definition.Shiny.Length > 0
-                    ? definition with { Shiny = calibrated } : definition with { Normal = calibrated };
             }
         }
     }

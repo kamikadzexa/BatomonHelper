@@ -14,13 +14,32 @@ public static class RuleCompiler
     public static RulesManifest CompileCombat(CatalogSnapshot catalog, StrategyKnowledge knowledge)
     {
         var full = Compile(catalog, knowledge);
+        var parameters = full.Parameters;
+        if (catalog.Balance == "28")
+        {
+            // The three Balance 28 captures include unmodified player HP through day 29.
+            double[] observedHp = [300, 500, 800, 1400, 2400, 3800, 5700, 8300, 11600, 19600,
+                31100, 46700, 67500, 94500, 128800, 171500, 223900, 287400, 363500, 453800,
+                559700, 683200, 826000, 990000, 1177300, 1389800, 1629900, 1899700, 2201700];
+            parameters = parameters with
+            {
+                DailyHp = observedHp,
+                HpEvidence = observedHp.Select((hp, index) => new ValueEvidence(index + 1, hp,
+                    EvidenceKind.UserProvided, "Balance 28 run captures")).ToArray()
+            };
+        }
         var combat = full with {
             CombatOnly = true,
+            Parameters = parameters,
             Items = [],
             Issues = full.Issues.Where(issue => issue.Kind != "items" &&
                 !(issue.Kind == "trainers" && (issue.Id, issue.Reason) is
                     ("witch", "The first shop rolled each day contains a Potion.") or
-                    ("bug-catcher", "The first Bug monster you buy each day costs $10 less."))).ToArray()
+                    ("bug-catcher", "The first Bug monster you buy each day costs $10 less.") or
+                    ("bug-catcher", "The first Bug monster you buy each day costs $15 less.") or
+                    ("mad-scientist", "On day 7, transform monsters on your active team into random level 1 Legendary monsters and gain $20.") or
+                    ("smuggler", "Batomon from other regions appear in your shop and cost 45% less.") or
+                    ("youngster-m", "Gain 4 free rerolls every day."))).ToArray()
         };
         return combat with { Hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(combat))) };
     }
@@ -41,7 +60,7 @@ public static class RuleCompiler
             }
             else if (element.ValueKind == JsonValueKind.Array) foreach (var value in element.EnumerateArray()) Walk(value);
         }
-        if ((catalog.DeclaredSteamBuild, catalog.Balance) is not (("25738032", "25") or ("26078162", "26") or ("26572818", "27")))
+        if ((catalog.DeclaredSteamBuild, catalog.Balance) is not (("25738032", "25") or ("26078162", "26") or ("26572818", "27") or ("26773903", "28")))
             issues.Add(new("catalog-build", "Source", $"Bundled build {catalog.DeclaredSteamBuild}/Balance {catalog.Balance} is not a reviewed catalog target.", "https://batomon.com/wiki"));
         if(!profile.AllowGuesses && settings.Evidence.Any(x=>x.Kind==EvidenceKind.Guessed))
             issues.Add(new("guesses-disabled","Source","This profile contains inferred rules while guesses are disabled.","user-profile.json"));
@@ -86,6 +105,11 @@ public static class RuleCompiler
             Effect[] effects;
             if (category == "items") supported = ItemRules.TryCompile(id, text, out effects);
             else if(ShopRules.TryCompile(category,id,text,out effects)) supported=true;
+            else if (category == "trainers" && id == "gentleman" && text == "Increase Income by $3. From day 4 onwards, your shop no longer stocks Common or Uncommon monsters.")
+            {
+                effects = AdvancedRules.Definition(category, id)!.Value.Effects.Select(effect => effect.ShopTrait == ShopTrait.Income ? effect with { Amount = 3 } : effect).ToArray();
+                supported = true;
+            }
             else if(category=="trinkets" && InventoryRules.TryCompile(id,text,out effects))supported=true;
             else if(AdvancedRules.TryCompile(category,id,text,out effects))supported=true;
             else effects = CompileText(text, category == "trinkets" || category == "trainers" ? Trigger.Ongoing : Trigger.Bought, out supported);

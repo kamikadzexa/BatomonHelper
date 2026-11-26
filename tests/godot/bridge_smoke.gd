@@ -61,6 +61,9 @@ func _init():
 		frame = bridge.read_battle_frame(state)
 		valid = valid and frame.player.units[0].slot == 5 - index \
 			and frame.opponent.units[0].slot == (index + 3) % 6
+	state.simulation.data.player_health[1] = -12.5
+	frame = bridge.read_battle_frame(state)
+	valid = valid and frame.opponent.health == 0.0 and frame.opponent.rawHealth == -12.5
 	empty_state.free()
 	bridge.free()
 	if not valid:

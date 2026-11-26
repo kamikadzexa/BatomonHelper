@@ -32,6 +32,11 @@ public static class InventoryRules
     };
     public static bool TryCompile(string id, string? text, out Effect[] effects)
     {
+        if (id == "rainbow-berry" && text?.Trim() == "Your monsters have +4 Damage for each unique type on your team.")
+        {
+            effects = [Buff(Stat.Damage, 4, scale: EffectScale.UniqueTeamTypes)];
+            return true;
+        }
         var definition = Definition(id); effects = definition?.Effects ?? [];
         return definition is { } d && d.Text == text?.Trim();
     }

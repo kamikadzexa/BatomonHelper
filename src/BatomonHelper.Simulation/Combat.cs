@@ -9,7 +9,9 @@ public sealed class Combat(RulesManifest rules)
     private readonly Dictionary<string, InventoryDefinition> _trainers = rules.Trainers.ToDictionary(x => x.Id);
     private readonly bool _hasAmplifiers=rules.Species.Any(s=>s.Normal.Concat(s.Shiny).Any(l=>l.Effects.Any(e=>e.Operation==Operation.RepeatOngoing)));
     private readonly bool _hasCooldownAuras=rules.Species.Any(s=>s.Normal.Concat(s.Shiny).Any(l=>l.Effects.Any(e=>e.Trigger==Trigger.Ongoing && e.Operation==Operation.AddedCooldown)));
-    public static double EffectiveCooldown(double basis, double speed, double added = 0) => Math.Max(.1, basis / Math.Max(.1, 1 + speed) + added);
+    public static double EffectiveCooldown(double basis, double speed, double added = 0) =>
+        Math.Max(.1, Math.Round(basis / Math.Max(.1, 1 + speed) + Math.Max(0, added), 1,
+            MidpointRounding.AwayFromZero));
     public static double Absorb(double damage, ref double shield, bool status)
     {
         if (status && shield > 0) damage *= .85;
@@ -22,6 +24,8 @@ public sealed class Combat(RulesManifest rules)
     private static int[] TargetSlots(int slot,Target target,bool linked=false)=>TargetCache[(slot,target,linked)];
     private readonly ConcurrentDictionary<(string,int,bool),LevelDefinition> _levels=[];
     private readonly ConcurrentDictionary<string,string[]> _matchTypes=[];
+    private static readonly string[] StatusNames = ["Burn", "Poison", "Shock"];
+    private static readonly Trigger[] StatusTriggers = [Trigger.AllyBurn, Trigger.AllyPoison, Trigger.AllyShock];
     private readonly ConcurrentDictionary<LevelDefinition,Dictionary<Trigger,Effect[]>> _effectGroups=[];
     private Effect[] Effects(LevelDefinition definition,Trigger trigger)=>_effectGroups.GetOrAdd(definition,
         d=>d.Effects.GroupBy(x=>x.Trigger).ToDictionary(x=>x.Key,x=>x.ToArray())).GetValueOrDefault(trigger)??[];
@@ -34,31 +38,111 @@ public sealed class Combat(RulesManifest rules)
         Target.TopMiddle => [1], Target.LeftColumn => [0,3], Target.RightColumn => [2,5],
         _ => [0,1,2,3,4,5]
     };
-    public BattleResult ResolveBattle(FrozenBoard player, FrozenBoard opponent, ulong seed, bool trace = false, bool reference = false,bool cacheStats=true, CombatProbe? probe=null)
+    private static Target ScreenTarget(Target target, bool mirrored) => !mirrored ? target : target switch
+    {
+        Target.Left => Target.Right,
+        Target.Right => Target.Left,
+        Target.LeftColumn => Target.RightColumn,
+        Target.RightColumn => Target.LeftColumn,
+        _ => target
+    };
+
+    private (double Flat, double Percent) OngoingHp(FrozenBoard board)
+    {
+        var flat = 0d;
+        var percent = 0d;
+        void Add(Effect effect, Unit? unit = null, int count = 1)
+        {
+            if (effect.Percent) percent += effect.Amount * count;
+            else flat += effect.Amount * count;
+            if (effect.ProgressCounter is { } key && unit is not null)
+                flat += unit.Counters.GetValueOrDefault("ability:" + key) * count;
+        }
+
+        foreach (var entry in board.Bag)
+            foreach (var effect in _trinkets[entry.Id].Effects)
+                if (effect is { Operation: Operation.TeamHp, Trigger: Trigger.Ongoing }) Add(effect, count: entry.Quantity);
+
+        var linked = board.Bag.Any(entry => _trinkets[entry.Id].Effects.Any(effect => effect.Operation == Operation.LinkAllies));
+        var definitions = board.Team.Select(unit => unit is null ? null : Level(unit)).ToArray();
+        for (var slot = 0; slot < board.Team.Length; slot++)
+            if (board.Team[slot] is { } unit)
+                foreach (var effect in definitions[slot]!.Effects)
+                    if (effect is { Operation: Operation.TeamHp, Trigger: Trigger.Ongoing })
+                    {
+                        var count = 1;
+                        for (var actor = 0; actor < definitions.Length; actor++)
+                            if (definitions[actor] is { } definition)
+                                foreach (var amplifier in definition.Effects)
+                                    if (amplifier is { Operation: Operation.RepeatOngoing, Trigger: Trigger.Ongoing } &&
+                                        TargetSlots(actor, ScreenTarget(amplifier.Target, board.Mirrored), linked).Contains(slot))
+                                        count += (int)amplifier.Amount;
+                        Add(effect, unit, count);
+                    }
+        return (flat, percent);
+    }
+
+    private LevelDefinition Level(Unit unit) => _levels.GetOrAdd((unit.SpeciesId, unit.Level, unit.Shiny),
+        key => LevelRules.Resolve(_species[key.Item1], key.Item2, key.Item3));
+
+    internal double RecoverBaseHp(FrozenBoard board)
+    {
+        var (flat, percent) = OngoingHp(board);
+        return board.MaxHp / (1 + percent) - flat;
+    }
+
+    public BattleResult ResolveBattle(FrozenBoard player, FrozenBoard opponent, ulong seed, bool trace = false, bool reference = false,bool cacheStats=true, CombatProbe? probe=null, Action<GameBattleFrame>? audit=null)
     {
         rules.RequireCombatReady();
         if (player.Day != opponent.Day) throw new ArgumentException("Opponent must be from the same day.");
         var rng = new SeedStream(seed);
         var teams = new[] { new Side(player), new Side(opponent) };
+        int[] SideTargets(int side, int slot, Target target, bool linked = false) =>
+            teams[side].Mirrored && target == Target.BottomRight ? [3]
+                : TargetSlots(slot, ScreenTarget(target, teams[side].Mirrored), linked);
+        InventorySummary InventoryState(int side) => teams[side].Inventory ??= new(teams[side].Bag, _trinkets);
         var statCache=new Dictionary<(int,int,UInt128),double[]>();
         void Invalidate()=>statCache.Clear();
-        var queue = new PriorityQueue<(int Side,int Slot,long Epoch), (long Tick,long Order)>();
+        var queue = new PriorityQueue<(int Side,int Slot,long Epoch,int Remaining), (long Tick,long Order)>();
         var log = new List<string>(); long order = 0; long now = 0; long operations = 0;
         var tickSeconds = rules.Profile?.CombatTickSeconds??.01;
         if(probe is not null&&(!double.IsFinite(probe.Duration)||probe.Duration<tickSeconds||probe.Duration>120))throw new ArgumentOutOfRangeException(nameof(probe),"Analysis duration must be between one tick and 120 seconds.");
         long Tick(double seconds) => (long)Math.Round(seconds/tickSeconds,MidpointRounding.AwayFromZero);
+        var multicastSpacing = Tick(.1);
+        var scoreLimit = probe is not null ? Tick(probe.Duration) : long.MaxValue;
+        var pressureTick = probe?.PressureHp is not null ? Tick(1) : long.MaxValue;
+        void Observe()
+        {
+            if (audit is null) return;
+            audit(new(now * tickSeconds, ObserveSide(0), ObserveSide(1)));
+        }
+        GameBattleFrameSide ObserveSide(int side)
+        {
+            var team = teams[side];
+            return new(Math.Max(0, team.Hp), team.MaxHp, team.Shield, (long)team.Status[0], (long)team.Status[1], (long)team.Status[2],
+                team.Units.Select((unit, slot) => (unit, slot)).Where(entry => entry.unit is not null)
+                    .Select(entry => new GameBattleFrameUnit(entry.slot, entry.unit!.Alive, entry.unit.Casts,
+                        Stats(side, entry.slot).ToArray(), entry.unit.Damage, entry.unit.Healing, entry.unit.ShieldGranted)).ToArray());
+        }
         void Output(int side,string kind,double amount)
         {
-            if(side==0 && probe is not null && amount>0)probe.Output.Add(new(now*tickSeconds,kind,amount));
+            if(side==0 && probe is { ScoreOnly: false } && amount>0)probe.Output.Add(new(now*tickSeconds,kind,amount));
         }
         void Damage(int side,double amount,string kind,bool status)
         {
             var dealt=Absorb(amount,ref teams[side].Shield,status);teams[side].Hp-=dealt;
-            if(side==1 && probe is not null && dealt>0)probe.Damage.Add(new(now*tickSeconds,kind,dealt));
+            if (side != 1 || probe is null || dealt <= 0) return;
+            if (probe.ScoreOnly)
+            {
+                probe.TotalDamage += dealt;
+                if (probe.KillSeconds is null && probe.KillTargetHp is { } target && probe.TotalDamage >= target)
+                    probe.KillSeconds = now * tickSeconds;
+            }
+            else probe.Damage.Add(new(now*tickSeconds,kind,dealt));
         }
         void Snapshot()
         {
-            if(probe is null)return;
+            if(probe is null || probe.ScoreOnly)return;
             if(probe.StopQuietlyOnCancellation)
             {
                 if(probe.Cancellation.IsCancellationRequested)return;
@@ -70,14 +154,14 @@ public sealed class Combat(RulesManifest rules)
                 var counters=new Dictionary<string,double>(u.Unit.Counters);
                 foreach(var pair in u.Activations)counters["effect:"+pair.Key]=pair.Value;
                 foreach(var pair in u.Growth)counters[$"growth:{pair.Key.Trigger}/{pair.Key.Operation}/{pair.Key.Target}/{pair.Key.Stat}"]=pair.Value;
-                units.Add(new(slot,u.Unit.SpeciesId,u.Alive,stats,Definition(u).Cooldown is {} cd?EffectiveCooldown(cd,stats[(int)Stat.Speed],u.AddedCooldown+OngoingCooldown(0,slot)):null,counters));
+                units.Add(new(slot,u.Unit.SpeciesId,u.Alive,stats,BasisCooldown(u) is {} cd?EffectiveCooldown(cd,stats[(int)Stat.Speed],u.AddedCooldown+OngoingCooldown(0,slot)):null,counters));
             }
             double CastRate(int slot)
             {
                 if(teams[0].Units[slot] is not {Alive:true,Disabled:false} unit)return 0;
                 var repeats=(int)Stats(0,slot)[(int)Stat.Multicast];
                 if(unit.ParentSlot is {} parent)return repeats*CastRate(parent);
-                return Definition(unit).Cooldown is {} basis
+                return BasisCooldown(unit) is {} basis
                     ? repeats/EffectiveCooldown(basis,Stats(0,slot)[(int)Stat.Speed],unit.AddedCooldown+OngoingCooldown(0,slot)) : 0;
             }
             var outputRates=new Dictionary<string,double>{{"Burn",0},{"Poison",0},{"Shock",0},{"Heal",0},{"Shield",0}};
@@ -94,19 +178,19 @@ public sealed class Combat(RulesManifest rules)
         {
             teams[side].MaxHp = side == 0 ? player.MaxHp : opponent.MaxHp;
             teams[side].Hp = teams[side].MaxHp;
-            double flatHp=0,percentHp=0;
-            void HpBonus(Effect effect,Fighter? source=null){
-                if(effect.Percent)percentHp+=effect.Amount;else flatHp+=effect.Amount;
-                if(effect.ProgressCounter is { } key)flatHp+=source?.Unit.Counters.GetValueOrDefault("ability:"+key)??0;
+            var board = side == 0 ? player : opponent;
+            if (!board.IncludesOngoingHp)
+            {
+                var (flat, percent) = OngoingHp(board);
+                teams[side].MaxHp = (teams[side].MaxHp + flat) * (1 + percent);
+                teams[side].Hp = teams[side].MaxHp;
             }
-            foreach(var entry in teams[side].Bag)foreach(var effect in _trinkets[entry.Id].Effects.Where(x=>x.Operation==Operation.TeamHp && x.Trigger==Trigger.Ongoing))
-                for(var copy=0;copy<entry.Quantity;copy++)HpBonus(effect);
-            for(var slot=0;slot<6;slot++)if(teams[side].Units[slot] is {Alive:true,Disabled:false} u){
-                if(teams[side].Trainers.Contains("pyromaniac") && Types(u).Count()==1){u.Unit.AddedTypes=u.Unit.AddedTypes.Append("fire").Distinct().ToArray();u.PersistentUnit.AddedTypes=[..u.Unit.AddedTypes];}
-                foreach(var effect in Definition(u).Effects.Where(x=>x.Trigger==Trigger.Ongoing && x.Operation==Operation.TeamHp))
-                    for(var repeat=0;repeat<=OngoingRepeats(side,slot);repeat++)HpBonus(effect,u);
-            }
-            teams[side].MaxHp=(teams[side].MaxHp+flatHp)*(1+percentHp);teams[side].Hp=teams[side].MaxHp;
+            foreach (var unit in teams[side].Units)
+                if (unit is not null && teams[side].Trainers.Contains("pyromaniac") && Types(unit).Count() == 1)
+                {
+                    unit.Unit.AddedTypes = unit.Unit.AddedTypes.Append("fire").Distinct().ToArray();
+                    unit.PersistentUnit.AddedTypes = [..unit.Unit.AddedTypes];
+                }
         }
         for(var side=0;side<2;side++)
         {
@@ -118,19 +202,20 @@ public sealed class Combat(RulesManifest rules)
                     for(var repeat=0;repeat<=startRepeats;repeat++)Activate(side,slot,Trigger.BattleStart);
         }
         long nextBurn=Tick(.5),nextPoison=Tick(1),nextStorm=probe is null?Tick(30.5):long.MaxValue;
-        Snapshot();long nextSnapshot=Tick(.5);
+        Observe();
+        Snapshot();long nextSnapshot=probe is { ScoreOnly: true } ? long.MaxValue : Tick(.5);
+        var casts = new List<(int Side, int Slot, double[] Stats)>();
         while (true)
         {
             if(probe is {StopQuietlyOnCancellation:true} && probe.Cancellation.IsCancellationRequested)break;
-            Invalidate();
             if (++operations > 1_000_000) throw new InvalidOperationException("Battle event limit exceeded; preserve the seed for a rules audit.");
             var next = now+1;
             if (!reference)
             {
-                next = Math.Min(nextBurn, Math.Min(nextPoison,nextStorm));
+                next = Math.Min(pressureTick, Math.Min(nextBurn, Math.Min(nextPoison,nextStorm)));
                 if (queue.TryPeek(out _,out var priority)) next=Math.Min(next,priority.Tick);
                 for(var side=0;side<2;side++) for(var slot=0;slot<6;slot++)
-                    if(teams[side].Units[slot] is { Alive:true, ParentSlot:null } u && Definition(u).Cooldown is { } basis)
+                    if(teams[side].Units[slot] is { Alive:true, ParentSlot:null } u && BasisCooldown(u) is { } basis)
                     {
                         var remaining=EffectiveCooldown(basis,Stats(side,slot)[(int)Stat.Speed],u.AddedCooldown+OngoingCooldown(side,slot))-u.Progress;
                         next=Math.Min(next,now+Math.Max(1,(long)Math.Ceiling((remaining-1e-9)/tickSeconds)));
@@ -152,17 +237,22 @@ public sealed class Combat(RulesManifest rules)
                 foreach(var effect in Effects(Definition(u),Trigger.Timer))if(u.Timers.GetValueOrDefault(effect)+1e-9>=effect.IntervalSeconds)
                 {u.Timers[effect]=0;for(var repeat=0;repeat<=OngoingRepeats(side,slot);repeat++)Apply(side,slot,effect);}
             for(var side=0;side<2;side++) for(var slot=0;slot<6;slot++)
-                if(teams[side].Units[slot] is { Alive:true, ParentSlot:null } u && Definition(u).Cooldown is { } basis &&
+                if(teams[side].Units[slot] is { Alive:true, ParentSlot:null } u && BasisCooldown(u) is { } basis &&
                     u.Progress+1e-9>=EffectiveCooldown(basis,Stats(side,slot)[(int)Stat.Speed],u.AddedCooldown+OngoingCooldown(side,slot)))
                 { u.Progress=0; Sequence(side,slot); }
-            var casts=new List<(int Side,int Slot,double[] Stats)>();
+            casts.Clear();
             while(queue.TryPeek(out var casting,out var at) && at.Tick<=now)
             {
+                if (probe is { StopQuietlyOnCancellation: true } && probe.Cancellation.IsCancellationRequested) break;
                 queue.Dequeue();
                 if(teams[casting.Side].Units[casting.Slot] is not { Alive:true } caster || caster.Epoch!=casting.Epoch) continue;
+                if (casting.Remaining > 1)
+                    queue.Enqueue((casting.Side, casting.Slot, casting.Epoch, casting.Remaining - 1),
+                        (at.Tick + multicastSpacing, at.Order + 1));
                 // The game reads output stats before on_cast runs. Self buffs such as
                 // Mosslug's damage growth therefore affect the next cast, not this one.
                 var castStats=(double[])Stats(casting.Side,casting.Slot).Clone();
+                if (audit is not null) caster.Casts++;
                 Activate(casting.Side,casting.Slot,Trigger.Cast);
                 for(var child=0;child<6;child++)if(teams[casting.Side].Units[child] is {Alive:true} summoned && summoned.ParentSlot==casting.Slot)
                     Sequence(casting.Side,child,casting.Slot);
@@ -174,28 +264,55 @@ public sealed class Combat(RulesManifest rules)
             // All casts on this tick share the published Shield -> Damage -> Status -> Heal phases.
             foreach(var cast in casts)
             {var shield=Math.Max(0,cast.Stats[(int)Stat.Shield])*(1+.25*BagCount(cast.Side,"topaz-amulet"));teams[cast.Side].Shield+=shield;Output(cast.Side,"Shield",shield);if(cast.Stats[(int)Stat.Shield]>0)
-                {NotifyAllies(cast.Side,cast.Slot,Trigger.AllyShield,cast.Stats);NotifyAllies(cast.Side,cast.Slot,Trigger.TeamShield,cast.Stats,true);}}
+                {NotifyAllies(cast.Side,cast.Slot,Trigger.AllyShield,cast.Stats);NotifyAllies(cast.Side,cast.Slot,Trigger.TeamShield,cast.Stats,true);}
+                if (audit is not null && teams[cast.Side].Units[cast.Slot] is { } caster) caster.ShieldGranted += shield;
+            }
             foreach(var cast in casts)
             {
                 var enemy=teams[1-cast.Side]; var direct=Math.Max(0,cast.Stats[(int)Stat.Damage]);
                 if(direct>0) { Damage(1-cast.Side,enemy.Status[2],"Shock",true); Damage(1-cast.Side,direct,"Direct",false);
+                    if (audit is not null && teams[cast.Side].Units[cast.Slot] is { } caster) caster.Damage += direct;
                     NotifyAllies(cast.Side,cast.Slot,Trigger.TeamDamage,cast.Stats,true);}
             }
             foreach(var cast in casts) for(var status=0;status<3;status++)
             {
-                var amount=Math.Max(0,cast.Stats[(int)Stat.Burn+status]);teams[1-cast.Side].Status[status]+=amount;
-                Output(cast.Side,new[]{"Burn","Poison","Shock"}[status],amount);
-                if(amount>0) {NotifyAllies(cast.Side,cast.Slot,new[]{Trigger.AllyBurn,Trigger.AllyPoison,Trigger.AllyShock}[status],cast.Stats);
+                var amount = Math.Max(0, cast.Stats[(int)Stat.Burn + status]);
+                if (amount == 0) continue;
+                teams[1-cast.Side].Status[status] += amount;
+                Invalidate();
+                Output(cast.Side,StatusNames[status],amount);
+                if(amount>0) {NotifyAllies(cast.Side,cast.Slot,StatusTriggers[status],cast.Stats);
                     if(status==0)NotifyAllies(cast.Side,cast.Slot,Trigger.TeamBurn,cast.Stats,true);}
+            }
+            if (now >= pressureTick && probe?.PressureHp is { } pressure)
+            {
+                Damage(0, teams[0].Status[2], "Shock", true);
+                Damage(0, pressure * .05, "Direct", false);
+                var seconds = (int)Math.Round(now * tickSeconds);
+                if (seconds % 5 == 0 && seconds <= 25)
+                {
+                    teams[0].Status[0] += Math.Ceiling(pressure * .005);
+                    teams[0].Status[1] += Math.Ceiling(pressure * .0025);
+                    teams[0].Status[2] += Math.Ceiling(pressure * .01);
+                    Invalidate();
+                }
+                pressureTick += Tick(1);
             }
             foreach(var cast in casts) {
                 var healing=Math.Max(0,cast.Stats[(int)Stat.Heal])*(1+.25*BagCount(cast.Side,"sapphire-amulet"));
                 Output(cast.Side,"Heal",healing);
+                if (audit is not null && teams[cast.Side].Units[cast.Slot] is { } caster) caster.Healing += healing;
                 teams[cast.Side].Hp=Math.Min(teams[cast.Side].MaxHp,teams[cast.Side].Hp+healing);
             }
             if(now>=nextBurn)
             {
-                for(var side=0;side<2;side++) { Damage(side,teams[side].Status[0],"Burn",true); teams[side].Status[0]=Math.Max(0,teams[side].Status[0]-1); }
+                for (var side = 0; side < 2; side++)
+                {
+                    if (teams[side].Status[0] <= 0) continue;
+                    Damage(side, teams[side].Status[0], "Burn", true);
+                    teams[side].Status[0] = Math.Max(0, teams[side].Status[0] - 1);
+                    Invalidate();
+                }
                 nextBurn+=Tick(.5);
             }
             if(now>=nextPoison) { for(var side=0;side<2;side++)Damage(side,teams[side].Status[1],"Poison",true); nextPoison+=Tick(1); }
@@ -205,11 +322,21 @@ public sealed class Combat(RulesManifest rules)
                 foreach(var team in teams) team.Hp-=Absorb(damage,ref team.Shield,false);
                 nextStorm+=Tick(.5);
             }
+            Observe();
+            if (probe is { StopAtTarget: true, KillSeconds: not null }) break;
+            if (probe?.PressureHp is not null && teams[0].Hp <= 0)
+            {
+                probe.Survival = new(0, 0, now*tickSeconds);
+                break;
+            }
             if(probe is not null){
                 if(now>=nextSnapshot){Snapshot();nextSnapshot+=Tick(.5);}
                 if(now>=Tick(probe.Duration))break;
             }else if(teams.Any(x=>x.Hp<=0)) break;
         }
+        if (probe?.PressureHp is not null && probe.Survival is null)
+            probe.Survival = new(teams[0].Hp, teams[0].Shield, null);
+        if (probe is not null) probe.UsedRandomness = rng.State != seed;
         var won=teams[1].Hp<=0;
         if(probe is null){
             for(var slot=0;slot<6;slot++) if(teams[0].Units[slot] is not null) Activate(0,slot,won?Trigger.Victory:Trigger.Defeat);
@@ -218,10 +345,10 @@ public sealed class Combat(RulesManifest rules)
         return new(won,teams.All(x=>x.Hp<=0),now*tickSeconds,teams[0].Hp,teams[1].Hp,
             teams[0].Units.Select(x=>x is {TemporarySpawn:false}?x.PersistentUnit.Clone():null).ToArray(),[..teams[0].Bag],teams[0].Gold,[..log],new(teams[0].Counters),[..teams[0].PendingPurchaseBuffs]);
 
-        LevelDefinition Definition(Fighter u)
-        {
-            return _levels.GetOrAdd((u.Unit.SpeciesId,u.Unit.Level,u.Unit.Shiny),key=>LevelRules.Resolve(_species[key.Item1],key.Item2,key.Item3));
-        }
+        LevelDefinition Definition(Fighter u) => Level(u.Unit);
+        double? BasisCooldown(Fighter fighter) => fighter.Unit.CapturedCooldown is { } live &&
+            (live.SpeciesId, live.Level, live.Shiny) == (fighter.Unit.SpeciesId, fighter.Unit.Level, fighter.Unit.Shiny)
+            ? live.Seconds : Definition(fighter).Cooldown;
         bool Matches(Fighter u,Effect effect) => (effect.Operation==Operation.AddType || effect.Type is null || _matchTypes.GetOrAdd(effect.Type,text=>text.Split('|')).Any(type=>Types(u).Contains(type))) &&
             u.Unit.SpeciesId!=effect.ExcludeSpecies && (effect.Rarity is null || _species[u.Unit.SpeciesId].Rarity==effect.Rarity) &&
             (effect.MinimumLevel is null || u.Unit.Level>=effect.MinimumLevel) && (effect.MaximumLevel is null || u.Unit.Level<=effect.MaximumLevel) &&
@@ -231,7 +358,7 @@ public sealed class Combat(RulesManifest rules)
         UInt128 StatBit(int side,int slot,Stat stat) => (UInt128)1<<((side*6+slot)*9+(int)stat);
         double Scale(int side,int slot,Effect effect,UInt128 excludedDynamicStats=default,double[]? eventStats=null) => effect.Scale==EffectScale.None?1:EffectScaling.Factor(effect,teams[side].Units[slot]?.Unit,
             teams[side].Units.Select((x,i)=>(x,i)).Where(x=>x.x is {Alive:true} && (effect.Scale!=EffectScale.AlliedStat ||
-                x.i!=slot && x.x.Unit.SpeciesId!=effect.ScaleExcludeSpecies && TargetSlots(slot,effect.ScaleTarget,Linked(side)).Contains(x.i))).Select(x=>x.x!.Unit),teams[side].Bag,_species,
+                x.i!=slot && x.x.Unit.SpeciesId!=effect.ScaleExcludeSpecies && SideTargets(side,slot,effect.ScaleTarget,Linked(side)).Contains(x.i))).Select(x=>x.x!.Unit),teams[side].Bag,_species,
             unit=>ScaleStats(side,unit,effect.Trigger==Trigger.Ongoing?excludedDynamicStats | StatBit(side,slot,effect.Stat):excludedDynamicStats),
             teams[1-side].Status,teams[side].Counters.GetValueOrDefault("lives-lost"),_trinkets,eventStats,teams[side].Wins,
             teams[side].Counters.GetValueOrDefault("items-used-rarity-"+effect.ScaleRarity));
@@ -257,18 +384,17 @@ public sealed class Combat(RulesManifest rules)
             for(var actor=0;actor<6;actor++)
                 if(teams[side].Units[actor] is { Alive:true, Disabled:false } u)
                     foreach(var e in Effects(Definition(u),Trigger.Ongoing))
-                        if((e.IncludeSelf && actor==slot || TargetSlots(actor,e.Target,Linked(side)).Contains(slot)) &&
+                        if((e.IncludeSelf && actor==slot || SideTargets(side,actor,e.Target,Linked(side)).Contains(slot)) &&
                             (e.IncludeSelf && actor==slot || Matches(source,e)))
                         for(var repeat=0;repeat<=OngoingRepeats(side,actor);repeat++)Bonus(e,actor);
-            foreach(var entry in teams[side].Bag)
-                foreach(var e in _trinkets[entry.Id].Effects.Where(x=>x.Trigger==Trigger.Ongoing))
-                    if(Matches(source,e) && TargetSlots(1,e.Target).Contains(slot))
-                    for(var copy=0;copy<entry.Quantity;copy++)
-                    Bonus(e,slot);
+            foreach (var (effect, count) in InventoryState(side).Effects(Trigger.Ongoing))
+                if (effect.Operation is Operation.Add or Operation.Multiply && Matches(source, effect) &&
+                    SideTargets(side, 1, effect.Target).Contains(slot))
+                    for (var copy = 0; copy < count; copy++) Bonus(effect, slot);
             foreach(var trainer in teams[side].Trainers)
                 foreach(var e in _trainers[trainer].Effects.Where(x=>x.Trigger==Trigger.Ongoing))
                     if(Matches(source,e))Bonus(e,slot);
-            var cooldown=Definition(source).Cooldown??0;
+            var cooldown=BasisCooldown(source)??0;
             if(cooldown>=5){percentages[0]+=.2*BagCount(side,"small-club");for(var i=0;i<6;i++)percentages[i]+=.7*BagCount(side,"giant-club");}
             var types=Types(source).ToHashSet();
             var kaleidoscope=BagCount(side,"kaleidoscope");
@@ -294,16 +420,20 @@ public sealed class Combat(RulesManifest rules)
         {
             if(teams[side].Units[slot]!.ParentSlot is { } required && required!=parent)return;
             var repeats=(int)Stats(side,slot)[(int)Stat.Multicast];
-            for(var repeat=0;repeat<repeats;repeat++) queue.Enqueue((side,slot,teams[side].Units[slot]!.Epoch),(now+repeat*Tick(.1),order++));
+            var scheduled = (int)Math.Min(repeats, (scoreLimit - now) / multicastSpacing + 1);
+            if (scheduled <= 0) return;
+            // Reserve tie-break order for the entire sequence and queue only its next cast.
+            queue.Enqueue((side, slot, teams[side].Units[slot]!.Epoch, scheduled), (now, order));
+            order += scheduled;
         }
-        bool Linked(int side) => teams[side].Bag.Any(x=>_trinkets[x.Id].Effects.Any(e=>e.Operation==Operation.LinkAllies));
+        bool Linked(int side) => InventoryState(side).Linked;
         int OngoingRepeats(int side,int slot)
         {
             if(!_hasAmplifiers)return 0;
             var extra=0;
             for(var actor=0;actor<6;actor++)if(teams[side].Units[actor] is {Alive:true,Disabled:false} u)
                 foreach(var e in Definition(u).Effects.Where(x=>x.Trigger==Trigger.Ongoing && x.Operation==Operation.RepeatOngoing))
-                    if(TargetSlots(actor,e.Target,Linked(side)).Contains(slot))extra+=(int)e.Amount;
+                    if(SideTargets(side,actor,e.Target,Linked(side)).Contains(slot))extra+=(int)e.Amount;
             return extra;
         }
         double OngoingCooldown(int side,int slot)
@@ -313,20 +443,20 @@ public sealed class Combat(RulesManifest rules)
             for(var owner=0;owner<2;owner++)for(var actor=0;actor<6;actor++)if(teams[owner].Units[actor] is {Alive:true,Disabled:false} u)
                 foreach(var e in Definition(u).Effects.Where(x=>x.Trigger==Trigger.Ongoing && x.Operation==Operation.AddedCooldown))
                     if((e.Target==Target.BothRows || owner==side && e.Target!=Target.EnemyRow || owner!=side && e.Target==Target.EnemyRow) &&
-                        TargetSlots(actor,e.Target,Linked(owner)).Contains(slot))delta+=e.Amount*(1+OngoingRepeats(owner,actor));
+                        SideTargets(owner,actor,e.Target,Linked(owner)).Contains(slot))delta+=e.Amount*(1+OngoingRepeats(owner,actor));
             return delta;
         }
         void NotifyAllies(int side,int actor,Trigger trigger,double[]? eventStats=null,bool includeSelf=false)
         {
             for(var slot=0;slot<6;slot++)if((includeSelf || slot!=actor) && teams[side].Units[slot] is { Alive:true,Disabled:false } u)
-                React(side,slot,Definition(u).Effects.Where(x=>x.Trigger==trigger && EventMatches(side,slot,side,actor,x) &&
+                React(side,slot,Effects(Definition(u),trigger).Where(x=>EventMatches(side,slot,side,actor,x) &&
                     (x.EventType is null||_species[teams[side].Units[actor]!.Unit.SpeciesId].Types.Concat(teams[side].Units[actor]!.Unit.AddedTypes).Contains(x.EventType))).ToArray(),eventStats,actor);
         }
         bool EventMatches(int watcherSide,int watcherSlot,int actorSide,int actorSlot,Effect e)
         {
             var actor=teams[actorSide].Units[actorSlot]!.Unit;
             return actor.SpeciesId!=e.EventExcludeSpecies && (e.EventMinimumLevel is null || actor.Level>=e.EventMinimumLevel) &&
-                (!e.EventAdjacent || actorSide==watcherSide && TargetSlots(watcherSlot,Target.Adjacent,Linked(watcherSide)).Contains(actorSlot));
+                (!e.EventAdjacent || actorSide==watcherSide && SideTargets(watcherSide,watcherSlot,Target.Adjacent,Linked(watcherSide)).Contains(actorSlot));
         }
         void NotifyKnockout(int actorSide,int actorSlot,double[] before)
         {
@@ -344,7 +474,6 @@ public sealed class Combat(RulesManifest rules)
         }
         void Activate(int side,int slot,Trigger trigger)
         {
-            Invalidate();
             if(teams[side].Units[slot] is not { } source || source.Disabled || (!source.Alive && trigger!=Trigger.Knockout && trigger!=Trigger.Victory && trigger!=Trigger.Defeat)) return;
             var origin=source.Unit.SpeciesId;var definition=Definition(source);
             var repeats=definition.AbilityTrigger==Trigger.Ongoing?OngoingRepeats(side,slot):0;
@@ -354,15 +483,15 @@ public sealed class Combat(RulesManifest rules)
         }
         void Inventory(int side,int slot,Trigger trigger)
         {
-            foreach(var entry in teams[side].Bag.ToArray())
-                foreach(var effect in _trinkets[entry.Id].Effects.Where(x=>x.Trigger==trigger))
-                    for(var count=0;count<entry.Quantity;count++) Apply(side,slot,effect);
+            foreach (var (effect, count) in InventoryState(side).Effects(trigger))
+                for (var copy = 0; copy < count; copy++) Apply(side, slot, effect);
             foreach(var trainer in teams[side].Trainers)
                 foreach(var effect in _trainers[trainer].Effects.Where(x=>x.Trigger==trigger || trainer=="black-belt" && trigger is Trigger.Victory or Trigger.Defeat))Apply(side,slot,effect);
         }
         void Apply(int side,int slot,Effect effect,double[]? eventStats=null,int eventSlot=-1)
         {
-            Invalidate();
+            var affectsStats = effect.Operation != Operation.Charge;
+            if (affectsStats) Invalidate();
             try{
             if(++operations>1_000_000) throw new InvalidOperationException("Recursive trigger limit exceeded.");
             if(effect.Operation is Operation.InventoryRule or Operation.TrainerRule){Special(side,slot,effect.DefinitionId!);return;}
@@ -398,9 +527,16 @@ public sealed class Combat(RulesManifest rules)
                 teams[side].Counters["forced-berries"]=teams[side].Counters.GetValueOrDefault("forced-berries")+effect.Amount;
                 return;
             }
+            if (effect is { Operation: Operation.Charge, Target: Target.Self } &&
+                teams[side].Units[slot] is { Alive: true } charged)
+            {
+                if (charged.Unit.SpeciesId is not ("dracana" or "ironcore" or "steamscuttle") &&
+                    (effect.IncludeSelf || Matches(charged, effect))) charged.Progress += effect.Amount;
+                return;
+            }
             var enemy=effect.Target is Target.Opposite or Target.Enemies or Target.RandomEnemy or Target.EnemyRow;
             var recipientSide=enemy?1-side:side; var team=teams[recipientSide];
-            var slots=(effect.Target==Target.Actor?(eventSlot>=0?[eventSlot]:throw new InvalidOperationException("Actor target requires an event.")):TargetSlots(slot,effect.Target,Linked(side)))
+            var slots=(effect.Target==Target.Actor?(eventSlot>=0?[eventSlot]:throw new InvalidOperationException("Actor target requires an event.")):SideTargets(side,slot,effect.Target,Linked(side)))
                 .Concat(effect.IncludeSelf?[slot]:[]).Distinct()
                 .Where(i=>team.Units[i] is { } u && (u.Alive||effect.Operation==Operation.Revive || effect.ReviveTargets || effect.Trigger is Trigger.Victory or Trigger.Defeat || effect.Trigger==Trigger.Knockout && effect.Target==Target.Self ||
                     effect.Operation==Operation.ActivateAbility && effect.SubjectTrigger is Trigger.Victory or Trigger.Defeat) &&
@@ -439,6 +575,7 @@ public sealed class Combat(RulesManifest rules)
                         (!x.Unique||!teams[side].Bag.Any(b=>b.Id==x.Id))).ToArray();
                     if(pool.Length==0)throw new InvalidOperationException("No eligible combat trinket grant.");
                     var definition=pool[rng.Index(pool.Length)];teams[side].Bag.Add(new(definition.Id,1,teams[side].NextInventoryInstance++));
+                    teams[side].Inventory = null;
                     for(var actor=0;actor<6;actor++)Activate(side,actor,Trigger.TrinketGained);
                 }
                 return;
@@ -447,7 +584,7 @@ public sealed class Combat(RulesManifest rules)
             { for(var i=0;i<3;i++) teams[side].Status[i]=Math.Max(0,teams[side].Status[i]-(effect.Percent?Math.Ceiling(teams[side].Status[i]*effect.Amount):effect.Amount)); return; }
             foreach(var recipient in slots)
             {
-                Invalidate();
+                if (affectsStats) Invalidate();
                 var unit=team.Units[recipient]!;
                 switch(effect.Operation)
                 {
@@ -521,12 +658,22 @@ public sealed class Combat(RulesManifest rules)
                     default: throw new NotSupportedException($"Combat handler missing: {effect.Operation}");
                 }
             }
-            }finally{Invalidate();}
+            }finally{if (affectsStats) Invalidate();}
         }
-        int BagCount(int side,string id)=>teams[side].Bag.Where(x=>x.Id==id).Sum(x=>x.Quantity);
+        int BagCount(int side,string id) => InventoryState(side).Counts.GetValueOrDefault(id);
         IEnumerable<string> Types(Fighter unit)=>UnitTypes.Resolve(unit.Unit,_species);
         double Gain(int side,Stat stat,double value)=>stat is Stat.Multicast or Stat.Speed?value:value*(1+.8*BagCount(side,"zenith-stone"));
-        void Consume(int side,string id){Invalidate();var index=teams[side].Bag.FindIndex(x=>x.Id==id);if(index<0)return;var entry=teams[side].Bag[index];if(entry.Quantity<=1)teams[side].Bag.RemoveAt(index);else teams[side].Bag[index]=entry with {Quantity=entry.Quantity-1};}
+        void Consume(int side, string id)
+        {
+            var team = teams[side];
+            var index = team.Bag.FindIndex(entry => entry.Id == id);
+            if (index < 0) return;
+            var entry = team.Bag[index];
+            if (entry.Quantity <= 1) team.Bag.RemoveAt(index);
+            else team.Bag[index] = entry with { Quantity = entry.Quantity - 1 };
+            team.Inventory = null;
+            Invalidate();
+        }
         void LevelChanged(int side,int slot){
             var unit=teams[side].Units[slot]!;
             if(unit.Unit.Level==3 && BagCount(side,"mega-upgrade-disc")>0){Consume(side,"mega-upgrade-disc");Apply(side,slot,new(Trigger.None,Operation.LevelUp,Target.Self,Permanent:true));}
@@ -547,7 +694,7 @@ public sealed class Combat(RulesManifest rules)
                 case "candy-jar":
                     foreach(var i in alive)if(_species[team.Units[i]!.Unit.SpeciesId].Rarity<=1 && team.Units[i]!.Unit.Level<3){while(team.Units[i]!.Unit.Level<3)Apply(side,i,new(Trigger.None,Operation.LevelUp,Target.Self,Permanent:true));}return;
                 case "metal-bat":
-                    var best=alive.OrderByDescending(i=>Definition(team.Units[i]!).Cooldown??0).FirstOrDefault(-1);
+                    var best=alive.OrderByDescending(i=>BasisCooldown(team.Units[i]!)??0).FirstOrDefault(-1);
                     if(best>=0)Apply(side,best,new(Trigger.None,Operation.Multiply,Target.Self,Amount:.5));return;
                 case "fake-diamond":if(BagCount(side,id)>0){team.Gold+=40;Consume(side,id);}return;
                 case "locked-box":if(BagCount(side,id)>0){Consume(side,id);Apply(side,slot,new(Trigger.None,Operation.GrantTrinket,Target.All,Rarity:HighestRarity(side),NonUnique:true));}return;
@@ -569,6 +716,7 @@ public sealed class Combat(RulesManifest rules)
     private sealed class Fighter(Unit unit)
     {
         public Unit Unit=unit.Clone(),PersistentUnit=unit.Clone(); public bool Alive=true,Disabled;public long Epoch;
+        public int Casts; public double Damage, Healing, ShieldGranted;
         public double Progress;public double DamageAdjustment; public double AddedCooldown=0; public int Protect; public double[] Temporary=new double[9];
         public HashSet<Effect> ConsumedEffects=[];
         public Dictionary<Effect,double> Growth=[];
@@ -576,9 +724,22 @@ public sealed class Combat(RulesManifest rules)
         public Dictionary<string,double> Activations=[];
         public int? ParentSlot;public bool TemporarySpawn;
     }
+    private sealed class InventorySummary(List<BagEntry> entries, Dictionary<string, InventoryDefinition> definitions)
+    {
+        private readonly ILookup<Trigger, (Effect Effect, int Count)> _effects = entries
+            .SelectMany(entry => definitions[entry.Id].Effects.Select(effect => (Effect: effect, Count: entry.Quantity)))
+            .ToLookup(entry => entry.Effect.Trigger);
+        public Dictionary<string, int> Counts { get; } = entries.GroupBy(entry => entry.Id)
+            .ToDictionary(group => group.Key, group => group.Sum(entry => entry.Quantity));
+        public bool Linked { get; } = entries.Any(entry => definitions[entry.Id].Effects.Any(effect => effect.Operation == Operation.LinkAllies));
+        public IEnumerable<(Effect Effect, int Count)> Effects(Trigger trigger) => _effects[trigger];
+    }
+
     private sealed class Side(FrozenBoard board)
     {
         public Fighter?[] Units=board.Team.Select(x=>x is null?null:new Fighter(x)).ToArray();
+        public bool Mirrored = board.Mirrored;
+        public InventorySummary? Inventory;
         public double MaxHp,Hp,Shield,Gold; public double[] Status=new double[3]; public List<BagEntry> Bag=[..board.Bag];
         public Dictionary<string,double> Counters=board.Counters is null?[]:new(board.Counters);
         public List<PurchaseBuff> PendingPurchaseBuffs=[];

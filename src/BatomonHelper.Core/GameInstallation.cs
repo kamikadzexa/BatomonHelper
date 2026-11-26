@@ -162,6 +162,24 @@ public sealed class GameInstallation
         finally { Directory.Delete(stage, true); }
     }
 
+    public static string? DetectSteamBuild(int processId)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+            if (process.MainModule?.FileName is not { } executable) return null;
+            var game = new FileInfo(executable).Directory;
+            if (game?.Parent is not { Name: "common", Parent: { } steamApps }) return null;
+            var manifest = File.ReadAllText(Path.Combine(steamApps.FullName, $"appmanifest_{SteamAppId}.acf"));
+            var installDir = System.Text.RegularExpressions.Regex.Match(manifest, """(?:"installdir")\s+"([^"]+)" """.TrimEnd());
+            var build = System.Text.RegularExpressions.Regex.Match(manifest, """(?:"buildid")\s+"(\d+)" """.TrimEnd());
+            return installDir.Groups[1].Value.Equals(game.Name, StringComparison.OrdinalIgnoreCase) && build.Success
+                ? build.Groups[1].Value : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException
+            or InvalidOperationException or System.ComponentModel.Win32Exception) { return null; }
+    }
+
     public static IEnumerable<string> FindSteamGames(IEnumerable<string> steamRoots)
     {
         foreach (var root in steamRoots.Distinct(StringComparer.OrdinalIgnoreCase))
@@ -185,13 +203,17 @@ public sealed class GameInstallation
     }
 }
 
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<PlacementObjective>))]
+public enum PlacementObjective { FastestKill, MostHpAndShield }
+
 public sealed record HelperSettings(
     string? GameDirectory = null,
     bool ShowDpsCounters = true,
     bool ShowBestDpsBoardSuggestions = true,
     bool ShowBattleOutcome = true,
     bool AutoInstallUpdates = false,
-    bool AlwaysOnTop = true)
+    bool AlwaysOnTop = true,
+    PlacementObjective PlacementObjective = PlacementObjective.FastestKill)
 {
     public static string DefaultPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BatomonHelper", "settings.json");
     public static HelperSettings Load(string? path = null)

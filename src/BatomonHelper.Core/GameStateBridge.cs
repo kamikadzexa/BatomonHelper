@@ -5,20 +5,20 @@ namespace BatomonHelper.Core;
 
 public sealed record GameStateMessage(int ProtocolVersion, long Sequence, DateTimeOffset UpdatedAt,
     int ProcessId, string Phase, BoardSnapshot? Board, string? Error = null, GameCombatState? Combat = null,
-    GameBattleState? Battle = null);
+    GameBattleState? Battle = null, GameBattleState? PreviousBattle = null);
 
-public sealed record GameBattleSide(int Day, int TeamHp, string TrainerId,
+public sealed record GameBattleSide(int Day, long TeamHp, string TrainerId,
     System.Collections.Immutable.ImmutableArray<BoardSlot> Team, GameCombatState Combat, int Rank = 1, int Wins = 0);
 /// <summary>A sampled, in-progress side of the game's own visual battle simulation.</summary>
 public sealed record GameBattleFrameSide(double Health, double MaximumHealth, double Shield,
-    int Burn, int Poison, int Shock, GameBattleFrameUnit[] Units);
+    long Burn, long Poison, long Shock, GameBattleFrameUnit[] Units, double? RawHealth = null);
 /// <summary>Live values are deliberately raw game values, in the same order as <see cref="GameCombatUnit.PermanentStats"/>.</summary>
 public sealed record GameBattleFrameUnit(int Slot, bool Alive, int Casts, double[] Stats,
     double DamageDealt, double HealingDone, double ShieldGranted);
 /// <summary>One read-only bridge sample, normally emitted every half second during visual playback.</summary>
 public sealed record GameBattleFrame(double ElapsedSeconds, GameBattleFrameSide Player, GameBattleFrameSide Opponent);
 public sealed record GameBattleState(GameBattleSide Player, GameBattleSide Opponent, GameBattleOutcome? Outcome = null,
-    GameBattleFrame? Frame = null);
+    GameBattleFrame? Frame = null, string? FightId = null);
 public sealed record GameBattleOutcome(bool PlayerWon);
 
 public sealed record GameCombatUnit(int Slot, double[] PermanentStats, double? BaseCooldown, string[] AddedTypes);
@@ -64,15 +64,16 @@ public sealed class GameStateBridge
             || message.UpdatedAt - now > TimeSpan.FromSeconds(5))
             throw new InvalidDataException("Bridge heartbeat is stale or invalid. Open Game setup to repair the mod, then restart the game.");
         if (message.Error is { Length: > 0 }) throw new InvalidDataException(message.Error);
+        if (message.PreviousBattle is { } previous)
+        {
+            try { message = message with { PreviousBattle = ResolveBattle(previous) }; }
+            catch (InvalidDataException) { message = message with { PreviousBattle = null }; }
+        }
         if (message.Phase == "other") return message with { Board = null };
         if (message.Phase == "battle")
         {
             var battle = message.Battle ?? throw new InvalidDataException("The bridge did not supply battle-start teams.");
-            var player = ResolveSide(battle.Player);
-            var opponent = ResolveSide(battle.Opponent);
-            if (player.Day != opponent.Day) throw new InvalidDataException("Battle teams have different days.");
-            var frame = battle.Frame is null ? null : ResolveFrame(battle.Frame);
-            return message with { Board = null, Battle = battle with { Player = player, Opponent = opponent, Frame = frame } };
+            return message with { Board = null, Battle = ResolveBattle(battle) };
         }
         if (message.Phase != "shop") throw new InvalidDataException("Unknown bridge phase.");
         var board = message.Board ?? throw new InvalidDataException("The bridge did not supply a shop board.");
@@ -92,7 +93,6 @@ public sealed class GameStateBridge
         // Game IDs and wiki IDs differ for a few renamed creatures. Resolve only unique exact aliases.
         board = board with
         {
-            ShopRank = board.ShopRank is int rank ? ShopRankOdds.Normalize(rank) : null,
             TrainerId = ResolveTrainer(board.TrainerId),
             Team = Resolve(board.Team),
             Bench = Resolve(board.Bench),
@@ -102,15 +102,27 @@ public sealed class GameStateBridge
         if (!validation.IsValid) throw new InvalidDataException("Game state could not be applied: " + string.Join(" ", validation.Errors));
         return message with { Board = board };
 
+        GameBattleState ResolveBattle(GameBattleState battle)
+        {
+            var player = ResolveSide(battle.Player);
+            var opponent = ResolveSide(battle.Opponent);
+            if (player.Day != opponent.Day) throw new InvalidDataException("Battle teams have different days.");
+            GameBattleFrame? frame = null;
+            try { if (battle.Frame is { } sample) frame = ResolveFrame(sample); }
+            catch (InvalidDataException) { }
+            return battle with { Player = player, Opponent = opponent, Frame = frame };
+        }
+
         GameBattleSide ResolveSide(GameBattleSide side)
         {
+            if (side is null) throw new InvalidDataException("Missing battle-start team.");
             var trainer = ResolveTrainer(side.TrainerId);
             var team = Resolve(side.Team);
-            if (side.Day is < 1 or > 999 || side.TeamHp <= 0 ||
+            if (side.Day < 1 || side.TeamHp <= 0 ||
                 !catalog.Trainers.Any(value => value.Id == trainer) || side.Combat is null ||
                 team.Length != 6 || !team.Select(slot => slot.Index).SequenceEqual(Enumerable.Range(0, 6)) ||
                 team.Any(slot => slot.Occupancy != SlotOccupancy.Empty &&
-                    (slot.Occupancy != SlotOccupancy.Creature || slot.Level is null or < 1 or > 4 ||
+                    (slot.Occupancy != SlotOccupancy.Creature || slot.Level is null or < 1 ||
                      slot.Variant is not (ShinyState.Normal or ShinyState.Shiny) ||
                      !catalog.Monsters.Any(value => value.Id == slot.DefinitionId))))
                 throw new InvalidDataException("Invalid battle-start team.");
@@ -126,8 +138,8 @@ public sealed class GameStateBridge
 
         GameBattleFrameSide ResolveFrameSide(GameBattleFrameSide side)
         {
-            if (!double.IsFinite(side.Health) || !double.IsFinite(side.MaximumHealth) || !double.IsFinite(side.Shield) ||
-                side.Health < 0 || side.MaximumHealth < 0 || side.Health > side.MaximumHealth + .001 || side.Shield < 0 ||
+            if (side is null || !double.IsFinite(side.Health) || !double.IsFinite(side.MaximumHealth) || !double.IsFinite(side.Shield) ||
+                side.RawHealth is { } rawHealth && !double.IsFinite(rawHealth) || side.Health < 0 || side.MaximumHealth < 0 || side.Health > side.MaximumHealth + .001 || side.Shield < 0 ||
                 side.Burn < 0 || side.Poison < 0 || side.Shock < 0 || side.Units is null || side.Units.Length > 6 ||
                 side.Units.Any(unit => unit is null || unit.Slot is < 0 or > 5 || unit.Casts < 0 || unit.Stats is null ||
                     unit.Stats.Length != 9 || unit.Stats.Any(value => !double.IsFinite(value)) ||

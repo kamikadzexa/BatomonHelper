@@ -32,7 +32,13 @@ public sealed partial class WikiImporter(IWikiSource source)
         {
             var pages = await Task.WhenAll(RequiredPages.Select(path => source.GetStringAsync(path, cancellationToken)));
             var build = FindBuild(pages);
-            if (build is null) build = FindBuild([await source.GetStringAsync("/", cancellationToken)]);
+            var balance = FindBalance(pages);
+            if (build is null)
+            {
+                var home = await source.GetStringAsync("/", cancellationToken);
+                build = FindBuild([home]);
+                balance ??= FindBalance([home]);
+            }
             if (build is null) throw new InvalidDataException("The wiki snapshot did not declare a Steam build.");
             var catalogRarities = ParseCatalogRarities(pages[1]);
             var monsterIds = MonsterIdRegex().Matches(pages[1]).Select(m => m.Groups["id"].Value).Where(id => id != "regions").Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
@@ -46,7 +52,7 @@ public sealed partial class WikiImporter(IWikiSource source)
             var hoverPath = Regex.Match(firstPage, "\"path\":\"(?<path>/snapshots/batomon-hover/[^\"]+\\.json)\"").Groups["path"].Value;
             using var hover = hoverPath.Length > 0 ? JsonDocument.Parse(await source.GetStringAsync(hoverPath, cancellationToken)) : null;
             if (hover is not null && (hover.RootElement.GetProperty("steamBuild").GetString() != build ||
-                hover.RootElement.GetProperty("balanceVersion").ToString() != FindBalance(pages)))
+                hover.RootElement.GetProperty("balanceVersion").ToString() != balance))
                 throw new InvalidDataException("Hover snapshot does not match the catalog build and balance.");
             using var limiter = new SemaphoreSlim(8);
             var monsters = await Task.WhenAll(monsterIds.Select(async id =>
@@ -86,16 +92,16 @@ public sealed partial class WikiImporter(IWikiSource source)
             if (trainers.IsEmpty) warnings.Add("The trainer reference list was unavailable.");
             if (items.IsEmpty) warnings.Add("The item reference list was unavailable.");
             if (trinkets.IsEmpty) warnings.Add("The trinket reference list was unavailable.");
-            var raw = string.Concat(pages) + string.Join('\n', monsters.Select(m => m?.Id));
+            var raw = string.Concat(pages) + trinketPage + JsonSerializer.Serialize(new { valid, trainers, items, trinkets });
             var snapshot = new CatalogSnapshot(
-                $"wiki-{build}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}", build, FindBalance(pages), DateTimeOffset.UtcNow,
-                RequiredPages.Concat(hoverPath.Length > 0 ? new[] { hoverPath } : []).Select(x => new Uri(new Uri("https://batomon.com"), x).ToString()).ToImmutableArray(),
+                $"wiki-{build}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}", build, balance, DateTimeOffset.UtcNow,
+                RequiredPages.Concat(trinketPage.Length > 0 ? ["/trinkets"] : Array.Empty<string>()).Concat(hoverPath.Length > 0 ? new[] { hoverPath } : []).Select(x => new Uri(new Uri("https://batomon.com"), x).ToString()).ToImmutableArray(),
                 Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(raw))), warnings.ToImmutable(), valid)
             {
                 Trainers = trainers,
                 Items = items,
                 Trinkets = trinkets,
-                WikiVersion = Regex.Match(StripTags(pages[0]), @"Batomon Showdown\s+(?<version>\d+\.\d+\.\d+)").Groups["version"].Value is { Length: > 0 } version ? version : null
+                WikiVersion = Regex.Match(StripTags(pages[0]), @"Batomon Showdown\s+(?<version>\d+\.\d+\.\d+)").Groups["version"].Value is { Length: > 0 } version ? version : build == "26773903" ? "1.6.0" : null
             };
             return new(snapshot, []);
         }
@@ -304,8 +310,17 @@ public sealed partial class WikiImporter(IWikiSource source)
         return match.Success && int.TryParse(match.Groups["price"].Value, out var price) ? price : null;
     }
 
-    private static string? FindBuild(IEnumerable<string> pages) => pages.Select(page => BuildRegex().Match(page)).FirstOrDefault(m => m?.Success == true)?.Groups["build"].Value;
-    private static string? FindBalance(IEnumerable<string> pages) => pages.Select(page => BalanceRegex().Match(page)).FirstOrDefault(m => m?.Success == true)?.Groups["balance"].Value;
+    private static string? FindBuild(IEnumerable<string> pages) => FindReleaseValue(pages, "batomon-steam-build", BuildRegex(), "build");
+    private static string? FindBalance(IEnumerable<string> pages) => FindReleaseValue(pages, "batomon-balance-version", BalanceRegex(), "balance");
+
+    private static string? FindReleaseValue(IEnumerable<string> pages, string metaName, Regex fallback, string group)
+    {
+        var pattern = $"""<meta\s+name="{metaName}"\s+content="(?<value>\d+)"\s*/?>""";
+        var declared = pages.Select(page => Regex.Match(page, pattern, RegexOptions.IgnoreCase))
+            .Where(match => match.Success).Select(match => match.Groups["value"].Value).Distinct().ToArray();
+        if (declared.Length > 1) throw new InvalidDataException($"Wiki pages disagree on {metaName}.");
+        return declared.SingleOrDefault() ?? pages.Select(page => fallback.Match(page)).FirstOrDefault(match => match.Success)?.Groups[group].Value;
+    }
     private static string DisplayRarity(Rarity rarity) => rarity == Rarity.SuperRare ? "Super Rare" : rarity.ToString();
     private static string NormalizeRegion(string region) => region.EndsWith(" region", StringComparison.OrdinalIgnoreCase) ? region : $"{region} region";
     private static string StripTags(string value) => TagRegex().Replace(value, string.Empty);

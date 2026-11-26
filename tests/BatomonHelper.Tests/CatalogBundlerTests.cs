@@ -22,9 +22,12 @@ public sealed class CatalogBundlerTests
             var pages = new Dictionary<string, string>
             {
                 ["/"] = "Balance 24 Steam build 25600878",
+                ["/wiki"] = """<meta name="batomon-steam-build" content="25600878"><meta name="batomon-balance-version" content="24"><main>Historical Balance 23 Steam build 25274443</main>""",
                 ["/batomon"] = "<a href=\"/batomon/alpha\"><div data-rarity=\"common\"></div></a>",
                 ["/mechanics/monster-pool"] = "shop", ["/trainers"] = "<a href=\"/trainers/fighter\">Fighter</a>",
-                ["/items"] = "", ["/trinkets"] = "", ["/batomon/regions/jinto"] = "", ["/batomon/regions/pantra"] = "",
+                ["/items"] = "<a href=\"/items/sample\">Sample</a>", ["/trinkets"] = "<a href=\"/trinkets/sample\">Sample</a>",
+                ["/items/sample"] = "<main><h1>Sample</h1><img src=\"/game/25600878/item/sample.png\"></main>",
+                ["/trinkets/sample"] = "<main><h1>Sample</h1><img src=\"/game/25600878/trinket/sample.png\"><div class=\"game-ability\">Gain Shield.</div></main>", ["/batomon/regions/jinto"] = "", ["/batomon/regions/pantra"] = "",
                 ["/batomon/alpha"] = "<main><h1>Alpha</h1><p>Common Starter</p><img alt=\"Alpha sprite\" src=\"/game/25600878/monster/internal_001.png\"><script>\"/game/25600878/monster/other_filename_shiny.png\"</script></main>",
                 ["/trainers/fighter"] = "<main><h1>Fighter</h1><img alt=\"Fighter sprite\" src=\"/game/25600878/trainer/portrait_02.png\"></main>"
             };
@@ -57,7 +60,7 @@ public sealed class CatalogBundlerTests
     public async Task Every_declared_offline_asset_exists_including_portraits_and_shiny_art()
     {
         var catalog = (await new SnapshotRepository(Path.Combine(AppContext.BaseDirectory, "Fixtures", "batomon-wiki.db"), true).GetLatestAsync())!;
-        Assert.Equal("26572818", catalog.DeclaredSteamBuild); Assert.Equal("27", catalog.Balance);
+        Assert.Equal("26773903", catalog.DeclaredSteamBuild); Assert.Equal("28", catalog.Balance);
         Assert.Equal("The first shop rolled each day contains a Potion.", catalog.Trainers.Single(t => t.Id == "witch").RuleText);
         Assert.Equal(54, catalog.Items.Length); Assert.Equal(95, catalog.Trinkets.Length);
         Assert.All(catalog.Monsters, monster => Assert.NotNull(monster.Rules));
@@ -65,7 +68,8 @@ public sealed class CatalogBundlerTests
         Assert.Equal(85, catalog.Monsters.Count(monster => monster.Regions.Contains("Jinto region")));
         Assert.Equal(25, catalog.Trainers.Length); Assert.Equal(143, catalog.Monsters.Count(monster => monster.ShinySpritePath is not null));
         var paths = catalog.Monsters.SelectMany(monster => new[] { monster.SpritePath, monster.ShinySpritePath })
-            .Concat(catalog.Trainers.Select(trainer => trainer.SpritePath)).Concat(catalog.Items.Select(item => item.SpritePath));
+            .Concat(catalog.Trainers.Select(trainer => trainer.SpritePath)).Concat(catalog.Items.Select(item => item.SpritePath))
+            .Concat(catalog.Trinkets.Select(trinket => trinket.SpritePath));
         foreach (var path in paths.Where(path => path is not null)) Assert.True(File.Exists(Path.Combine(AppContext.BaseDirectory, path!)), path);
         Assert.Equal(5, catalog.Warnings.Count(warning => warning.StartsWith("No shiny sprite declared", StringComparison.Ordinal)));
     }

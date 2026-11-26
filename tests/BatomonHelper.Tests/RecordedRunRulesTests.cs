@@ -25,11 +25,11 @@ public sealed class RecordedRunRulesTests
         }
         if (!expectedWin)
         {
-            // The recorded Alpinine has "all" types. Balance 27 Rainbow Berry grants 13 * 5 damage.
+            // The recorded Alpinine has "all" types. Current Balance 28 Rainbow Berry grants 13 * 4 damage.
             var probe = new CombatProbe { Duration = 1 };
             new Combat(opponent.Rules).ResolveBattle(opponent.Board, player.Board, 69, probe: probe);
             var pebbler = probe.Frames[0].Units.Single(unit => unit.Species == "pebbler");
-            Assert.Equal(65, pebbler.Stats[(int)Stat.Damage]);
+            Assert.Equal(52, pebbler.Stats[(int)Stat.Damage]);
         }
     }
 

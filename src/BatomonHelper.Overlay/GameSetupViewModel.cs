@@ -85,6 +85,11 @@ public sealed class GameSetupViewModel : INotifyPropertyChanged
         get => _settings.ShowBestDpsBoardSuggestions;
         set => SaveOptions(_settings with { ShowBestDpsBoardSuggestions = value });
     }
+    public PlacementObjective PlacementObjective
+    {
+        get => _settings.PlacementObjective;
+        set => SaveOptions(_settings with { PlacementObjective = value });
+    }
     public bool ShowBattleOutcome
     {
         get => _settings.ShowBattleOutcome;

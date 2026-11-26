@@ -19,6 +19,7 @@ public sealed class SimulationTests
     public void Cooldown_charge_floor_and_status_shield_paths_are_separate()
     {
         Assert.Equal(3,Combat.EffectiveCooldown(6,1));
+        Assert.Equal(2.1, Combat.EffectiveCooldown(2.5, .2));
         Assert.Equal(.1,Combat.EffectiveCooldown(1,1000));
         double shield=10;
         Assert.Equal(7,Combat.Absorb(20,ref shield,true),8); Assert.Equal(0,shield);

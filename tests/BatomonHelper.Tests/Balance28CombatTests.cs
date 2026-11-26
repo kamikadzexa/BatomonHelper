@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 
 namespace BatomonHelper.Tests;
 
-public sealed class Balance27CombatTests
+public sealed class Balance28CombatTests
 {
     private static RulesManifest Rules() => JsonSerializer.Deserialize<RulesManifest>(File.ReadAllText(
         Path.Combine(AppContext.BaseDirectory, "assets", "simulation", "combat-rules.json")))!;
@@ -16,7 +16,8 @@ public sealed class Balance27CombatTests
     public void New_trainer_and_balance_values_work_in_live_projections(bool reference)
     {
         var rules = Rules();
-        Assert.Equal("26572818", rules.Build); Assert.Equal("27", rules.Balance);
+        Assert.Equal("26773903", rules.Build); Assert.Equal("28", rules.Balance);
+        Assert.Equal(453800, rules.Parameters.DailyHp[19]);
         Assert.Empty(rules.Issues); Assert.True(rules.CombatReady);
         Assert.Equal(148, rules.Species.Length); Assert.Equal(24, rules.Trainers.Length); Assert.Equal(95, rules.Trinkets.Length);
         Assert.Equal(5, rules.Species.Single(s => s.Id == "lignite").Normal[0].Cooldown);

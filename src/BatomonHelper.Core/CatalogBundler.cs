@@ -53,7 +53,8 @@ public sealed class CatalogBundler(HttpClient client)
             await repository.InitializeAsync(cancellationToken);
             await repository.SaveAsync(snapshot, cancellationToken);
             var loaded = await repository.GetLatestAsync(cancellationToken);
-            if (loaded?.Monsters.Length != snapshot.Monsters.Length || loaded.Trainers.IsEmpty) throw new InvalidDataException("Staged catalog validation failed.");
+            if (loaded?.Monsters.Length != snapshot.Monsters.Length || loaded.Trainers.IsEmpty || loaded.Items.IsEmpty || loaded.Trinkets.IsEmpty ||
+                loaded.Trinkets.Any(trinket => string.IsNullOrWhiteSpace(trinket.RuleText))) throw new InvalidDataException("Staged catalog validation failed.");
             var replaced = new List<(string Destination, string? Backup)>();
             cancellationToken.ThrowIfCancellationRequested();
             try

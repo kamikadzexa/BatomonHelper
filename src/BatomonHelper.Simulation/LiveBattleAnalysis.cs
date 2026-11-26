@@ -18,8 +18,8 @@ public static class LiveBattleAnalysis
         if (cancellation.IsCancellationRequested) return null;
         if (samples is < 1 or > 256) throw new ArgumentOutOfRangeException(nameof(samples));
         if (battle.Player.Day != battle.Opponent.Day) throw new InvalidDataException("Battle teams have different days.");
-        var player = Import(battle.Player, rules);
-        var opponent = Import(battle.Opponent, player.Rules);
+        var player = LiveBoardImport.CreateBattleSide(battle.Player, rules);
+        var opponent = LiveBoardImport.CreateBattleSide(battle.Opponent, rules, mirrored: true);
         var analyzer = new BoardAnalyzer(opponent.Rules);
         var playerOutput = analyzer.TryAnalyze(player.Board, opponent.Board.MaxHp, samples, seed, cancellation);
         if (playerOutput is null) return null;
@@ -28,7 +28,4 @@ public static class LiveBattleAnalysis
         return new(playerOutput, opponentOutput);
     }
 
-    private static LiveBoardProjection Import(GameBattleSide side, RulesManifest rules) => LiveBoardImport.Create(
-        new BoardSnapshot { Day = side.Day, TeamHp = side.TeamHp, TrainerId = side.TrainerId, Team = side.Team,
-            ShopRank = side.Rank, Wins = side.Wins }, side.Combat with { Bench = null }, rules);
 }

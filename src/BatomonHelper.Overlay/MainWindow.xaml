@@ -45,7 +45,7 @@
           <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Hide  ·  F8" Margin="0,0,10,0" Click="HideHelper" ToolTip="Hide the helper. Press F8 to show it again."/>
           <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0">
             <CheckBox Content="Auto update" IsChecked="{Binding AutoUpdate, Mode=TwoWay}" ToolTip="Refresh live game state every half second"/>
-            <CheckBox Content="Capture run" Margin="20,0,0,0" IsChecked="{Binding CaptureRun, Mode=TwoWay}" IsEnabled="{Binding CanToggleRunCapture}" ToolTip="Start from a clean Day 1 opening to record shop changes and game battle samples for simulator validation"/>
+            <CheckBox Content="Capture run" Margin="20,0,0,0" IsChecked="{Binding CaptureRun, Mode=TwoWay}" IsEnabled="{Binding CanToggleRunCapture}" ToolTip="Record shop changes and battle samples from the current shop onward"/>
           </StackPanel>
           <StackPanel VerticalAlignment="Center"><TextBlock Text="LIVE COMPANION" FontSize="10" FontWeight="SemiBold" Foreground="#FFD34D"/></StackPanel>
         </DockPanel>
@@ -90,7 +90,7 @@
                   </StackPanel>
                   <Border x:Name="BoardAnalysis" Grid.Column="1" Style="{StaticResource Surface}" Margin="16,0,0,0" VerticalAlignment="Top">
                     <StackPanel><TextBlock Text="Battle insights" Style="{StaticResource SectionTitle}"/>
-                      <TextBlock Text="Passive-target output and positioning suggestions" Foreground="#BCDDE4" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                      <TextBlock Text="Projected combat output and placement" Foreground="#BCDDE4" TextWrapping="Wrap" Margin="0,0,0,16"/>
                       <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DamagePanel}" HorizontalContentAlignment="Stretch"/>
                       <TextBlock Text="Insights appear when game state is available." Foreground="#BCDDE4" TextWrapping="Wrap" Margin="0,8,0,0"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding DamageRows.Count}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
                     </StackPanel>
@@ -212,7 +212,7 @@
                   <TextBlock Text="Battle helper options" Style="{StaticResource SectionTitle}"/>
                   <TextBlock Text="Choose which live battle insights the helper shows. Changes are saved automatically." TextWrapping="Wrap" Foreground="#BCDDE4" Margin="0,0,0,10"/>
                   <CheckBox Content="Show DPS counters" IsChecked="{Binding ShowDpsCounters, Mode=TwoWay}" ToolTip="Show team and enemy damage-per-second counters during battles." Margin="0,4"/>
-                  <CheckBox Content="Suggest the best DPS board" IsChecked="{Binding ShowBestDpsBoardSuggestions, Mode=TwoWay}" ToolTip="Show a faster board and bench arrangement when one is found." Margin="0,4"/>
+                  <CheckBox Content="Suggest board placement" IsChecked="{Binding ShowBestDpsBoardSuggestions, Mode=TwoWay}" ToolTip="Compare board and bench layouts using the selected objective." Margin="0,4"/>
                   <CheckBox Content="Show WIN / LOSS at battle start" IsChecked="{Binding ShowBattleOutcome, Mode=TwoWay}" ToolTip="Show the battle result indicator when the game supplies it." Margin="0,4"/>
                   <CheckBox Content="Always on top" IsChecked="{Binding AlwaysOnTop, Mode=TwoWay}" ToolTip="Keep the helper window above other windows." Margin="0,4"/>
                 </StackPanel></Border>

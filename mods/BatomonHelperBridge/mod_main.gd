@@ -11,6 +11,9 @@ var _sequence := 0
 var _last_error := ""
 var _battle_player_id := 0
 var _battle_snapshot := {}
+var _last_battle := {}
+var _battle_number := 0
+var _last_battle_at := 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -53,16 +56,25 @@ func _publish() -> void:
 			message.error = "Battle teams are initializing."
 		else:
 			if _battle_player_id != player.get_instance_id():
-				_battle_snapshot = {"player": read_battle_side(player, int(player.current_round)),
+				_battle_number += 1
+				_battle_snapshot = {"fightId": "%d-%d" % [OS.get_process_id(), _battle_number], "player": read_battle_side(player, int(player.current_round)),
 					"opponent": read_battle_side(opponent, int(player.current_round), true)}
 				_battle_player_id = player.get_instance_id()
 			message.battle = _battle_snapshot.duplicate()
 			message.battle.outcome = read_battle_outcome(player)
+			if message.battle.outcome == null and _last_battle.get("fightId") == message.battle.fightId:
+				message.battle.outcome = _last_battle.get("outcome")
 			# These are observations of the game's visual replay, never a second
 			# simulation. They make captured runs useful for auditing simulator rules.
 			var frame = read_battle_frame(state)
 			if frame != null:
 				message.battle.frame = frame
+			elif _last_battle.get("fightId") == message.battle.fightId and _last_battle.has("frame"):
+				message.battle.frame = _last_battle.frame
+			_last_battle = message.battle
+			_last_battle_at = Time.get_ticks_msec()
+	if message.phase != "battle" and not _last_battle.is_empty() and Time.get_ticks_msec() - _last_battle_at <= 3000:
+		message.previousBattle = _last_battle
 	var pending := OUTPUT_DIR.path_join("state.pending")
 	var file := FileAccess.open(pending, FileAccess.WRITE)
 	if file == null:
@@ -85,10 +97,11 @@ func read_board(run, manager, view) -> Dictionary:
 	var items: Array = manager.current_shop_items
 	var item_counter: bool = view.item_uses_label.visible
 	var free_rerolls: int = run.get_free_rerolls_available()
+	var win_target := int(str(view.wins_count_label.text).get_slice("/", 1))
 	# Read the game's counter text directly; it already includes berry overrides.
 	var uses := str(view.item_uses_label.text).split(" ")[0].split("/") if item_counter else PackedStringArray()
 	return {"trainerId": str(run.trainer_id), "day": int(run.current_round), "lives": int(run.lives),
-		"wins": int(run.current_wins), "winTarget": int(str(view.wins_count_label.text).get_slice("/", 1)),
+		"wins": int(run.current_wins), "winTarget": win_target if win_target > 0 else null,
 		"teamHp": int(run.player_hp), "gold": int(run.gold), "shopRank": int(run.shop_rank),
 		"rarityOdds": odds, "rerollCost": null if free_rerolls > 0 else int(manager.reroll_cost),
 		"freeRerolls": free_rerolls if free_rerolls > 0 else null,
@@ -212,7 +225,8 @@ func read_battle_frame(state):
 		"opponent": read_battle_frame_side(data, 1)}
 
 func read_battle_frame_side(data, team_id: int) -> Dictionary:
-	return {"health": float(data.player_health[team_id]), "maximumHealth": float(data.max_health[team_id]),
+	var raw_hp := float(data.player_health[team_id])
+	return {"health": maxf(0.0, raw_hp), "rawHealth": raw_hp, "maximumHealth": float(data.max_health[team_id]),
 		"shield": float(data.team_shield[team_id]), "burn": int(data.team_burn[team_id]),
 		"poison": int(data.team_poison[team_id]), "shock": int(data.team_shock[team_id]),
 		"units": read_battle_frame_units(data.battle_units, team_id)}

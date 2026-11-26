@@ -1,8 +1,8 @@
 {
-  "Build": "26572818",
-  "Balance": "27",
-  "Version": "unknown",
-  "Hash": "0DE7B07402F6CD8D091317C8B46797557DA04ED76ABBEEBC36A53412E3D561DB",
+  "Build": "26773903",
+  "Balance": "28",
+  "Version": "1.6.0",
+  "Hash": "8A9213BB28955571E3D9397F9213BB9C2936298292FC419107DCB994FD3EFE71",
   "Species": [
     {
       "Id": "bambudo",
@@ -9363,80 +9363,6 @@
           "Level": 1,
           "Cooldown": 5,
           "Stats": [
-            25,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0
-          ],
-          "Effects": [],
-          "Description": "Evolves at level 3.",
-          "AbilityTrigger": 0
-        },
-        {
-          "Level": 2,
-          "Cooldown": 5,
-          "Stats": [
-            50,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0
-          ],
-          "Effects": [],
-          "Description": "Evolves at level 3.",
-          "AbilityTrigger": 0
-        },
-        {
-          "Level": 3,
-          "Cooldown": 5,
-          "Stats": [
-            75,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0
-          ],
-          "Effects": [],
-          "Description": "Evolves at level 3.",
-          "AbilityTrigger": 0
-        },
-        {
-          "Level": 4,
-          "Cooldown": 5,
-          "Stats": [
-            75,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0
-          ],
-          "Effects": [],
-          "Description": "Evolves at level 3.",
-          "AbilityTrigger": 0
-        }
-      ],
-      "Shiny": [
-        {
-          "Level": 1,
-          "Cooldown": 5,
-          "Stats": [
             30,
             0,
             0,
@@ -9492,6 +9418,80 @@
           "Cooldown": 5,
           "Stats": [
             90,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "Effects": [],
+          "Description": "Evolves at level 3.",
+          "AbilityTrigger": 0
+        }
+      ],
+      "Shiny": [
+        {
+          "Level": 1,
+          "Cooldown": 5,
+          "Stats": [
+            36,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "Effects": [],
+          "Description": "Evolves at level 3.",
+          "AbilityTrigger": 0
+        },
+        {
+          "Level": 2,
+          "Cooldown": 5,
+          "Stats": [
+            72,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "Effects": [],
+          "Description": "Evolves at level 3.",
+          "AbilityTrigger": 0
+        },
+        {
+          "Level": 3,
+          "Cooldown": 5,
+          "Stats": [
+            108,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "Effects": [],
+          "Description": "Evolves at level 3.",
+          "AbilityTrigger": 0
+        },
+        {
+          "Level": 4,
+          "Cooldown": 5,
+          "Stats": [
+            108,
             0,
             0,
             0,
@@ -20483,292 +20483,6 @@
               "Operation": 0,
               "Target": 25,
               "Stat": 0,
-              "Amount": 10,
-              "Permanent": true,
-              "Type": null,
-              "ExcludeSpecies": null,
-              "Rarity": 0,
-              "MinimumLevel": null,
-              "MaximumLevel": null,
-              "Percent": false,
-              "DefinitionId": null,
-              "MaximumRarity": null,
-              "TargetCount": 1,
-              "RequireNoAbility": false,
-              "IncludeSelf": true,
-              "NonUnique": false,
-              "SubjectTrigger": 0,
-              "EventType": null,
-              "ShopTrait": null,
-              "MinimumDay": 1,
-              "ForceShiny": false,
-              "Foreign": false,
-              "AdmitToShop": false,
-              "Scale": 0,
-              "ScaleStat": 0,
-              "ScaleType": null,
-              "ScaleMinimumLevel": null,
-              "OncePerBattle": false,
-              "KnockoutStat": null,
-              "KnockoutBonus": 0,
-              "KnockoutPermanent": false,
-              "StealKnockoutStats": false,
-              "EventExcludeSpecies": null,
-              "EventMinimumLevel": null,
-              "EventAdjacent": false,
-              "RequireOngoing": false,
-              "ScaleTarget": 1,
-              "ScaleExcludeSpecies": null,
-              "ScaleRarity": null,
-              "ProgressCounter": null,
-              "ProgressStat": null,
-              "DeferredEvolution": false,
-              "RequireNoOwnedEvolution": false,
-              "GrowthPerTrigger": 0,
-              "ReviveTargets": false,
-              "GrantTransformStat": false,
-              "UnlimitedLevels": false,
-              "IntervalSeconds": 0
-            }
-          ],
-          "Description": "This and Common allies gain \u002B10 Damage permanently.",
-          "AbilityTrigger": 4
-        },
-        {
-          "Level": 2,
-          "Cooldown": 5.5,
-          "Stats": [
-            100,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0
-          ],
-          "Effects": [
-            {
-              "Trigger": 4,
-              "Operation": 0,
-              "Target": 25,
-              "Stat": 0,
-              "Amount": 20,
-              "Permanent": true,
-              "Type": null,
-              "ExcludeSpecies": null,
-              "Rarity": 0,
-              "MinimumLevel": null,
-              "MaximumLevel": null,
-              "Percent": false,
-              "DefinitionId": null,
-              "MaximumRarity": null,
-              "TargetCount": 1,
-              "RequireNoAbility": false,
-              "IncludeSelf": true,
-              "NonUnique": false,
-              "SubjectTrigger": 0,
-              "EventType": null,
-              "ShopTrait": null,
-              "MinimumDay": 1,
-              "ForceShiny": false,
-              "Foreign": false,
-              "AdmitToShop": false,
-              "Scale": 0,
-              "ScaleStat": 0,
-              "ScaleType": null,
-              "ScaleMinimumLevel": null,
-              "OncePerBattle": false,
-              "KnockoutStat": null,
-              "KnockoutBonus": 0,
-              "KnockoutPermanent": false,
-              "StealKnockoutStats": false,
-              "EventExcludeSpecies": null,
-              "EventMinimumLevel": null,
-              "EventAdjacent": false,
-              "RequireOngoing": false,
-              "ScaleTarget": 1,
-              "ScaleExcludeSpecies": null,
-              "ScaleRarity": null,
-              "ProgressCounter": null,
-              "ProgressStat": null,
-              "DeferredEvolution": false,
-              "RequireNoOwnedEvolution": false,
-              "GrowthPerTrigger": 0,
-              "ReviveTargets": false,
-              "GrantTransformStat": false,
-              "UnlimitedLevels": false,
-              "IntervalSeconds": 0
-            }
-          ],
-          "Description": "This and Common allies gain \u002B20 Damage permanently.",
-          "AbilityTrigger": 4
-        },
-        {
-          "Level": 3,
-          "Cooldown": 5.5,
-          "Stats": [
-            150,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0
-          ],
-          "Effects": [
-            {
-              "Trigger": 4,
-              "Operation": 0,
-              "Target": 25,
-              "Stat": 0,
-              "Amount": 30,
-              "Permanent": true,
-              "Type": null,
-              "ExcludeSpecies": null,
-              "Rarity": 0,
-              "MinimumLevel": null,
-              "MaximumLevel": null,
-              "Percent": false,
-              "DefinitionId": null,
-              "MaximumRarity": null,
-              "TargetCount": 1,
-              "RequireNoAbility": false,
-              "IncludeSelf": true,
-              "NonUnique": false,
-              "SubjectTrigger": 0,
-              "EventType": null,
-              "ShopTrait": null,
-              "MinimumDay": 1,
-              "ForceShiny": false,
-              "Foreign": false,
-              "AdmitToShop": false,
-              "Scale": 0,
-              "ScaleStat": 0,
-              "ScaleType": null,
-              "ScaleMinimumLevel": null,
-              "OncePerBattle": false,
-              "KnockoutStat": null,
-              "KnockoutBonus": 0,
-              "KnockoutPermanent": false,
-              "StealKnockoutStats": false,
-              "EventExcludeSpecies": null,
-              "EventMinimumLevel": null,
-              "EventAdjacent": false,
-              "RequireOngoing": false,
-              "ScaleTarget": 1,
-              "ScaleExcludeSpecies": null,
-              "ScaleRarity": null,
-              "ProgressCounter": null,
-              "ProgressStat": null,
-              "DeferredEvolution": false,
-              "RequireNoOwnedEvolution": false,
-              "GrowthPerTrigger": 0,
-              "ReviveTargets": false,
-              "GrantTransformStat": false,
-              "UnlimitedLevels": false,
-              "IntervalSeconds": 0
-            }
-          ],
-          "Description": "This and Common allies gain \u002B30 Damage permanently.",
-          "AbilityTrigger": 4
-        },
-        {
-          "Level": 4,
-          "Cooldown": 5.5,
-          "Stats": [
-            150,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            2,
-            0
-          ],
-          "Effects": [
-            {
-              "Trigger": 4,
-              "Operation": 0,
-              "Target": 25,
-              "Stat": 0,
-              "Amount": 60,
-              "Permanent": true,
-              "Type": null,
-              "ExcludeSpecies": null,
-              "Rarity": 0,
-              "MinimumLevel": null,
-              "MaximumLevel": null,
-              "Percent": false,
-              "DefinitionId": null,
-              "MaximumRarity": null,
-              "TargetCount": 1,
-              "RequireNoAbility": false,
-              "IncludeSelf": true,
-              "NonUnique": false,
-              "SubjectTrigger": 0,
-              "EventType": null,
-              "ShopTrait": null,
-              "MinimumDay": 1,
-              "ForceShiny": false,
-              "Foreign": false,
-              "AdmitToShop": false,
-              "Scale": 0,
-              "ScaleStat": 0,
-              "ScaleType": null,
-              "ScaleMinimumLevel": null,
-              "OncePerBattle": false,
-              "KnockoutStat": null,
-              "KnockoutBonus": 0,
-              "KnockoutPermanent": false,
-              "StealKnockoutStats": false,
-              "EventExcludeSpecies": null,
-              "EventMinimumLevel": null,
-              "EventAdjacent": false,
-              "RequireOngoing": false,
-              "ScaleTarget": 1,
-              "ScaleExcludeSpecies": null,
-              "ScaleRarity": null,
-              "ProgressCounter": null,
-              "ProgressStat": null,
-              "DeferredEvolution": false,
-              "RequireNoOwnedEvolution": false,
-              "GrowthPerTrigger": 0,
-              "ReviveTargets": false,
-              "GrantTransformStat": false,
-              "UnlimitedLevels": false,
-              "IntervalSeconds": 0
-            }
-          ],
-          "Description": "This and Common allies gain \u002B60 Damage permanently.",
-          "AbilityTrigger": 4
-        }
-      ],
-      "Shiny": [
-        {
-          "Level": 1,
-          "Cooldown": 5.5,
-          "Stats": [
-            60,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0
-          ],
-          "Effects": [
-            {
-              "Trigger": 4,
-              "Operation": 0,
-              "Target": 25,
-              "Stat": 0,
               "Amount": 12,
               "Permanent": true,
               "Type": null,
@@ -20824,7 +20538,7 @@
           "Level": 2,
           "Cooldown": 5.5,
           "Stats": [
-            120,
+            100,
             0,
             0,
             0,
@@ -20895,7 +20609,7 @@
           "Level": 3,
           "Cooldown": 5.5,
           "Stats": [
-            180,
+            150,
             0,
             0,
             0,
@@ -20966,7 +20680,7 @@
           "Level": 4,
           "Cooldown": 5.5,
           "Stats": [
-            180,
+            150,
             0,
             0,
             0,
@@ -21031,6 +20745,292 @@
             }
           ],
           "Description": "This and Common allies gain \u002B72 Damage permanently.",
+          "AbilityTrigger": 4
+        }
+      ],
+      "Shiny": [
+        {
+          "Level": 1,
+          "Cooldown": 5.5,
+          "Stats": [
+            60,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "Effects": [
+            {
+              "Trigger": 4,
+              "Operation": 0,
+              "Target": 25,
+              "Stat": 0,
+              "Amount": 14,
+              "Permanent": true,
+              "Type": null,
+              "ExcludeSpecies": null,
+              "Rarity": 0,
+              "MinimumLevel": null,
+              "MaximumLevel": null,
+              "Percent": false,
+              "DefinitionId": null,
+              "MaximumRarity": null,
+              "TargetCount": 1,
+              "RequireNoAbility": false,
+              "IncludeSelf": true,
+              "NonUnique": false,
+              "SubjectTrigger": 0,
+              "EventType": null,
+              "ShopTrait": null,
+              "MinimumDay": 1,
+              "ForceShiny": false,
+              "Foreign": false,
+              "AdmitToShop": false,
+              "Scale": 0,
+              "ScaleStat": 0,
+              "ScaleType": null,
+              "ScaleMinimumLevel": null,
+              "OncePerBattle": false,
+              "KnockoutStat": null,
+              "KnockoutBonus": 0,
+              "KnockoutPermanent": false,
+              "StealKnockoutStats": false,
+              "EventExcludeSpecies": null,
+              "EventMinimumLevel": null,
+              "EventAdjacent": false,
+              "RequireOngoing": false,
+              "ScaleTarget": 1,
+              "ScaleExcludeSpecies": null,
+              "ScaleRarity": null,
+              "ProgressCounter": null,
+              "ProgressStat": null,
+              "DeferredEvolution": false,
+              "RequireNoOwnedEvolution": false,
+              "GrowthPerTrigger": 0,
+              "ReviveTargets": false,
+              "GrantTransformStat": false,
+              "UnlimitedLevels": false,
+              "IntervalSeconds": 0
+            }
+          ],
+          "Description": "This and Common allies gain \u002B14 Damage permanently.",
+          "AbilityTrigger": 4
+        },
+        {
+          "Level": 2,
+          "Cooldown": 5.5,
+          "Stats": [
+            120,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "Effects": [
+            {
+              "Trigger": 4,
+              "Operation": 0,
+              "Target": 25,
+              "Stat": 0,
+              "Amount": 29,
+              "Permanent": true,
+              "Type": null,
+              "ExcludeSpecies": null,
+              "Rarity": 0,
+              "MinimumLevel": null,
+              "MaximumLevel": null,
+              "Percent": false,
+              "DefinitionId": null,
+              "MaximumRarity": null,
+              "TargetCount": 1,
+              "RequireNoAbility": false,
+              "IncludeSelf": true,
+              "NonUnique": false,
+              "SubjectTrigger": 0,
+              "EventType": null,
+              "ShopTrait": null,
+              "MinimumDay": 1,
+              "ForceShiny": false,
+              "Foreign": false,
+              "AdmitToShop": false,
+              "Scale": 0,
+              "ScaleStat": 0,
+              "ScaleType": null,
+              "ScaleMinimumLevel": null,
+              "OncePerBattle": false,
+              "KnockoutStat": null,
+              "KnockoutBonus": 0,
+              "KnockoutPermanent": false,
+              "StealKnockoutStats": false,
+              "EventExcludeSpecies": null,
+              "EventMinimumLevel": null,
+              "EventAdjacent": false,
+              "RequireOngoing": false,
+              "ScaleTarget": 1,
+              "ScaleExcludeSpecies": null,
+              "ScaleRarity": null,
+              "ProgressCounter": null,
+              "ProgressStat": null,
+              "DeferredEvolution": false,
+              "RequireNoOwnedEvolution": false,
+              "GrowthPerTrigger": 0,
+              "ReviveTargets": false,
+              "GrantTransformStat": false,
+              "UnlimitedLevels": false,
+              "IntervalSeconds": 0
+            }
+          ],
+          "Description": "This and Common allies gain \u002B29 Damage permanently.",
+          "AbilityTrigger": 4
+        },
+        {
+          "Level": 3,
+          "Cooldown": 5.5,
+          "Stats": [
+            180,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "Effects": [
+            {
+              "Trigger": 4,
+              "Operation": 0,
+              "Target": 25,
+              "Stat": 0,
+              "Amount": 43,
+              "Permanent": true,
+              "Type": null,
+              "ExcludeSpecies": null,
+              "Rarity": 0,
+              "MinimumLevel": null,
+              "MaximumLevel": null,
+              "Percent": false,
+              "DefinitionId": null,
+              "MaximumRarity": null,
+              "TargetCount": 1,
+              "RequireNoAbility": false,
+              "IncludeSelf": true,
+              "NonUnique": false,
+              "SubjectTrigger": 0,
+              "EventType": null,
+              "ShopTrait": null,
+              "MinimumDay": 1,
+              "ForceShiny": false,
+              "Foreign": false,
+              "AdmitToShop": false,
+              "Scale": 0,
+              "ScaleStat": 0,
+              "ScaleType": null,
+              "ScaleMinimumLevel": null,
+              "OncePerBattle": false,
+              "KnockoutStat": null,
+              "KnockoutBonus": 0,
+              "KnockoutPermanent": false,
+              "StealKnockoutStats": false,
+              "EventExcludeSpecies": null,
+              "EventMinimumLevel": null,
+              "EventAdjacent": false,
+              "RequireOngoing": false,
+              "ScaleTarget": 1,
+              "ScaleExcludeSpecies": null,
+              "ScaleRarity": null,
+              "ProgressCounter": null,
+              "ProgressStat": null,
+              "DeferredEvolution": false,
+              "RequireNoOwnedEvolution": false,
+              "GrowthPerTrigger": 0,
+              "ReviveTargets": false,
+              "GrantTransformStat": false,
+              "UnlimitedLevels": false,
+              "IntervalSeconds": 0
+            }
+          ],
+          "Description": "This and Common allies gain \u002B43 Damage permanently.",
+          "AbilityTrigger": 4
+        },
+        {
+          "Level": 4,
+          "Cooldown": 5.5,
+          "Stats": [
+            180,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          "Effects": [
+            {
+              "Trigger": 4,
+              "Operation": 0,
+              "Target": 25,
+              "Stat": 0,
+              "Amount": 86,
+              "Permanent": true,
+              "Type": null,
+              "ExcludeSpecies": null,
+              "Rarity": 0,
+              "MinimumLevel": null,
+              "MaximumLevel": null,
+              "Percent": false,
+              "DefinitionId": null,
+              "MaximumRarity": null,
+              "TargetCount": 1,
+              "RequireNoAbility": false,
+              "IncludeSelf": true,
+              "NonUnique": false,
+              "SubjectTrigger": 0,
+              "EventType": null,
+              "ShopTrait": null,
+              "MinimumDay": 1,
+              "ForceShiny": false,
+              "Foreign": false,
+              "AdmitToShop": false,
+              "Scale": 0,
+              "ScaleStat": 0,
+              "ScaleType": null,
+              "ScaleMinimumLevel": null,
+              "OncePerBattle": false,
+              "KnockoutStat": null,
+              "KnockoutBonus": 0,
+              "KnockoutPermanent": false,
+              "StealKnockoutStats": false,
+              "EventExcludeSpecies": null,
+              "EventMinimumLevel": null,
+              "EventAdjacent": false,
+              "RequireOngoing": false,
+              "ScaleTarget": 1,
+              "ScaleExcludeSpecies": null,
+              "ScaleRarity": null,
+              "ProgressCounter": null,
+              "ProgressStat": null,
+              "DeferredEvolution": false,
+              "RequireNoOwnedEvolution": false,
+              "GrowthPerTrigger": 0,
+              "ReviveTargets": false,
+              "GrantTransformStat": false,
+              "UnlimitedLevels": false,
+              "IntervalSeconds": 0
+            }
+          ],
+          "Description": "This and Common allies gain \u002B86 Damage permanently.",
           "AbilityTrigger": 4
         }
       ],
@@ -27414,7 +27414,7 @@
       "Id": "kappow",
       "Name": "Kappow",
       "Rarity": 1,
-      "Cost": 25,
+      "Cost": 20,
       "MergeGroup": "kappow",
       "Types": [
         "water",
@@ -30358,7 +30358,7 @@
       "Id": "puffloon",
       "Name": "Puffloon",
       "Rarity": 1,
-      "Cost": 30,
+      "Cost": 35,
       "MergeGroup": "puffloon",
       "Types": [
         "toxic",
@@ -44683,9 +44683,9 @@
       "Normal": [
         {
           "Level": 1,
-          "Cooldown": 5.5,
+          "Cooldown": 8.5,
           "Stats": [
-            50,
+            80,
             0,
             0,
             0,
@@ -44728,7 +44728,7 @@
               "ScaleMinimumLevel": null,
               "OncePerBattle": false,
               "KnockoutStat": 2,
-              "KnockoutBonus": 20,
+              "KnockoutBonus": 32,
               "KnockoutPermanent": true,
               "StealKnockoutStats": false,
               "EventExcludeSpecies": null,
@@ -44749,14 +44749,14 @@
               "IntervalSeconds": 0
             }
           ],
-          "Description": "Knockout adjacent allies and gain \u002B20 Shield permanently for each ally Knockout.",
+          "Description": "Knockout adjacent allies and gain \u002B32 Shield permanently for each ally Knockout.",
           "AbilityTrigger": 1
         },
         {
           "Level": 2,
-          "Cooldown": 5.5,
+          "Cooldown": 8.5,
           "Stats": [
-            100,
+            160,
             0,
             0,
             0,
@@ -44799,7 +44799,7 @@
               "ScaleMinimumLevel": null,
               "OncePerBattle": false,
               "KnockoutStat": 2,
-              "KnockoutBonus": 40,
+              "KnockoutBonus": 64,
               "KnockoutPermanent": true,
               "StealKnockoutStats": false,
               "EventExcludeSpecies": null,
@@ -44820,14 +44820,14 @@
               "IntervalSeconds": 0
             }
           ],
-          "Description": "Knockout adjacent allies and gain \u002B40 Shield permanently for each ally Knockout.",
+          "Description": "Knockout adjacent allies and gain \u002B64 Shield permanently for each ally Knockout.",
           "AbilityTrigger": 1
         },
         {
           "Level": 3,
-          "Cooldown": 5.5,
+          "Cooldown": 8.5,
           "Stats": [
-            150,
+            240,
             0,
             0,
             0,
@@ -44870,7 +44870,7 @@
               "ScaleMinimumLevel": null,
               "OncePerBattle": false,
               "KnockoutStat": 2,
-              "KnockoutBonus": 60,
+              "KnockoutBonus": 96,
               "KnockoutPermanent": true,
               "StealKnockoutStats": false,
               "EventExcludeSpecies": null,
@@ -44891,14 +44891,14 @@
               "IntervalSeconds": 0
             }
           ],
-          "Description": "Knockout adjacent allies and gain \u002B60 Shield permanently for each ally Knockout.",
+          "Description": "Knockout adjacent allies and gain \u002B96 Shield permanently for each ally Knockout.",
           "AbilityTrigger": 1
         },
         {
           "Level": 4,
-          "Cooldown": 5.5,
+          "Cooldown": 8.5,
           "Stats": [
-            600,
+            960,
             0,
             0,
             0,
@@ -44941,7 +44941,7 @@
               "ScaleMinimumLevel": null,
               "OncePerBattle": false,
               "KnockoutStat": 2,
-              "KnockoutBonus": 240,
+              "KnockoutBonus": 384,
               "KnockoutPermanent": true,
               "StealKnockoutStats": false,
               "EventExcludeSpecies": null,
@@ -44962,16 +44962,16 @@
               "IntervalSeconds": 0
             }
           ],
-          "Description": "Knockout adjacent allies and gain \u002B240 Shield permanently for each ally Knockout.",
+          "Description": "Knockout adjacent allies and gain \u002B384 Shield permanently for each ally Knockout.",
           "AbilityTrigger": 1
         }
       ],
       "Shiny": [
         {
           "Level": 1,
-          "Cooldown": 5.5,
+          "Cooldown": 8.5,
           "Stats": [
-            50,
+            80,
             0,
             0,
             0,
@@ -45014,7 +45014,7 @@
               "ScaleMinimumLevel": null,
               "OncePerBattle": false,
               "KnockoutStat": 2,
-              "KnockoutBonus": 24,
+              "KnockoutBonus": 38,
               "KnockoutPermanent": true,
               "StealKnockoutStats": false,
               "EventExcludeSpecies": null,
@@ -45035,14 +45035,14 @@
               "IntervalSeconds": 0
             }
           ],
-          "Description": "Knockout adjacent allies and gain \u002B24 Shield permanently for each ally Knockout.",
+          "Description": "Knockout adjacent allies and gain \u002B38 Shield permanently for each ally Knockout.",
           "AbilityTrigger": 1
         },
         {
           "Level": 2,
-          "Cooldown": 5.5,
+          "Cooldown": 8.5,
           "Stats": [
-            100,
+            160,
             0,
             0,
             0,
@@ -45085,7 +45085,7 @@
               "ScaleMinimumLevel": null,
               "OncePerBattle": false,
               "KnockoutStat": 2,
-              "KnockoutBonus": 48,
+              "KnockoutBonus": 77,
               "KnockoutPermanent": true,
               "StealKnockoutStats": false,
               "EventExcludeSpecies": null,
@@ -45106,14 +45106,14 @@
               "IntervalSeconds": 0
             }
           ],
-          "Description": "Knockout adjacent allies and gain \u002B48 Shield permanently for each ally Knockout.",
+          "Description": "Knockout adjacent allies and gain \u002B77 Shield permanently for each ally Knockout.",
           "AbilityTrigger": 1
         },
         {
           "Level": 3,
-          "Cooldown": 5.5,
+          "Cooldown": 8.5,
           "Stats": [
-            150,
+            240,
             0,
             0,
             0,
@@ -45156,7 +45156,7 @@
               "ScaleMinimumLevel": null,
               "OncePerBattle": false,
               "KnockoutStat": 2,
-              "KnockoutBonus": 72,
+              "KnockoutBonus": 115,
               "KnockoutPermanent": true,
               "StealKnockoutStats": false,
               "EventExcludeSpecies": null,
@@ -45177,14 +45177,14 @@
               "IntervalSeconds": 0
             }
           ],
-          "Description": "Knockout adjacent allies and gain \u002B72 Shield permanently for each ally Knockout.",
+          "Description": "Knockout adjacent allies and gain \u002B115 Shield permanently for each ally Knockout.",
           "AbilityTrigger": 1
         },
         {
           "Level": 4,
-          "Cooldown": 5.5,
+          "Cooldown": 8.5,
           "Stats": [
-            600,
+            960,
             0,
             0,
             0,
@@ -45227,7 +45227,7 @@
               "ScaleMinimumLevel": null,
               "OncePerBattle": false,
               "KnockoutStat": 2,
-              "KnockoutBonus": 288,
+              "KnockoutBonus": 461,
               "KnockoutPermanent": true,
               "StealKnockoutStats": false,
               "EventExcludeSpecies": null,
@@ -45248,7 +45248,7 @@
               "IntervalSeconds": 0
             }
           ],
-          "Description": "Knockout adjacent allies and gain \u002B288 Shield permanently for each ally Knockout.",
+          "Description": "Knockout adjacent allies and gain \u002B461 Shield permanently for each ally Knockout.",
           "AbilityTrigger": 1
         }
       ],
@@ -47036,7 +47036,7 @@
       "Normal": [
         {
           "Level": 1,
-          "Cooldown": 5.5,
+          "Cooldown": 6,
           "Stats": [
             0,
             0,
@@ -47107,7 +47107,7 @@
         },
         {
           "Level": 2,
-          "Cooldown": 5.5,
+          "Cooldown": 6,
           "Stats": [
             0,
             0,
@@ -47178,7 +47178,7 @@
         },
         {
           "Level": 3,
-          "Cooldown": 5.5,
+          "Cooldown": 6,
           "Stats": [
             0,
             0,
@@ -47249,7 +47249,7 @@
         },
         {
           "Level": 4,
-          "Cooldown": 5.5,
+          "Cooldown": 6,
           "Stats": [
             0,
             0,
@@ -47322,7 +47322,7 @@
       "Shiny": [
         {
           "Level": 1,
-          "Cooldown": 5.5,
+          "Cooldown": 6,
           "Stats": [
             0,
             0,
@@ -47393,7 +47393,7 @@
         },
         {
           "Level": 2,
-          "Cooldown": 5.5,
+          "Cooldown": 6,
           "Stats": [
             0,
             0,
@@ -47464,7 +47464,7 @@
         },
         {
           "Level": 3,
-          "Cooldown": 5.5,
+          "Cooldown": 6,
           "Stats": [
             0,
             0,
@@ -47535,7 +47535,7 @@
         },
         {
           "Level": 4,
-          "Cooldown": 5.5,
+          "Cooldown": 6,
           "Stats": [
             0,
             0,
@@ -63484,7 +63484,7 @@
       "Id": "prismagon",
       "Name": "Prismagon",
       "Rarity": 3,
-      "Cost": 45,
+      "Cost": 40,
       "MergeGroup": "prismagon",
       "Types": [
         "dragon"
@@ -67331,7 +67331,7 @@
           "Cooldown": 9,
           "Stats": [
             0,
-            96,
+            960,
             0,
             144,
             0,
@@ -67617,7 +67617,7 @@
           "Cooldown": 9,
           "Stats": [
             0,
-            115,
+            1152,
             0,
             173,
             0,
@@ -89584,7 +89584,7 @@
           "Operation": 0,
           "Target": 1,
           "Stat": 0,
-          "Amount": 5,
+          "Amount": 4,
           "Permanent": false,
           "Type": null,
           "ExcludeSpecies": null,
@@ -89633,7 +89633,7 @@
         }
       ],
       "SourceUrl": "https://batomon.com/trinkets/rainbow-berry",
-      "Description": "Your monsters have \u002B5 Damage for each unique type on your team."
+      "Description": "Your monsters have \u002B4 Damage for each unique type on your team."
     },
     {
       "Id": "sapphire-ring",
@@ -95496,62 +95496,9 @@
       "Rarity": 0,
       "Unique": false,
       "Cost": 0,
-      "Effects": [
-        {
-          "Trigger": 16,
-          "Operation": 31,
-          "Target": 1,
-          "Stat": 0,
-          "Amount": 10,
-          "Permanent": false,
-          "Type": null,
-          "ExcludeSpecies": null,
-          "Rarity": null,
-          "MinimumLevel": null,
-          "MaximumLevel": null,
-          "Percent": false,
-          "DefinitionId": null,
-          "MaximumRarity": null,
-          "TargetCount": 1,
-          "RequireNoAbility": false,
-          "IncludeSelf": false,
-          "NonUnique": false,
-          "SubjectTrigger": 0,
-          "EventType": null,
-          "ShopTrait": 17,
-          "MinimumDay": 1,
-          "ForceShiny": false,
-          "Foreign": false,
-          "AdmitToShop": false,
-          "Scale": 0,
-          "ScaleStat": 0,
-          "ScaleType": null,
-          "ScaleMinimumLevel": null,
-          "OncePerBattle": false,
-          "KnockoutStat": null,
-          "KnockoutBonus": 0,
-          "KnockoutPermanent": false,
-          "StealKnockoutStats": false,
-          "EventExcludeSpecies": null,
-          "EventMinimumLevel": null,
-          "EventAdjacent": false,
-          "RequireOngoing": false,
-          "ScaleTarget": 1,
-          "ScaleExcludeSpecies": null,
-          "ScaleRarity": null,
-          "ProgressCounter": null,
-          "ProgressStat": null,
-          "DeferredEvolution": false,
-          "RequireNoOwnedEvolution": false,
-          "GrowthPerTrigger": 0,
-          "ReviveTargets": false,
-          "GrantTransformStat": false,
-          "UnlimitedLevels": false,
-          "IntervalSeconds": 0
-        }
-      ],
+      "Effects": [],
       "SourceUrl": "https://batomon.com/trainers/bug-catcher",
-      "Description": "The first Bug monster you buy each day costs $10 less."
+      "Description": "The first Bug monster you buy each day costs $15 less."
     },
     {
       "Id": "burglar",
@@ -95880,7 +95827,7 @@
           "Operation": 31,
           "Target": 1,
           "Stat": 0,
-          "Amount": 5,
+          "Amount": 3,
           "Permanent": false,
           "Type": null,
           "ExcludeSpecies": null,
@@ -95981,7 +95928,7 @@
         }
       ],
       "SourceUrl": "https://batomon.com/trainers/gentleman",
-      "Description": "Increase Income by $5. From day 4 onwards, your shop no longer stocks Common or Uncommon monsters."
+      "Description": "Increase Income by $3. From day 4 onwards, your shop no longer stocks Common or Uncommon monsters."
     },
     {
       "Id": "youngster-f",
@@ -96052,62 +95999,9 @@
       "Rarity": 0,
       "Unique": false,
       "Cost": 0,
-      "Effects": [
-        {
-          "Trigger": 7,
-          "Operation": 47,
-          "Target": 1,
-          "Stat": 0,
-          "Amount": 0,
-          "Permanent": false,
-          "Type": null,
-          "ExcludeSpecies": null,
-          "Rarity": null,
-          "MinimumLevel": null,
-          "MaximumLevel": null,
-          "Percent": false,
-          "DefinitionId": "mad-scientist",
-          "MaximumRarity": null,
-          "TargetCount": 1,
-          "RequireNoAbility": false,
-          "IncludeSelf": false,
-          "NonUnique": false,
-          "SubjectTrigger": 0,
-          "EventType": null,
-          "ShopTrait": null,
-          "MinimumDay": 1,
-          "ForceShiny": false,
-          "Foreign": false,
-          "AdmitToShop": false,
-          "Scale": 0,
-          "ScaleStat": 0,
-          "ScaleType": null,
-          "ScaleMinimumLevel": null,
-          "OncePerBattle": false,
-          "KnockoutStat": null,
-          "KnockoutBonus": 0,
-          "KnockoutPermanent": false,
-          "StealKnockoutStats": false,
-          "EventExcludeSpecies": null,
-          "EventMinimumLevel": null,
-          "EventAdjacent": false,
-          "RequireOngoing": false,
-          "ScaleTarget": 1,
-          "ScaleExcludeSpecies": null,
-          "ScaleRarity": null,
-          "ProgressCounter": null,
-          "ProgressStat": null,
-          "DeferredEvolution": false,
-          "RequireNoOwnedEvolution": false,
-          "GrowthPerTrigger": 0,
-          "ReviveTargets": false,
-          "GrantTransformStat": false,
-          "UnlimitedLevels": false,
-          "IntervalSeconds": 0
-        }
-      ],
+      "Effects": [],
       "SourceUrl": "https://batomon.com/trainers/mad-scientist",
-      "Description": "On day 7, transform monsters on your active team into random level 1 Legendary monsters."
+      "Description": "On day 7, transform monsters on your active team into random level 1 Legendary monsters and gain $20."
     },
     {
       "Id": "masked-man",
@@ -96723,62 +96617,9 @@
       "Rarity": 0,
       "Unique": false,
       "Cost": 0,
-      "Effects": [
-        {
-          "Trigger": 16,
-          "Operation": 47,
-          "Target": 1,
-          "Stat": 0,
-          "Amount": 0,
-          "Permanent": false,
-          "Type": null,
-          "ExcludeSpecies": null,
-          "Rarity": null,
-          "MinimumLevel": null,
-          "MaximumLevel": null,
-          "Percent": false,
-          "DefinitionId": "smuggler",
-          "MaximumRarity": null,
-          "TargetCount": 1,
-          "RequireNoAbility": false,
-          "IncludeSelf": false,
-          "NonUnique": false,
-          "SubjectTrigger": 0,
-          "EventType": null,
-          "ShopTrait": null,
-          "MinimumDay": 1,
-          "ForceShiny": false,
-          "Foreign": false,
-          "AdmitToShop": false,
-          "Scale": 0,
-          "ScaleStat": 0,
-          "ScaleType": null,
-          "ScaleMinimumLevel": null,
-          "OncePerBattle": false,
-          "KnockoutStat": null,
-          "KnockoutBonus": 0,
-          "KnockoutPermanent": false,
-          "StealKnockoutStats": false,
-          "EventExcludeSpecies": null,
-          "EventMinimumLevel": null,
-          "EventAdjacent": false,
-          "RequireOngoing": false,
-          "ScaleTarget": 1,
-          "ScaleExcludeSpecies": null,
-          "ScaleRarity": null,
-          "ProgressCounter": null,
-          "ProgressStat": null,
-          "DeferredEvolution": false,
-          "RequireNoOwnedEvolution": false,
-          "GrowthPerTrigger": 0,
-          "ReviveTargets": false,
-          "GrantTransformStat": false,
-          "UnlimitedLevels": false,
-          "IntervalSeconds": 0
-        }
-      ],
+      "Effects": [],
       "SourceUrl": "https://batomon.com/trainers/smuggler",
-      "Description": "Batomon from other regions appear in your shop and cost 35% less."
+      "Description": "Batomon from other regions appear in your shop and cost 45% less."
     },
     {
       "Id": "swim-coach",
@@ -96985,62 +96826,9 @@
       "Rarity": 0,
       "Unique": false,
       "Cost": 0,
-      "Effects": [
-        {
-          "Trigger": 7,
-          "Operation": 17,
-          "Target": 1,
-          "Stat": 0,
-          "Amount": 3,
-          "Permanent": false,
-          "Type": null,
-          "ExcludeSpecies": null,
-          "Rarity": null,
-          "MinimumLevel": null,
-          "MaximumLevel": null,
-          "Percent": false,
-          "DefinitionId": null,
-          "MaximumRarity": null,
-          "TargetCount": 1,
-          "RequireNoAbility": false,
-          "IncludeSelf": false,
-          "NonUnique": false,
-          "SubjectTrigger": 0,
-          "EventType": null,
-          "ShopTrait": null,
-          "MinimumDay": 1,
-          "ForceShiny": false,
-          "Foreign": false,
-          "AdmitToShop": false,
-          "Scale": 0,
-          "ScaleStat": 0,
-          "ScaleType": null,
-          "ScaleMinimumLevel": null,
-          "OncePerBattle": false,
-          "KnockoutStat": null,
-          "KnockoutBonus": 0,
-          "KnockoutPermanent": false,
-          "StealKnockoutStats": false,
-          "EventExcludeSpecies": null,
-          "EventMinimumLevel": null,
-          "EventAdjacent": false,
-          "RequireOngoing": false,
-          "ScaleTarget": 1,
-          "ScaleExcludeSpecies": null,
-          "ScaleRarity": null,
-          "ProgressCounter": null,
-          "ProgressStat": null,
-          "DeferredEvolution": false,
-          "RequireNoOwnedEvolution": false,
-          "GrowthPerTrigger": 0,
-          "ReviveTargets": false,
-          "GrantTransformStat": false,
-          "UnlimitedLevels": false,
-          "IntervalSeconds": 0
-        }
-      ],
+      "Effects": [],
       "SourceUrl": "https://batomon.com/trainers/youngster-m",
-      "Description": "Gain 3 free rerolls every day."
+      "Description": "Gain 4 free rerolls every day."
     }
   ],
   "Issues": [],
@@ -97070,17 +96858,30 @@
       800,
       1400,
       2400,
-      4050,
+      3800,
       5700,
       8300,
       11600,
-      18250,
-      24900,
-      38600,
-      52300,
-      68000,
-      87400,
-      106800
+      19600,
+      31100,
+      46700,
+      67500,
+      94500,
+      128800,
+      171500,
+      223900,
+      287400,
+      363500,
+      453800,
+      559700,
+      683200,
+      826000,
+      990000,
+      1177300,
+      1389800,
+      1629900,
+      1899700,
+      2201700
     ],
     "TurnCap": 16,
     "WinTarget": 10,
@@ -97091,97 +96892,175 @@
         "Day": 1,
         "Value": 300,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 2,
         "Value": 500,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 3,
         "Value": 800,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 4,
         "Value": 1400,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 5,
         "Value": 2400,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 6,
-        "Value": 4050,
-        "Kind": "Guessed",
-        "Explanation": "Linear interpolation between days 5 and 7."
+        "Value": 3800,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 7,
         "Value": 5700,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 8,
         "Value": 8300,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 9,
         "Value": 11600,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 10,
-        "Value": 18250,
-        "Kind": "Guessed",
-        "Explanation": "Linear interpolation between days 9 and 11."
+        "Value": 19600,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 11,
-        "Value": 24900,
+        "Value": 31100,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 12,
-        "Value": 38600,
-        "Kind": "Guessed",
-        "Explanation": "Linear interpolation between days 11 and 13."
+        "Value": 46700,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 13,
-        "Value": 52300,
+        "Value": 67500,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 14,
-        "Value": 68000,
+        "Value": 94500,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 15,
-        "Value": 87400,
+        "Value": 128800,
         "Kind": "UserProvided",
-        "Explanation": "User-provided base team HP observation."
+        "Explanation": "Balance 28 run captures"
       },
       {
         "Day": 16,
-        "Value": 106800,
-        "Kind": "Guessed",
-        "Explanation": "Linear extrapolation of the last observed change (days 14\u201315)."
+        "Value": 171500,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 17,
+        "Value": 223900,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 18,
+        "Value": 287400,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 19,
+        "Value": 363500,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 20,
+        "Value": 453800,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 21,
+        "Value": 559700,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 22,
+        "Value": 683200,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 23,
+        "Value": 826000,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 24,
+        "Value": 990000,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 25,
+        "Value": 1177300,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 26,
+        "Value": 1389800,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 27,
+        "Value": 1629900,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 28,
+        "Value": 1899700,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
+      },
+      {
+        "Day": 29,
+        "Value": 2201700,
+        "Kind": "UserProvided",
+        "Explanation": "Balance 28 run captures"
       }
     ],
     "IncomeEvidence": [

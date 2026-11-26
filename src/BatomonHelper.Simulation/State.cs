@@ -93,10 +93,12 @@ public sealed class Unit
     public int Copies { get; set; } = 1;
     public Dictionary<string, double> Counters { get; set; } = [];
     public Unit? Devoured { get; set; }
+    public LiveCooldown? CapturedCooldown { get; set; }
     public Unit Clone() => new() { Instance = Instance, SpeciesId = SpeciesId, Level = Level, Shiny = Shiny,
-        AddedTypes = [.. AddedTypes], Bonuses = [.. Bonuses], StoredDiscount = StoredDiscount, Copies = Copies,
+        AddedTypes = [.. AddedTypes], Bonuses = [.. Bonuses], StoredDiscount = StoredDiscount, Copies = Copies, CapturedCooldown = CapturedCooldown,
         Counters = new(Counters), Devoured=Devoured?.Clone() };
 }
+public sealed record LiveCooldown(string SpeciesId, int Level, bool Shiny, double? Seconds);
 public sealed record BagEntry(string Id, int Quantity, long Instance = 0);
 public sealed record Offer(Unit? Creature, string? ItemId, double Price, double? BasisPrice = null);
 public sealed record Choice(string Label, string? DefinitionId, Effect[] Effects, TargetRule? TargetRule = null, bool AtShopStart = false);
@@ -163,7 +165,7 @@ public sealed record Observation(int Day, int TurnsRemaining, int Wins, double G
 public sealed record VisibleRunState(string[] ForeignPool,bool CarryShop,bool SecondChanceUsed,Unit[] PendingUnits,
     bool TakeAllChoices,Effect[] PendingShopEffects,PurchaseBuff[] PendingPurchaseBuffs,bool PendingShopStart,Phase ActiveChoicePhase,string? CurrentEvent);
 public sealed record FrozenBoard(int Day, double MaxHp, string Trainer, Unit?[] Team, BagEntry[] Bag, string[] ExtraTrainers,
-    Dictionary<string, double>? Counters = null, int Rank = 1, string[]? ForeignPool = null, int Wins = 0)
+    Dictionary<string, double>? Counters = null, int Rank = 1, string[]? ForeignPool = null, int Wins = 0, bool Mirrored = false, bool IncludesOngoingHp = false)
 {
     public static FrozenBoard From(RunState state) => new(state.Day, state.MaxHp, state.Trainer,
         state.Units.Take(6).Select(x => x?.Clone()).ToArray(), [.. state.Bag], [.. state.ExtraTrainers], new(state.Counters),state.Rank,[..state.ForeignPool],state.Wins);

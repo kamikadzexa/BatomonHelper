@@ -33,7 +33,7 @@ public sealed record PoolContext(ShopOddsSnapshot Snapshot, ImmutableHashSet<str
         var owned = ownedUnique.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
         var assumptions = ImmutableArray.CreateBuilder<string>();
         assumptions.Add($"Selected pool: {displayed.RegionFilter}. Region selection is supplied by you, not captured from the game.");
-        if (board is not null && (displayed.ShopRank != board.ShopRank || !displayed.RarityOdds.SequenceEqual(board.RarityOdds)))
+        if (board is not null && (displayed.ShopRank != ShopRankOdds.Normalize(board.ShopRank ?? 1) || !displayed.RarityOdds.SequenceEqual(board.RarityOdds)))
             assumptions.Add($"Manual odds scenario: rank {displayed.ShopRank}; captured rank {board.ShopRank}. Captured prices and gold still determine legal moves.");
         if (board is not null && displayed.ItemAvailable != (board.ItemUsesRemaining > 0))
             assumptions.Add($"Manual item-slot scenario: {(displayed.ItemAvailable ? "four" : "five")} Batomon rolls next shop.");

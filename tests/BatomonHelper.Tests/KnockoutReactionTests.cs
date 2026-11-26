@@ -110,7 +110,7 @@ public sealed class KnockoutReactionTests
         var reviver = Unit("reviver", 1.5, Effects("Knocked-out allies are revived and gain +50% Cooldown Speed for this battle."));
         var sacrifice = Unit("sacrifice", 1, Effects("Knockout self.")); var alive = Unit("alive", 2, [], 1);
         var result = Match([reviver, sacrifice, alive], Board("reviver", "sacrifice", "alive"));
-        Assert.Contains(result.Trace, x => x.StartsWith("2.17s side 0 slot 1"));
+        Assert.Contains(result.Trace, x => x.StartsWith("2.20s side 0 slot 1"));
         Assert.Contains(result.Trace, x => x.StartsWith("4.00s side 0 slot 2"));
         Assert.Equal(0, result.PersistentTeam[1]!.Bonuses[6]);
     }

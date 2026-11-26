@@ -112,7 +112,7 @@ public sealed class StatTransferReactionTests
         var watcher=Species("watcher",null,Effects("When a Toxic ally casts, give it +50% Cooldown Speed for this battle.",Trigger.Ongoing));
         var actor=Species("actor",1,[],1,types:["toxic"]);var own=Board("watcher","actor");
         var result=Match([watcher,actor],own,own with {MaxHp=2,Team=new Unit?[6]});
-        Assert.Equal(1.67,result.Seconds,8);Assert.Equal(0,result.PersistentTeam[1]!.Bonuses[6]);
+        Assert.Equal(1.7,result.Seconds,8);Assert.Equal(0,result.PersistentTeam[1]!.Bonuses[6]);
     }
 
     [Fact]
