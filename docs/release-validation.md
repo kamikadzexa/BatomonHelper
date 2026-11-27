@@ -1,3 +1,13 @@
+# Release validation for 1.0.8
+
+Validated locally on 2026-11-27.
+
+- The Release solution suite passed all 509 tests, including the survival, DPS, and empty-slot placement regressions.
+- Balance 28 combat rules for Steam build 26773903 imported 500 shop snapshots across the two November 27 captures. The replays matched 35 of 36 committed outcomes, up from 32. Both simulator modes agreed on the winner, duration, and remaining HP in all 36 replays. The remaining outcome discrepancy falls after the last recorded frame.
+- Godot 4.7.2 compiled Bridge 1.8 and passed the isolated battle-frame smoke test.
+- Inno Setup 6.7.3 built the production installer. The build verified the self-contained payload, including the 1.0.8 app, Bridge 1.8, and Balance 28 catalog. The installer matched its generated SHA-256 checksum.
+- The installer is unsigned. The release checks did not run a machine-wide installation or modify the live game.
+
 # Release validation: 1.0.7
 
 Validated locally on 2026-11-16.

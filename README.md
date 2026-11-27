@@ -10,7 +10,7 @@ A Windows companion for **Batomon Showdown**. View your live team, bench, shop, 
 - Damage, healing, shielding, and status projections over 0–30 seconds, with team/bench position suggestions.
 - Enemy lineups and the game's committed **WIN/LOSS** result.
 - Searchable creatures, items, and trinkets, region filters, and shop odds.
-- Optional run recording from the clean Day 1 opening, including game battle samples for simulator validation.
+- Optional run recording from any live shop, including game battle observations for simulator validation. Later starts are marked partial.
 - Steam discovery, readiness checks, mod installation/removal, and game launch.
 
 ## Install and connect
@@ -31,7 +31,7 @@ The helper does not attach to the game process, capture screenshots, send gamepl
 | **Hide · F8** / global **F8** | Hide/show; F8 also restores a minimized helper |
 | **Refresh · F9** / global **F9** | Refresh manually |
 | **Auto update** | Read state every 500 ms |
-| **Capture run** | Record shop changes plus game battle samples from the clean Day 1 opening |
+| **Capture run** | Record shop changes and game battle observations from the current live shop onward |
 | Window buttons / title-bar double-click | Minimize, maximize/restore, close |
 | **Escape** | Restore a maximized window |
 
@@ -63,7 +63,7 @@ dotnet test BatomonHelper.sln -c Release
 .\Installer\Build-Installer.ps1 -GodotPath 'C:\Tools\Godot\Godot_win64_console.exe'
 ```
 
-Needs .NET 10 SDK; installer creation also needs [Inno Setup 6](https://jrsoftware.org/isinfo.php) and a Godot 4.7 editor executable passed through `-GodotPath`. The build compiles the actual bridge and runs an isolated battle-frame smoke test before publishing. Pass `-CompilerPath` for a custom Inno compiler location. Output includes installer, checksum, and [release notes](docs/release-1.0.7.md). Publish the installer and its `.sha256` file as identically versioned GitHub Release assets for in-app updating.
+Needs the .NET 10 SDK, Inno Setup 6, and a Godot 4.7 editor executable passed through `-GodotPath`. The build compiles the bridge and runs an isolated battle-frame smoke test. Pass `-CompilerPath` for a custom Inno compiler location. Publish the installer and its matching `.sha256` file on GitHub Releases so the in-app updater can find them. [Inno Setup](https://jrsoftware.org/isinfo.php) · [1.0.8 release notes](docs/release-1.0.8.md)
 
 [Training Lab](docs/strategic-training.md) is separate and excluded from the installer. See [data/development details](docs/development.md) and [training](docs/training.md).
 
