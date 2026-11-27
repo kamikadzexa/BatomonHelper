@@ -54,11 +54,16 @@ public partial class MainWindow : Window
         };
         PreviewKeyDown += (_, e) =>
         {
-            if (e.Key == Key.Escape && IsFullscreen)
+            if (e.Key != Key.Escape || !IsFullscreen) return;
+            var picker = Keyboard.FocusedElement switch
             {
-                ToggleMaximize(this, new RoutedEventArgs());
-                e.Handled = true;
-            }
+                ComboBox combo => combo,
+                ComboBoxItem item => ItemsControl.ItemsControlFromItemContainer(item) as ComboBox,
+                _ => null
+            };
+            if (picker is { IsDropDownOpen: true }) return;
+            ToggleMaximize(this, new RoutedEventArgs());
+            e.Handled = true;
         };
         SourceInitialized += (_, _) =>
         {

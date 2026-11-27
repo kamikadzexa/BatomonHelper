@@ -51,7 +51,8 @@ public sealed class AnalysisRefreshTests
                     foreach (var seconds in new[] { .5, 1, 2 })
                     {
                         var frameSide = new GameBattleFrameSide(90, 100, 0, 0, 0, 0, []);
-                        var update = start with { Frame = new(seconds, frameSide, frameSide), Outcome = new(true) };
+                        var frame = new GameBattleFrame(seconds, frameSide, frameSide);
+                        var update = start with { Frame = frame, Outcome = new(true), Observations = [new((long)(seconds * 2), frame)] };
                         ((Task)refreshBattle.Invoke(model, [update])!).GetAwaiter().GetResult();
                         Assert.Same(row, Assert.Single(model.DamageRows));
                         Assert.Same(row, Assert.Single(model.OpponentDamageRows));
@@ -66,6 +67,15 @@ public sealed class AnalysisRefreshTests
                     Assert.Empty(model.OpponentDamageRows);
                     Assert.Null(Field(model, "_damageIdentity").GetValue(model));
                     Assert.Equal("unchanged", Field(model, "_positionIdentity").GetValue(model));
+                    using var placement = new CancellationTokenSource();
+                    Field(model, "_positionCancellation").SetValue(model, placement);
+                    Field(model.Setup, "_settings").SetValue(model.Setup, settings with
+                    {
+                        ShowDpsCounters = false, PlacementObjective = PlacementObjective.MostHpAndShield
+                    });
+                    model.Setup.SetConnection("");
+                    Assert.True(placement.IsCancellationRequested);
+                    Assert.Null(Field(model, "_positionIdentity").GetValue(model));
                     var side = new GameBattleSide(1, 100, "fixture", [], new([], []));
                     var refresh = typeof(OverlayViewModel).GetMethod("RefreshBattleAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
                     foreach (var hp in new[] { 100, 200 })

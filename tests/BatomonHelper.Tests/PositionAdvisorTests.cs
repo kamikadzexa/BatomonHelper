@@ -64,6 +64,7 @@ public sealed class PositionAdvisorTests
             [new(Trigger.Cast, Operation.Cleanse, Target.All, Amount: 1, Percent: true)])] };
         rules = rules with
         {
+            Build = "26773903",
             Species = [rules.Species[0], support],
             Parameters = rules.Parameters with { DailyHp = [.. rules.Parameters.DailyHp.Take(19), 453800] }
         };
@@ -78,6 +79,52 @@ public sealed class PositionAdvisorTests
         Assert.NotNull(advice.CurrentSurvival!.DefeatedAt);
         Assert.Null(advice.RecommendedSurvival!.DefeatedAt);
         Assert.Contains(advice.Slots.Take(6), unit => unit?.SpeciesId == "guard");
+    }
+
+    [Theory]
+    [InlineData(1000, false)]
+    [InlineData(20, true)]
+    public void Survival_fills_an_empty_slot_with_the_highest_dps_when_survival_is_equal(int hp, bool defeated)
+    {
+        var rules = RuleCompiler.Fixture();
+        var team = new Unit?[6];
+        for (var slot = 0; slot < 5; slot++)
+            team[slot] = Striker(slot + 1, 100);
+        var board = new FrozenBoard(1, hp, "fixture", team, [], []);
+        Unit?[] bench = [Striker(6, 0), Striker(7, 50), null, null];
+
+        var advice = Assert.IsType<PositionAdvice>(new PositionAdvisor(rules).FindBetterPosition(board, bench,
+            targetHp: 100, objective: PlacementObjective.MostHpAndShield));
+
+        Assert.Equal(advice.CurrentSurvival, advice.RecommendedSurvival);
+        Assert.Equal(defeated, advice.RecommendedSurvival!.DefeatedAt.HasValue);
+        Assert.All(advice.Slots.Take(6), slot => Assert.NotNull(slot));
+        Assert.Equal(7, advice.Slots[5]!.Instance);
+        Assert.True(advice.Recommended.Checkpoints[^1].Dps > advice.Current.Checkpoints[^1].Dps);
+
+        static Unit Striker(int instance, double damageBonus)
+        {
+            var unit = new Unit { Instance = instance, SpeciesId = "striker" };
+            unit.Bonuses[(int)Stat.Damage] = damageBonus;
+            return unit;
+        }
+    }
+
+    [Fact]
+    public void Survival_prefers_an_occupied_slot_when_survival_and_dps_are_equal()
+    {
+        var rules = RuleCompiler.Fixture();
+        var neutral = rules.Species[1] with { Normal = [new(1, null, new double[9], [])] };
+        rules = rules with { Species = [neutral] };
+        var board = new FrozenBoard(1, 1000, "fixture", new Unit?[6], [], []);
+        Unit?[] bench = [new() { Instance = 1, SpeciesId = neutral.Id }, null, null, null];
+
+        var advice = Assert.IsType<PositionAdvice>(new PositionAdvisor(rules).FindBetterPosition(board, bench,
+            targetHp: 100, objective: PlacementObjective.MostHpAndShield));
+
+        Assert.Equal(advice.CurrentSurvival, advice.RecommendedSurvival);
+        Assert.Equal(advice.Current.Checkpoints[^1].Dps, advice.Recommended.Checkpoints[^1].Dps);
+        Assert.Equal(1, Assert.Single(advice.Slots.Take(6).OfType<Unit>()).Instance);
     }
 
     [Fact]

@@ -4,6 +4,10 @@ namespace BatomonHelper.Simulation;
 
 public sealed class Combat(RulesManifest rules)
 {
+    private const string Balance28Build = "26773903";
+    private static readonly int[] ScreenSlots = [0, 1, 2, 3, 4, 5];
+    private static readonly int[] PlayerBattleSlots = [5, 4, 3, 2, 1, 0];
+    private static readonly int[] OpponentBattleSlots = [3, 4, 5, 0, 1, 2];
     private readonly Dictionary<string, Species> _species = rules.Species.ToDictionary(x => x.Id);
     private readonly Dictionary<string, InventoryDefinition> _trinkets = rules.Trinkets.ToDictionary(x => x.Id);
     private readonly Dictionary<string, InventoryDefinition> _trainers = rules.Trainers.ToDictionary(x => x.Id);
@@ -105,10 +109,13 @@ public sealed class Combat(RulesManifest rules)
         void Invalidate()=>statCache.Clear();
         var queue = new PriorityQueue<(int Side,int Slot,long Epoch,int Remaining), (long Tick,long Order)>();
         var log = new List<string>(); long order = 0; long now = 0; long operations = 0;
-        var tickSeconds = rules.Profile?.CombatTickSeconds??.01;
+        var balance28 = rules.Build == Balance28Build;
+        var tickSeconds = balance28 ? 1d / 30 : rules.Profile?.CombatTickSeconds ?? .01;
+        int[] BattleSlots(int side) => !balance28 ? ScreenSlots : side == 0 ? PlayerBattleSlots : OpponentBattleSlots;
         if(probe is not null&&(!double.IsFinite(probe.Duration)||probe.Duration<tickSeconds||probe.Duration>120))throw new ArgumentOutOfRangeException(nameof(probe),"Analysis duration must be between one tick and 120 seconds.");
         long Tick(double seconds) => (long)Math.Round(seconds/tickSeconds,MidpointRounding.AwayFromZero);
-        var multicastSpacing = Tick(.1);
+        // The Balance 28 captures fit four game ticks between consecutive casts by one unit.
+        var multicastSpacing = balance28 ? 4 : Tick(.1);
         var scoreLimit = probe is not null ? Tick(probe.Duration) : long.MaxValue;
         var pressureTick = probe?.PressureHp is not null ? Tick(1) : long.MaxValue;
         void Observe()
@@ -122,7 +129,9 @@ public sealed class Combat(RulesManifest rules)
             return new(Math.Max(0, team.Hp), team.MaxHp, team.Shield, (long)team.Status[0], (long)team.Status[1], (long)team.Status[2],
                 team.Units.Select((unit, slot) => (unit, slot)).Where(entry => entry.unit is not null)
                     .Select(entry => new GameBattleFrameUnit(entry.slot, entry.unit!.Alive, entry.unit.Casts,
-                        Stats(side, entry.slot).ToArray(), entry.unit.Damage, entry.unit.Healing, entry.unit.ShieldGranted)).ToArray());
+                        Stats(side, entry.slot).ToArray(), entry.unit.Damage, entry.unit.Healing, entry.unit.ShieldGranted,
+                        Cooldown(side, entry.slot), BasisCooldown(entry.unit) is null ? null : entry.unit.Progress,
+                        balance28 ? entry.unit.PendingCasts : null)).ToArray(), team.Hp);
         }
         void Output(int side,string kind,double amount)
         {
@@ -154,15 +163,15 @@ public sealed class Combat(RulesManifest rules)
                 var counters=new Dictionary<string,double>(u.Unit.Counters);
                 foreach(var pair in u.Activations)counters["effect:"+pair.Key]=pair.Value;
                 foreach(var pair in u.Growth)counters[$"growth:{pair.Key.Trigger}/{pair.Key.Operation}/{pair.Key.Target}/{pair.Key.Stat}"]=pair.Value;
-                units.Add(new(slot,u.Unit.SpeciesId,u.Alive,stats,BasisCooldown(u) is {} cd?EffectiveCooldown(cd,stats[(int)Stat.Speed],u.AddedCooldown+OngoingCooldown(0,slot)):null,counters));
+                units.Add(new(slot,u.Unit.SpeciesId,u.Alive,stats,Cooldown(0,slot),counters));
             }
             double CastRate(int slot)
             {
                 if(teams[0].Units[slot] is not {Alive:true,Disabled:false} unit)return 0;
                 var repeats=(int)Stats(0,slot)[(int)Stat.Multicast];
-                if(unit.ParentSlot is {} parent)return repeats*CastRate(parent);
-                return BasisCooldown(unit) is {} basis
-                    ? repeats/EffectiveCooldown(basis,Stats(0,slot)[(int)Stat.Speed],unit.AddedCooldown+OngoingCooldown(0,slot)) : 0;
+                var rate = unit.ParentSlot is { } parent ? repeats * CastRate(parent)
+                    : Cooldown(0, slot) is { } cooldown ? repeats / cooldown : 0;
+                return balance28 ? Math.Min(rate, 1 / (multicastSpacing * tickSeconds)) : rate;
             }
             var outputRates=new Dictionary<string,double>{{"Burn",0},{"Poison",0},{"Shock",0},{"Heal",0},{"Shield",0}};
             foreach(var unit in units){
@@ -197,7 +206,7 @@ public sealed class Combat(RulesManifest rules)
             Inventory(side,1,Trigger.BattleStart);
             var startRepeats=(int)teams[side].Counters.GetValueOrDefault("next-battle-start-repeat")+
                 teams[side].Bag.Sum(entry=>entry.Quantity*_trinkets[entry.Id].Effects.Where(x=>x.Trigger==Trigger.Ongoing && x.Operation==Operation.NextBattleStartRepeat).Sum(x=>(int)x.Amount));
-            for (var slot=0; slot<6; slot++)
+            foreach (var slot in BattleSlots(side))
                 if (teams[side].Units[slot] is { } unit)
                     for(var repeat=0;repeat<=startRepeats;repeat++)Activate(side,slot,Trigger.BattleStart);
         }
@@ -215,9 +224,9 @@ public sealed class Combat(RulesManifest rules)
                 next = Math.Min(pressureTick, Math.Min(nextBurn, Math.Min(nextPoison,nextStorm)));
                 if (queue.TryPeek(out _,out var priority)) next=Math.Min(next,priority.Tick);
                 for(var side=0;side<2;side++) for(var slot=0;slot<6;slot++)
-                    if(teams[side].Units[slot] is { Alive:true, ParentSlot:null } u && BasisCooldown(u) is { } basis)
+                    if(teams[side].Units[slot] is { Alive:true, ParentSlot:null } u && Cooldown(side, slot) is { } cooldown)
                     {
-                        var remaining=EffectiveCooldown(basis,Stats(side,slot)[(int)Stat.Speed],u.AddedCooldown+OngoingCooldown(side,slot))-u.Progress;
+                        var remaining=cooldown-u.Progress;
                         next=Math.Min(next,now+Math.Max(1,(long)Math.Ceiling((remaining-1e-9)/tickSeconds)));
                     }
                 for(var side=0;side<2;side++)for(var slot=0;slot<6;slot++)if(teams[side].Units[slot] is {Alive:true,Disabled:false} u)
@@ -233,12 +242,12 @@ public sealed class Combat(RulesManifest rules)
                 if(!u.Disabled)foreach(var effect in Effects(Definition(u),Trigger.Timer))u.Timers[effect]=u.Timers.GetValueOrDefault(effect)+elapsed;
             }
             now=next;
-            for(var side=0;side<2;side++)for(var slot=0;slot<6;slot++)if(teams[side].Units[slot] is {Alive:true,Disabled:false} u)
+            for(var side=0;side<2;side++)foreach(var slot in BattleSlots(side))if(teams[side].Units[slot] is {Alive:true,Disabled:false} u)
                 foreach(var effect in Effects(Definition(u),Trigger.Timer))if(u.Timers.GetValueOrDefault(effect)+1e-9>=effect.IntervalSeconds)
                 {u.Timers[effect]=0;for(var repeat=0;repeat<=OngoingRepeats(side,slot);repeat++)Apply(side,slot,effect);}
-            for(var side=0;side<2;side++) for(var slot=0;slot<6;slot++)
-                if(teams[side].Units[slot] is { Alive:true, ParentSlot:null } u && BasisCooldown(u) is { } basis &&
-                    u.Progress+1e-9>=EffectiveCooldown(basis,Stats(side,slot)[(int)Stat.Speed],u.AddedCooldown+OngoingCooldown(side,slot)))
+            for(var side=0;side<2;side++) foreach(var slot in BattleSlots(side))
+                if(teams[side].Units[slot] is { Alive:true, ParentSlot:null } u && Cooldown(side, slot) is { } cooldown &&
+                    u.Progress+1e-9>=cooldown)
                 { u.Progress=0; Sequence(side,slot); }
             casts.Clear();
             while(queue.TryPeek(out var casting,out var at) && at.Tick<=now)
@@ -246,7 +255,13 @@ public sealed class Combat(RulesManifest rules)
                 if (probe is { StopQuietlyOnCancellation: true } && probe.Cancellation.IsCancellationRequested) break;
                 queue.Dequeue();
                 if(teams[casting.Side].Units[casting.Slot] is not { Alive:true } caster || caster.Epoch!=casting.Epoch) continue;
-                if (casting.Remaining > 1)
+                if (balance28)
+                {
+                    caster.NextCastTick = now + multicastSpacing;
+                    if (--caster.PendingCasts > 0 && caster.NextCastTick <= scoreLimit)
+                        queue.Enqueue(casting, (caster.NextCastTick, at.Order));
+                }
+                else if (casting.Remaining > 1)
                     queue.Enqueue((casting.Side, casting.Slot, casting.Epoch, casting.Remaining - 1),
                         (at.Tick + multicastSpacing, at.Order + 1));
                 // The game reads output stats before on_cast runs. Self buffs such as
@@ -254,7 +269,7 @@ public sealed class Combat(RulesManifest rules)
                 var castStats=(double[])Stats(casting.Side,casting.Slot).Clone();
                 if (audit is not null) caster.Casts++;
                 Activate(casting.Side,casting.Slot,Trigger.Cast);
-                for(var child=0;child<6;child++)if(teams[casting.Side].Units[child] is {Alive:true} summoned && summoned.ParentSlot==casting.Slot)
+                foreach(var child in BattleSlots(casting.Side))if(teams[casting.Side].Units[child] is {Alive:true} summoned && summoned.ParentSlot==casting.Slot)
                     Sequence(casting.Side,child,casting.Slot);
                 Inventory(casting.Side,casting.Slot,Trigger.Cast);
                 casts.Add((casting.Side,casting.Slot,castStats));
@@ -349,6 +364,16 @@ public sealed class Combat(RulesManifest rules)
         double? BasisCooldown(Fighter fighter) => fighter.Unit.CapturedCooldown is { } live &&
             (live.SpeciesId, live.Level, live.Shiny) == (fighter.Unit.SpeciesId, fighter.Unit.Level, fighter.Unit.Shiny)
             ? live.Seconds : Definition(fighter).Cooldown;
+        double? Cooldown(int side, int slot) => BasisCooldown(teams[side].Units[slot]!) is { } basis
+            ? EffectiveCooldown(basis, Stats(side, slot)[(int)Stat.Speed], AddedCooldown(side, slot)) : null;
+        double AddedCooldown(int side, int slot) => teams[side].Units[slot]!.AddedCooldown + OngoingCooldown(side, slot);
+        void Charge(int side, int slot, Fighter unit, double seconds)
+        {
+            if (unit.Unit.SpeciesId is "dracana" or "ironcore" or "steamscuttle") return;
+            if (!balance28) unit.Progress += seconds;
+            else if (Cooldown(side, slot) is { } cooldown)
+                unit.Progress += Math.Min(Math.Max(cooldown - unit.Progress, 0), seconds);
+        }
         bool Matches(Fighter u,Effect effect) => (effect.Operation==Operation.AddType || effect.Type is null || _matchTypes.GetOrAdd(effect.Type,text=>text.Split('|')).Any(type=>Types(u).Contains(type))) &&
             u.Unit.SpeciesId!=effect.ExcludeSpecies && (effect.Rarity is null || _species[u.Unit.SpeciesId].Rarity==effect.Rarity) &&
             (effect.MinimumLevel is null || u.Unit.Level>=effect.MinimumLevel) && (effect.MaximumLevel is null || u.Unit.Level<=effect.MaximumLevel) &&
@@ -374,6 +399,7 @@ public sealed class Combat(RulesManifest rules)
             var source=teams[side].Units[slot]!; var values=Base(source);var percentages=System.Buffers.ArrayPool<double>.Shared.Rent(9);
             Array.Clear(percentages,0,9);
             try{
+            source.TemporaryPercentages?.CopyTo(percentages, 0);
             void Bonus(Effect e,int actor)
             {
                 if(e.Scale!=EffectScale.None && (excludedDynamicStats & StatBit(side,actor,e.Stat))!=0)return;
@@ -394,8 +420,6 @@ public sealed class Combat(RulesManifest rules)
             foreach(var trainer in teams[side].Trainers)
                 foreach(var e in _trainers[trainer].Effects.Where(x=>x.Trigger==Trigger.Ongoing))
                     if(Matches(source,e))Bonus(e,slot);
-            var cooldown=BasisCooldown(source)??0;
-            if(cooldown>=5){percentages[0]+=.2*BagCount(side,"small-club");for(var i=0;i<6;i++)percentages[i]+=.7*BagCount(side,"giant-club");}
             var types=Types(source).ToHashSet();
             var kaleidoscope=BagCount(side,"kaleidoscope");
             if(kaleidoscope>0&&!teams[side].Units.Where((u,i)=>i!=slot && u is {Alive:true}).OfType<Fighter>().Any(u=>Types(u).Any(types.Contains)))values[6]+=.35*kaleidoscope;
@@ -406,6 +430,18 @@ public sealed class Combat(RulesManifest rules)
                 if(trainer=="musician" && types.Contains("electric") && teams[side].Units.OfType<Fighter>().Count(u=>Types(u).Contains("electric"))==1)percentages[5]+=1.5;
                 if(trainer=="chemist" && types.Contains("toxic"))values[4]+=3+teams[side].Counters.GetValueOrDefault("chemist-levels");
                 if(trainer=="pyromaniac" && types.Contains("fire"))values[3]+=2;
+            }
+            var smallClubs = BagCount(side, "small-club");
+            var giantClubs = BagCount(side, "giant-club");
+            if (smallClubs + giantClubs > 0 && BasisCooldown(source) is { } basis)
+            {
+                var speed = values[(int)Stat.Speed] * (1 + percentages[(int)Stat.Speed]);
+                var cooldown = balance28 ? EffectiveCooldown(basis, speed, AddedCooldown(side, slot)) : basis;
+                if (cooldown >= 5)
+                {
+                    percentages[(int)Stat.Damage] += .2 * smallClubs;
+                    for (var stat = 0; stat < 6; stat++) percentages[stat] += .7 * giantClubs;
+                }
             }
             for(var i=0;i<9;i++)values[i]*=1+percentages[i];
             for(var i=0;i<6;i++) values[i]=Math.Clamp(Math.Round(values[i],MidpointRounding.AwayFromZero),0,999_999_999);
@@ -418,12 +454,22 @@ public sealed class Combat(RulesManifest rules)
         }
         void Sequence(int side,int slot,int? parent=null)
         {
-            if(teams[side].Units[slot]!.ParentSlot is { } required && required!=parent)return;
+            var caster = teams[side].Units[slot]!;
+            if(caster.ParentSlot is { } required && required!=parent)return;
             var repeats=(int)Stats(side,slot)[(int)Stat.Multicast];
+            if (balance28)
+            {
+                var nextCast = Math.Max(now, caster.NextCastTick);
+                if (nextCast > scoreLimit || repeats <= 0) return;
+                if (caster.PendingCasts == 0)
+                    queue.Enqueue((side, slot, caster.Epoch, 0), (nextCast, order++));
+                caster.PendingCasts += repeats;
+                return;
+            }
             var scheduled = (int)Math.Min(repeats, (scoreLimit - now) / multicastSpacing + 1);
             if (scheduled <= 0) return;
             // Reserve tie-break order for the entire sequence and queue only its next cast.
-            queue.Enqueue((side, slot, teams[side].Units[slot]!.Epoch, scheduled), (now, order));
+            queue.Enqueue((side, slot, caster.Epoch, scheduled), (now, order));
             order += scheduled;
         }
         bool Linked(int side) => InventoryState(side).Linked;
@@ -448,7 +494,7 @@ public sealed class Combat(RulesManifest rules)
         }
         void NotifyAllies(int side,int actor,Trigger trigger,double[]? eventStats=null,bool includeSelf=false)
         {
-            for(var slot=0;slot<6;slot++)if((includeSelf || slot!=actor) && teams[side].Units[slot] is { Alive:true,Disabled:false } u)
+            foreach(var slot in BattleSlots(side))if((includeSelf || slot!=actor) && teams[side].Units[slot] is { Alive:true,Disabled:false } u)
                 React(side,slot,Effects(Definition(u),trigger).Where(x=>EventMatches(side,slot,side,actor,x) &&
                     (x.EventType is null||_species[teams[side].Units[actor]!.Unit.SpeciesId].Types.Concat(teams[side].Units[actor]!.Unit.AddedTypes).Contains(x.EventType))).ToArray(),eventStats,actor);
         }
@@ -460,7 +506,7 @@ public sealed class Combat(RulesManifest rules)
         }
         void NotifyKnockout(int actorSide,int actorSlot,double[] before)
         {
-            for(var side=0;side<2;side++)for(var slot=0;slot<6;slot++)
+            for(var side=0;side<2;side++)foreach(var slot in BattleSlots(side))
                 if((side!=actorSide || slot!=actorSlot) && teams[side].Units[slot] is {Alive:true,Disabled:false} u)
                     React(side,slot,Definition(u).Effects.Where(x=>(x.Trigger==Trigger.AnyKnockout || side==actorSide && x.Trigger==Trigger.AllyKnockout) && EventMatches(side,slot,actorSide,actorSlot,x)).ToArray(),before);
         }
@@ -530,8 +576,7 @@ public sealed class Combat(RulesManifest rules)
             if (effect is { Operation: Operation.Charge, Target: Target.Self } &&
                 teams[side].Units[slot] is { Alive: true } charged)
             {
-                if (charged.Unit.SpeciesId is not ("dracana" or "ironcore" or "steamscuttle") &&
-                    (effect.IncludeSelf || Matches(charged, effect))) charged.Progress += effect.Amount;
+                if (effect.IncludeSelf || Matches(charged, effect)) Charge(side, slot, charged, effect.Amount);
                 return;
             }
             var enemy=effect.Target is Target.Opposite or Target.Enemies or Target.RandomEnemy or Target.EnemyRow;
@@ -601,7 +646,7 @@ public sealed class Combat(RulesManifest rules)
                         var pool=id is "same-rarity" or "above-shop"?_species.Values.Where(x=>x.Rarity==tier &&
                             (x.ShopEligible && x.Pantra || teams[recipientSide].ForeignPool.Contains(x.Id))).ToArray():[_species[id]];
                         if(pool.Length==0)throw new InvalidOperationException("No eligible battle transformation at rarity "+tier);
-                        unit.Unit.SpeciesId=pool[rng.Index(pool.Length)].Id;unit.Progress=0;unit.Epoch++;unit.Timers.Clear();
+                        unit.Unit.SpeciesId=pool[rng.Index(pool.Length)].Id;unit.Progress=0;unit.CancelCasts();unit.Timers.Clear();
                         if(effect.ReviveTargets)unit.Alive=true;
                         if(effect.Permanent)unit.PersistentUnit.SpeciesId=unit.Unit.SpeciesId;break;
                     case Operation.CopyStat:
@@ -613,7 +658,7 @@ public sealed class Combat(RulesManifest rules)
                         if(progress>=effect.Amount && !effect.DeferredEvolution)Apply(recipientSide,recipient,effect with {Operation=Operation.Evolve,ProgressCounter=null});break;
                     case Operation.Evolve:
                         var evolved=_species[unit.Unit.SpeciesId].EvolutionId??throw new InvalidDataException("Evolution target missing.");
-                        unit.Unit.SpeciesId=evolved;unit.Progress=0;unit.Epoch++;unit.Timers.Clear();
+                        unit.Unit.SpeciesId=evolved;unit.Progress=0;unit.CancelCasts();unit.Timers.Clear();
                         if(effect.Permanent)unit.PersistentUnit.SpeciesId=evolved;break;
                     case Operation.Add:
                         if(unit.Unit.SpeciesId=="zephyrex" && effect.Stat==Stat.Multicast)break;
@@ -621,10 +666,15 @@ public sealed class Combat(RulesManifest rules)
                         if(effect.Permanent)unit.PersistentUnit.Bonuses[(int)effect.Stat]+=Gain(side,effect.Stat,effect.Amount);break;
                     case Operation.Multiply:
                         if(unit.Unit.SpeciesId=="zephyrex" && effect.Stat==Stat.Multicast)break;
+                        if (balance28 && !effect.Permanent)
+                        {
+                            (unit.TemporaryPercentages ??= new double[9])[(int)effect.Stat] += effect.Amount;
+                            break;
+                        }
                         var bonus=Base(unit)[(int)effect.Stat]*effect.Amount;
                         (effect.Permanent?unit.Unit.Bonuses:unit.Temporary)[(int)effect.Stat]+=bonus;
                         if(effect.Permanent)unit.PersistentUnit.Bonuses[(int)effect.Stat]+=bonus;break;
-                    case Operation.Charge: if(unit.Unit.SpeciesId is not("dracana" or "ironcore" or "steamscuttle")) unit.Progress+=effect.Amount; break;
+                    case Operation.Charge: Charge(recipientSide, recipient, unit, effect.Amount); break;
                     case Operation.Trigger: Sequence(recipientSide,recipient); break;
                     case Operation.Protect: unit.Protect+=(int)effect.Amount; break;
                     case Operation.Disable: unit.Disabled=true; break;
@@ -632,7 +682,7 @@ public sealed class Combat(RulesManifest rules)
                         if(!unit.Alive)break;
                         if(unit.Protect>0) { unit.Protect--; break; }
                         var before=Stats(recipientSide,recipient);
-                        unit.Alive=false;unit.Epoch++;Activate(recipientSide,recipient,Trigger.Knockout);
+                        unit.Alive=false;unit.CancelCasts();Activate(recipientSide,recipient,Trigger.Knockout);
                         NotifyKnockout(recipientSide,recipient,before);
                         if(effect.KnockoutStat is { } gained)Apply(side,slot,new(Trigger.None,Operation.Add,Target.Self,gained,effect.KnockoutBonus,effect.KnockoutPermanent));
                         if(effect.StealKnockoutStats)for(var stat=0;stat<8;stat++)if(stat!=6)
@@ -645,7 +695,11 @@ public sealed class Combat(RulesManifest rules)
                         unit.Unit.Level=effect.UnlimitedLevels?checked(unit.Unit.Level+1):Math.Min(effect.MaximumLevel??4,unit.Unit.Level+1);
                         var currentSpecies=_species[unit.Unit.SpeciesId];
                         if(currentSpecies.EvolutionId is { } levelEvolution && currentSpecies.EvolutionLevel is { } threshold && unit.Unit.Level>=threshold)
-                        {unit.Unit.SpeciesId=levelEvolution;if(effect.Permanent)unit.PersistentUnit.SpeciesId=levelEvolution;}
+                        {
+                            unit.Unit.SpeciesId=levelEvolution;
+                            if (balance28) { unit.Progress = 0; unit.CancelCasts(); }
+                            if(effect.Permanent)unit.PersistentUnit.SpeciesId=levelEvolution;
+                        }
                         if(effect.Permanent)unit.PersistentUnit.Level=unit.Unit.Level;
                         if(unit.Unit.Level!=oldLevel){unit.Timers.Clear();LevelChanged(recipientSide,recipient);NotifyAllies(recipientSide,recipient,Trigger.AllyAnyLevelUp);}break;
                     case Operation.AddedCooldown: unit.AddedCooldown+=effect.Amount; break;
@@ -718,6 +772,14 @@ public sealed class Combat(RulesManifest rules)
         public Unit Unit=unit.Clone(),PersistentUnit=unit.Clone(); public bool Alive=true,Disabled;public long Epoch;
         public int Casts; public double Damage, Healing, ShieldGranted;
         public double Progress;public double DamageAdjustment; public double AddedCooldown=0; public int Protect; public double[] Temporary=new double[9];
+        public double[]? TemporaryPercentages;
+        public long NextCastTick;
+        public long PendingCasts;
+        public void CancelCasts()
+        {
+            Epoch++;
+            PendingCasts = 0;
+        }
         public HashSet<Effect> ConsumedEffects=[];
         public Dictionary<Effect,double> Growth=[];
         public Dictionary<Effect,double> Timers=[];

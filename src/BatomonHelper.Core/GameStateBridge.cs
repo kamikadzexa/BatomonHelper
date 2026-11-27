@@ -14,11 +14,13 @@ public sealed record GameBattleFrameSide(double Health, double MaximumHealth, do
     long Burn, long Poison, long Shock, GameBattleFrameUnit[] Units, double? RawHealth = null);
 /// <summary>Live values are deliberately raw game values, in the same order as <see cref="GameCombatUnit.PermanentStats"/>.</summary>
 public sealed record GameBattleFrameUnit(int Slot, bool Alive, int Casts, double[] Stats,
-    double DamageDealt, double HealingDone, double ShieldGranted);
+    double DamageDealt, double HealingDone, double ShieldGranted,
+    double? EffectiveCooldownSeconds = null, double? CooldownProgressSeconds = null, long? PendingCasts = null);
 /// <summary>One read-only bridge sample, normally emitted every half second during visual playback.</summary>
 public sealed record GameBattleFrame(double ElapsedSeconds, GameBattleFrameSide Player, GameBattleFrameSide Opponent);
 public sealed record GameBattleState(GameBattleSide Player, GameBattleSide Opponent, GameBattleOutcome? Outcome = null,
-    GameBattleFrame? Frame = null, string? FightId = null);
+    GameBattleFrame? Frame = null, string? FightId = null, GameBattleObservation[]? Observations = null);
+public sealed record GameBattleObservation(long Index, GameBattleFrame Frame);
 public sealed record GameBattleOutcome(bool PlayerWon);
 
 public sealed record GameCombatUnit(int Slot, double[] PermanentStats, double? BaseCooldown, string[] AddedTypes);
@@ -107,10 +109,18 @@ public sealed class GameStateBridge
             var player = ResolveSide(battle.Player);
             var opponent = ResolveSide(battle.Opponent);
             if (player.Day != opponent.Day) throw new InvalidDataException("Battle teams have different days.");
-            GameBattleFrame? frame = null;
-            try { if (battle.Frame is { } sample) frame = ResolveFrame(sample); }
-            catch (InvalidDataException) { }
-            return battle with { Player = player, Opponent = opponent, Frame = frame };
+            var frame = ValidFrame(battle.Frame);
+            var observations = battle.Observations?.Where(sample => sample is { Index: > 0 })
+                .Select(sample => (sample.Index, Frame: ValidFrame(sample.Frame)))
+                .Where(sample => sample.Frame is not null)
+                .Select(sample => new GameBattleObservation(sample.Index, sample.Frame!)).ToArray();
+            return battle with { Player = player, Opponent = opponent, Frame = frame, Observations = observations };
+        }
+
+        GameBattleFrame? ValidFrame(GameBattleFrame? frame)
+        {
+            try { return frame is null ? null : ResolveFrame(frame); }
+            catch (InvalidDataException) { return null; }
         }
 
         GameBattleSide ResolveSide(GameBattleSide side)
@@ -144,6 +154,9 @@ public sealed class GameStateBridge
                 side.Units.Any(unit => unit is null || unit.Slot is < 0 or > 5 || unit.Casts < 0 || unit.Stats is null ||
                     unit.Stats.Length != 9 || unit.Stats.Any(value => !double.IsFinite(value)) ||
                     !double.IsFinite(unit.DamageDealt) || !double.IsFinite(unit.HealingDone) || !double.IsFinite(unit.ShieldGranted) ||
+                    (unit.EffectiveCooldownSeconds is { } cooldown && (!double.IsFinite(cooldown) || cooldown <= 0)) ||
+                    (unit.CooldownProgressSeconds is { } progress && (!double.IsFinite(progress) || progress < 0)) ||
+                    unit.PendingCasts is < 0 ||
                     unit.DamageDealt < 0 || unit.HealingDone < 0 || unit.ShieldGranted < 0) ||
                 side.Units.Select(unit => unit.Slot).Distinct().Count() != side.Units.Length)
                 throw new InvalidDataException("Invalid battle frame.");

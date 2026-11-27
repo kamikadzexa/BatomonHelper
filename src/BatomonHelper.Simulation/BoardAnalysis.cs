@@ -40,7 +40,7 @@ public sealed record BoardAnalysisResult(int Version,string RulesHash,string Ide
 /// <summary>Passive-target offensive projection using the production combat resolver, never a second damage formula.</summary>
 public sealed class BoardAnalyzer(RulesManifest rules)
 {
-    public const int Version=6;
+    public const int Version=7;
     private readonly Dictionary<string,BoardAnalysisResult> _cache=[];
     private readonly Queue<string> _order=[];
     private readonly object _gate=new();

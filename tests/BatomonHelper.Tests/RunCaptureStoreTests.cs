@@ -97,4 +97,41 @@ public sealed class RunCaptureStoreTests
         }
     }
 
+    [Fact]
+    public async Task Merges_overlapping_observation_batches_and_keeps_a_terminal_sample_between_heartbeats()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "BatomonHelperTests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            var store = new RunCaptureStore(directory, CatalogSnapshot.Empty, now);
+            var side = new GameBattleSide(1, 100, "fixture", [], new([], [], Counters: [], ExtraTrainers: []));
+            var frameSide = new GameBattleFrameSide(100, 100, 0, 0, 0, 0, []);
+            var first = new GameBattleFrame(0, frameSide, frameSide);
+            var started = first with { Player = frameSide with { Shield = 10 } };
+            var terminal = started with { ElapsedSeconds = .1, Opponent = frameSide with { Health = 0 } };
+            var battle = new GameBattleState(side, side, Frame: started, FightId: "10-1",
+                Observations: [new(1, first), new(2, started)]);
+            await store.AppendFightAsync(1, now, battle);
+            await store.AppendFightAsync(2, now, battle with
+            {
+                Outcome = new(true), Frame = null, Observations = [new(2, started), new(4, terminal), new(5, first)]
+            });
+            await store.AppendFightAsync(3, now, battle);
+            await store.CompleteAsync();
+
+            var capture = JsonSerializer.Deserialize<CapturedRun>(await File.ReadAllTextAsync(store.Path), GameStateBridge.JsonOptions)!;
+            Assert.Equal(5, capture.Version);
+            var fight = Assert.Single(capture.Fights);
+            Assert.Null(fight.Start.Observations);
+            Assert.True(fight.TerminalObserved);
+            Assert.True(fight.Outcome!.PlayerWon);
+            Assert.Equal(new long?[] { 1, 2, 4, 5 }, fight.Frames.Select(frame => frame.ObservationIndex));
+            Assert.Equal(new double[] { 0, 10, 10, 0 }, fight.Frames.Select(frame => frame.Frame.Player.Shield));
+        }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, true);
+        }
+    }
 }

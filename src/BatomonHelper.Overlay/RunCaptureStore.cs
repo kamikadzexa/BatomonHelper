@@ -15,7 +15,8 @@ public sealed record RunCaptureStep(long BridgeSequence, DateTimeOffset Captured
 /// <summary>Game-authoritative fight evidence for comparing the simulator with the live game.</summary>
 public sealed record CapturedFight(GameBattleState Start, GameBattleOutcome? Outcome,
     ImmutableArray<FightCaptureFrame> Frames, bool TerminalObserved = false);
-public sealed record FightCaptureFrame(long BridgeSequence, DateTimeOffset CapturedAt, GameBattleFrame Frame);
+public sealed record FightCaptureFrame(long BridgeSequence, DateTimeOffset CapturedAt, GameBattleFrame Frame,
+    long? ObservationIndex = null);
 
 public sealed class RunCaptureStore
 {
@@ -66,7 +67,7 @@ public sealed class RunCaptureStore
         CancellationToken cancellationToken = default)
     {
         // The starting teams identify a fight. Outcome and each sampled frame are mutable observations.
-        var start = battle with { Outcome = null, Frame = null };
+        var start = battle with { Outcome = null, Frame = null, Observations = null };
         var startSignature = start.FightId ?? JsonSerializer.Serialize(start, GameStateBridge.JsonOptions);
         await _gate.WaitAsync(cancellationToken);
         try
@@ -83,14 +84,27 @@ public sealed class RunCaptureStore
             var fight = _fights[index];
             var frames = fight.Frames;
             var terminal = fight.TerminalObserved;
-            if (battle.Frame is { } frame)
+            if (battle.Observations is { } observations)
+            {
+                var lastIndex = frames.IsEmpty ? 0 : frames[^1].ObservationIndex.GetValueOrDefault();
+                var additions = new List<FightCaptureFrame>();
+                foreach (var observation in observations.OrderBy(sample => sample.Index))
+                {
+                    if (observation.Index <= lastIndex) continue;
+                    lastIndex = observation.Index;
+                    additions.Add(new(sequence, capturedAt, observation.Frame, observation.Index));
+                    terminal |= IsTerminal(observation.Frame);
+                }
+                if (additions.Count > 0) frames = frames.AddRange(additions);
+            }
+            else if (battle.Frame is { } frame && (frames.IsEmpty || frames[^1].ObservationIndex is null))
             {
                 var signature = JsonSerializer.Serialize(frame, GameStateBridge.JsonOptions);
                 if (_lastFrameSignatures.GetValueOrDefault(startSignature) != signature)
                 {
                     _lastFrameSignatures[startSignature] = signature;
                     frames = frames.Add(new(sequence, capturedAt, frame));
-                    terminal |= frame.Player.Health <= 0 || frame.Opponent.Health <= 0;
+                    terminal |= IsTerminal(frame);
                 }
             }
             var outcome = battle.Outcome ?? fight.Outcome;
@@ -103,6 +117,8 @@ public sealed class RunCaptureStore
         }
         finally { _gate.Release(); }
     }
+
+    private static bool IsTerminal(GameBattleFrame frame) => frame.Player.Health <= 0 || frame.Opponent.Health <= 0;
 
     public async Task CompleteAsync(CancellationToken cancellationToken = default)
     {
@@ -117,9 +133,12 @@ public sealed class RunCaptureStore
         // frame indices. Do not label those recordings as corrected screen order.
         var version = _fights.Any(fight => fight.Start.Player.Combat.Counters is null) ? 2 : 3;
         if (version == 3 && (_partial || _gameBuild is not null || _fights.Any(fight => fight.Start.FightId is not null))) version = 4;
+        if (version >= 3 && _fights.Any(fight => !fight.Frames.IsEmpty && fight.Frames[^1].ObservationIndex is not null)) version = 5;
         var run = new CapturedRun(version, _startedAt, endedAt, _catalogVersion, _gameBuild, [.. _changes], [.. _fights], _catalogBuild, _partial);
         var temporaryPath = _path + ".tmp";
-        await File.WriteAllTextAsync(temporaryPath, JsonSerializer.Serialize(run, JsonOptions), cancellationToken);
+        await using (var stream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096,
+            FileOptions.Asynchronous))
+            await JsonSerializer.SerializeAsync(stream, run, version == 5 ? GameStateBridge.JsonOptions : JsonOptions, cancellationToken);
         File.Move(temporaryPath, _path, true);
         _lastPersisted = DateTimeOffset.UtcNow;
     }

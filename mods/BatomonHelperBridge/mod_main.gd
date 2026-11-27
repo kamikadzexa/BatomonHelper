@@ -4,13 +4,18 @@ extends Node
 const OUTPUT_DIR := "user://batomon-helper"
 const SHOP_SCRIPT := "res://game/states/shop_state.gd"
 const BATTLE_SCRIPT := "res://game/states/battle_state.gd"
+const BATTLE_OBSERVATION_LIMIT := 192
 const STAT_NAMES := {1: "Damage", 2: "Heal", 3: "Shield", 4: "Burn", 5: "Poison", 6: "Shock", 7: "Multicast"}
 const RARITIES := ["Common", "Uncommon", "Rare", "SuperRare", "Legendary"]
 var _next_poll := 0
 var _sequence := 0
 var _last_error := ""
 var _battle_player_id := 0
+var _battle_player
 var _battle_snapshot := {}
+var _battle_frame
+var _battle_observations: Array[Dictionary] = []
+var _battle_observation_index := 0
 var _last_battle := {}
 var _battle_number := 0
 var _last_battle_at := 0
@@ -21,20 +26,27 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	var now := Time.get_ticks_msec()
+	var main = get_tree().current_scene
+	var state = main.get("current_state") if _has(main, "current_state") else null
+	if _script_is(state, BATTLE_SCRIPT):
+		observe_battle(state)
+	elif _battle_player_id != 0:
+		# Preserve the tail even when playback finishes between heartbeats.
+		_last_battle = _read_observed_battle()
+		_last_battle_at = now
+		_battle_player_id = 0
+		_battle_player = null
 	if now < _next_poll:
 		return
 	_next_poll = now + 500
-	_publish()
+	_publish(state)
 
-func _publish() -> void:
+func _publish(state) -> void:
 	_sequence += 1
 	var message := {"protocolVersion": 1, "sequence": _sequence,
 		"updatedAt": Time.get_datetime_string_from_system(true) + "Z",
 		"processId": OS.get_process_id(), "phase": "other", "board": null}
-	var main = get_tree().current_scene
-	var state = main.get("current_state") if _has(main, "current_state") else null
 	if _script_is(state, SHOP_SCRIPT):
-		_battle_player_id = 0
 		message.phase = "shop"
 		var run = get_node_or_null("/root/RunManager")
 		run = run.get("data") if run != null else null
@@ -49,28 +61,10 @@ func _publish() -> void:
 			message.combat = read_combat(run)
 	elif _script_is(state, BATTLE_SCRIPT):
 		message.phase = "battle"
-		# TEMPLATE copies are captured before start effects and remain stable throughout replays.
-		var player = state.get("_replay_p1_data") if _has(state, "_replay_p1_data") else null
-		var opponent = state.get("_replay_p2_data") if _has(state, "_replay_p2_data") else null
-		if player == null or opponent == null:
+		if _battle_player_id == 0:
 			message.error = "Battle teams are initializing."
 		else:
-			if _battle_player_id != player.get_instance_id():
-				_battle_number += 1
-				_battle_snapshot = {"fightId": "%d-%d" % [OS.get_process_id(), _battle_number], "player": read_battle_side(player, int(player.current_round)),
-					"opponent": read_battle_side(opponent, int(player.current_round), true)}
-				_battle_player_id = player.get_instance_id()
-			message.battle = _battle_snapshot.duplicate()
-			message.battle.outcome = read_battle_outcome(player)
-			if message.battle.outcome == null and _last_battle.get("fightId") == message.battle.fightId:
-				message.battle.outcome = _last_battle.get("outcome")
-			# These are observations of the game's visual replay, never a second
-			# simulation. They make captured runs useful for auditing simulator rules.
-			var frame = read_battle_frame(state)
-			if frame != null:
-				message.battle.frame = frame
-			elif _last_battle.get("fightId") == message.battle.fightId and _last_battle.has("frame"):
-				message.battle.frame = _last_battle.frame
+			message.battle = _read_observed_battle()
 			_last_battle = message.battle
 			_last_battle_at = Time.get_ticks_msec()
 	if message.phase != "battle" and not _last_battle.is_empty() and Time.get_ticks_msec() - _last_battle_at <= 3000:
@@ -85,6 +79,47 @@ func _publish() -> void:
 	var err := DirAccess.rename_absolute(ProjectSettings.globalize_path(pending), ProjectSettings.globalize_path(OUTPUT_DIR.path_join("state.json")))
 	if err != OK:
 		_warn("Cannot publish bridge state: " + error_string(err))
+
+func observe_battle(state) -> void:
+	# Replay templates predate the start effects and keep their identity during playback.
+	var player = state.get("_replay_p1_data") if _has(state, "_replay_p1_data") else null
+	var opponent = state.get("_replay_p2_data") if _has(state, "_replay_p2_data") else null
+	if player == null or opponent == null:
+		return
+	if _battle_player_id != player.get_instance_id():
+		_battle_number += 1
+		_battle_player_id = player.get_instance_id()
+		_battle_player = player
+		_battle_snapshot = {"fightId": "%d-%d" % [OS.get_process_id(), _battle_number],
+			"player": read_battle_side(player, int(player.current_round)),
+			"opponent": read_battle_side(opponent, int(player.current_round), true)}
+		_battle_frame = null
+		_battle_observations.clear()
+		_battle_observation_index = 0
+	var frame = read_battle_frame(state)
+	if frame != null:
+		_remember_battle_frame(frame)
+
+func _remember_battle_frame(frame: Dictionary) -> void:
+	_battle_frame = frame
+	if not _battle_observations.is_empty():
+		var previous: Dictionary = _battle_observations.back().frame
+		var elapsed: float = frame.elapsedSeconds - previous.elapsedSeconds
+		if elapsed >= 0.0 and elapsed < 0.5 and frame.player == previous.player and frame.opponent == previous.opponent:
+			return
+	_battle_observation_index += 1
+	_battle_observations.append({"index": _battle_observation_index, "frame": frame})
+	if _battle_observations.size() > BATTLE_OBSERVATION_LIMIT:
+		_battle_observations.pop_front()
+
+func _read_observed_battle() -> Dictionary:
+	var battle := _battle_snapshot.duplicate()
+	battle.outcome = read_battle_outcome(_battle_player)
+	if battle.outcome == null and _last_battle.get("fightId") == battle.fightId:
+		battle.outcome = _last_battle.get("outcome")
+	battle.frame = _battle_frame
+	battle.observations = _battle_observations.duplicate()
+	return battle
 
 func read_board(run, manager, view) -> Dictionary:
 	var weights: Dictionary = view.rank_ui.get("_last_weights")

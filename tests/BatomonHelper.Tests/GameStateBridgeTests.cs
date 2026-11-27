@@ -137,9 +137,25 @@ public sealed class GameStateBridgeTests
             ["player"] = FrameSide(2400, new JsonObject { ["slot"] = 0, ["alive"] = true, ["casts"] = 1, ["stats"] = new JsonArray(6, 0, 0, 6, 0, 0, 0, 1, 0), ["damageDealt"] = 6, ["healingDone"] = 0, ["shieldGranted"] = 0 }),
             ["opponent"] = FrameSide(2394)
         };
+        var validObservation = json["battle"]!["frame"]!.DeepClone();
+        validObservation["player"]!["units"]![0]!["effectiveCooldownSeconds"] = 0.4;
+        validObservation["player"]!["units"]![0]!["cooldownProgressSeconds"] = 0.1;
+        validObservation["player"]!["units"]![0]!["pendingCasts"] = 2;
+        var invalidObservation = validObservation.DeepClone();
+        invalidObservation["player"]!["units"]![0]!["pendingCasts"] = -1;
+        json["battle"]!["observations"] = new JsonArray(
+            new JsonObject { ["index"] = 1, ["frame"] = validObservation },
+            new JsonObject { ["index"] = 2, ["frame"] = invalidObservation });
+
         var message = GameStateBridge.Parse(json.ToJsonString(), await Catalog(), Time(json));
         Assert.Equal(.5, message.Battle!.Frame!.ElapsedSeconds);
         Assert.Equal(1, message.Battle.Frame.Player.Units[0].Casts);
+        Assert.Null(message.Battle.Frame.Player.Units[0].CooldownProgressSeconds);
+        var observation = Assert.Single(message.Battle.Observations!);
+        Assert.Equal(1, observation.Index);
+        Assert.Equal(.4, observation.Frame.Player.Units[0].EffectiveCooldownSeconds);
+        Assert.Equal(.1, observation.Frame.Player.Units[0].CooldownProgressSeconds);
+        Assert.Equal(2, observation.Frame.Player.Units[0].PendingCasts);
 
         json["battle"]!["frame"]!["player"]!["health"] = -1;
         Assert.Null(GameStateBridge.Parse(json.ToJsonString(), await Catalog(), Time(json)).Battle!.Frame);

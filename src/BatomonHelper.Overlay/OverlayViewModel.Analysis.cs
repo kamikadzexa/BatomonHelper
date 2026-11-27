@@ -29,7 +29,7 @@ public sealed partial class OverlayViewModel
     private async Task RefreshBattleAsync(GameBattleState battle)
     {
         BattleSummary = Setup.ShowBattleOutcome ? BattleOutcomePresentation.Summary(battle.Outcome) : "";
-        var identity = "battle:" + JsonSerializer.Serialize(battle with { Outcome = null, Frame = null });
+        var identity = "battle:" + JsonSerializer.Serialize(battle with { Outcome = null, Frame = null, Observations = null });
         if (_damageIdentity == identity) return;
         AnalysisWarning = "";
         _damageIdentity = identity;
@@ -210,11 +210,11 @@ public sealed partial class OverlayViewModel
             {
                 PositionHint = objective == PlacementObjective.FastestKill
                     ? "No placement improves estimated kill time or 30-second DPS."
-                    : "No placement improves survival under standard pressure.";
+                    : "No placement improves survival, 30-second DPS, or board occupancy.";
                 return;
             }
             PositionHint = advice.RecommendedSurvival is { } survival
-                ? $"Simulated pressure · {Survival(survival)} instead of {Survival(advice.CurrentSurvival!)}."
+                ? $"Under standard pressure, {Survival(survival)}. 30-second DPS {advice.Recommended.Checkpoints[^1].Dps:N1}."
                 : $"Final placement reaches target HP {Timing(advice.Recommended)} instead of {Timing(advice.Current)}.";
             if (target.Estimated) PositionHint += " Target HP is estimated from live team HP.";
             if (advice.ExcludesRandomTrinketEffects) PositionHint += " Placement scoring excludes random trinket targets.";

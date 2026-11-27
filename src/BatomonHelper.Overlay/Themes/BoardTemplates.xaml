@@ -17,18 +17,18 @@
         <TextBlock Text="{Binding DamageSummary}" FontWeight="SemiBold" Foreground="#FFD34D" FontSize="15" Margin="0,0,0,10" TextWrapping="Wrap">
           <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding DamageSummary}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
         </TextBlock>
-        <StackPanel Margin="0,0,0,10" Visibility="{Binding PlacementControlsVisibility}">
-          <TextBlock Text="Placement objective" Foreground="#BCDDE4" Margin="0,0,0,4" />
-          <ComboBox Style="{DynamicResource FilterComboBox}" ItemsSource="{Binding PlacementObjectives}"
-                    DisplayMemberPath="Name" SelectedValuePath="Key" SelectedValue="{Binding Setup.PlacementObjective, Mode=TwoWay}"
-                    AutomationProperties.Name="Placement objective" />
-          <TextBlock Text="{Binding PositionHint}" TextWrapping="Wrap" Foreground="#E0F5F8" Margin="0,6,0,0" />
-        </StackPanel>
-        <Border Background="#164F62" BorderBrush="#73B3C4" BorderThickness="1" CornerRadius="5" Padding="8" Margin="0,0,0,10" Visibility="{Binding RecommendedPositionsVisibility}">
+        <Border Background="#164F62" BorderBrush="#73B3C4" BorderThickness="1" CornerRadius="5" Padding="8" Margin="0,0,0,10" Visibility="{Binding PlacementControlsVisibility}">
           <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+              <TextBlock Text="Placement" FontWeight="Bold" Foreground="#FFD34D" VerticalAlignment="Center" />
+              <ComboBox Grid.Column="1" FontSize="11" MinHeight="24" Padding="6,2" Background="#125F70"
+                        ItemsSource="{Binding PlacementObjectives}" DisplayMemberPath="Name" SelectedValuePath="Key"
+                        SelectedValue="{Binding Setup.PlacementObjective, Mode=TwoWay}" AutomationProperties.Name="Placement objective" />
+            </Grid>
+            <TextBlock Text="{Binding PositionHint}" TextWrapping="Wrap" Foreground="#E0F5F8" Margin="0,6,0,0" />
             <StackPanel Visibility="{Binding RecommendedPositionsVisibility}">
-              <TextBlock Text="Recommended placement" FontWeight="Bold" Foreground="#FFD34D" Margin="0,7,0,2" />
-              <TextBlock Text="Yellow positions need a change." Foreground="#FFD34D" FontSize="11" Margin="0,0,0,4" />
+              <TextBlock Text="Yellow positions need a change." Foreground="#FFD34D" FontSize="11" Margin="0,7,0,4" />
               <ItemsControl ItemsSource="{Binding RecommendedTeamRows}">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>

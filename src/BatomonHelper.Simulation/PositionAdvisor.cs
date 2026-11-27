@@ -19,6 +19,8 @@ public sealed record PositionAdvice(Unit?[] Slots, BoardAnalysisResult Current, 
 /// <summary>Searches successive legal board and bench swaps until none improves the selected objective.</summary>
 public sealed class PositionAdvisor(RulesManifest rules)
 {
+    private const int Duration = 30;
+
     private sealed record Score(FrozenBoard Board, double? Kill, PlacementSurvival? Survival)
     {
         public double? Damage { get; set; }
@@ -38,7 +40,8 @@ public sealed class PositionAdvisor(RulesManifest rules)
         if (cancellation.IsCancellationRequested) return null;
         if (bench.Length != 4) throw new ArgumentOutOfRangeException(nameof(bench));
         var slots = current.Team.Concat(bench).ToArray();
-        if (slots.OfType<Unit>().Count() < 2) return null;
+        var unitCount = slots.OfType<Unit>().Count();
+        if (unitCount == 0 || (unitCount == 1 && objective != PlacementObjective.MostHpAndShield)) return null;
 
         var randomIds = rules.Trinkets.Where(trinket => trinket.Effects.Any(IsRandomTarget))
             .Select(trinket => trinket.Id).ToHashSet(StringComparer.Ordinal);
@@ -75,20 +78,21 @@ public sealed class PositionAdvisor(RulesManifest rules)
         {
             var board = current with { Team = active };
             var stopAtTarget = objective == PlacementObjective.FastestKill;
-            var probe = Simulate(board, stopAtTarget);
+            var pressureHp = objective == PlacementObjective.MostHpAndShield ? (double?)hp : null;
+            var probe = Simulate(board, stopAtTarget, pressureHp);
             return new(board, probe.KillSeconds, probe.Survival)
             {
-                Damage = stopAtTarget && probe.KillSeconds.HasValue ? null : probe.TotalDamage
+                Damage = pressureHp.HasValue || (stopAtTarget && probe.KillSeconds.HasValue) ? null : probe.TotalDamage
             };
         }
 
-        CombatProbe Simulate(FrozenBoard board, bool stopAtTarget)
+        CombatProbe Simulate(FrozenBoard board, bool stopAtTarget, double? pressureHp = null)
         {
             var probe = new CombatProbe
             {
-                Duration = 30, ScoreOnly = true, Cancellation = cancellation, StopQuietlyOnCancellation = true,
+                Duration = Duration, ScoreOnly = true, Cancellation = cancellation, StopQuietlyOnCancellation = true,
                 KillTargetHp = hp, StopAtTarget = stopAtTarget,
-                PressureHp = objective == PlacementObjective.MostHpAndShield ? hp : null
+                PressureHp = pressureHp
             };
             resolver.ResolveBattle(board, target, 69, probe: probe);
             return probe;
@@ -163,9 +167,16 @@ public sealed class PositionAdvisor(RulesManifest rules)
         const double epsilon = .01;
         if (candidate.Survival is { } survival && current.Survival is { } baseline)
         {
-            if (survival.DefeatedAt is { } defeat)
-                return baseline.DefeatedAt is { } previous && defeat > previous + epsilon;
-            return baseline.DefeatedAt.HasValue || survival.Remaining > baseline.Remaining + epsilon;
+            if (survival.DefeatedAt.HasValue != baseline.DefeatedAt.HasValue)
+                return survival.DefeatedAt is null;
+            var survivalOrder = Math.Round(survival.DefeatedAt ?? survival.Remaining, 2)
+                .CompareTo(Math.Round(baseline.DefeatedAt ?? baseline.Remaining, 2));
+            if (survivalOrder != 0) return survivalOrder > 0;
+
+            var dpsOrder = Math.Round(damage(candidate) / Duration, 2).CompareTo(Math.Round(damage(current) / Duration, 2));
+            if (dpsOrder != 0) return dpsOrder > 0;
+
+            return candidate.Board.Team.Count(unit => unit is not null) > current.Board.Team.Count(unit => unit is not null);
         }
         if (candidate.Kill is { } kill)
         {
@@ -174,6 +185,6 @@ public sealed class PositionAdvisor(RulesManifest rules)
             if (order != 0) return order < 0;
         }
         else if (current.Kill.HasValue) return false;
-        return (damage(candidate) - damage(current)) / 30 > epsilon;
+        return (damage(candidate) - damage(current)) / Duration > epsilon;
     }
 }

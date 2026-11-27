@@ -64,6 +64,26 @@ func _init():
 	state.simulation.data.player_health[1] = -12.5
 	frame = bridge.read_battle_frame(state)
 	valid = valid and frame.opponent.health == 0.0 and frame.opponent.rawHealth == -12.5
+	var terminal = frame
+	state.simulation.data.time_elapsed = 0.0
+	state.simulation.data.player_health[1] = 80.0
+	var opening = bridge.read_battle_frame(state)
+	bridge._remember_battle_frame(opening)
+	bridge._remember_battle_frame(bridge.read_battle_frame(state))
+	state.simulation.data.team_shield[0] += 10.0
+	bridge._remember_battle_frame(bridge.read_battle_frame(state))
+	bridge._remember_battle_frame(terminal)
+	bridge._remember_battle_frame(opening)
+	valid = (valid and bridge._battle_observations.size() == 4
+		and bridge._battle_observations[1].frame.elapsedSeconds == 0.0
+		and bridge._battle_observations[1].frame.player.shield == 12.0
+		and bridge._battle_observations[2].frame.opponent.health == 0.0
+		and bridge._battle_observations[3].index == 4)
+	for sample in range(bridge.BATTLE_OBSERVATION_LIMIT):
+		state.simulation.data.time_elapsed += 0.5
+		bridge._remember_battle_frame(bridge.read_battle_frame(state))
+	valid = (valid and bridge._battle_observations.size() == bridge.BATTLE_OBSERVATION_LIMIT
+		and bridge._battle_observations[0].index == 5)
 	empty_state.free()
 	bridge.free()
 	if not valid:
